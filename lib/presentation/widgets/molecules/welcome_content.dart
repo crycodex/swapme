@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../atoms/animated_text.dart';
 import '../atoms/animated_icon.dart' as custom;
+import '../atoms/rotating_sun.dart';
 
 class WelcomeContent extends StatelessWidget {
   final AnimationController fadeController;
@@ -51,19 +52,14 @@ class WelcomeContent extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
 
-                // Header con Welcome y Sol
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Sol animado en la esquina superior derecha
-                    custom.AnimatedIcon(
-                      icon: Icons.wb_sunny,
-                      size: 50,
-                      color: Colors.yellow,
-                      animation: bounceAnimation,
-                      scaleAnimation: scaleAnimation,
-                    ),
-                  ],
+                // Sol rotatorio personalizado en el lado derecho
+                Align(
+                  alignment: Alignment.topRight,
+                  child: RotatingSun(
+                    size: 100,
+                    animation: bounceAnimation,
+                    scaleAnimation: scaleAnimation,
+                  ),
                 ),
 
                 const SizedBox(height: 30),
