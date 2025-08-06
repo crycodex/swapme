@@ -40,6 +40,11 @@ dependencies:
   another_flutter_splash_screen: ^1.2.1
   #launcheer icons
   flutter_launcher_icons: ^0.14.4
+  #state management
+  flutter_riverpod: ^2.5.1
+  #freezed for immutable data classes
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +56,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  #code generation
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
 
 #flutter_launcher_icons:
 flutter_launcher_icons:

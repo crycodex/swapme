@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 //theme personalizado
 import 'config/theme/theme_data.dart';
 //material symbols
@@ -7,7 +8,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'splash_screen.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const ProviderScope(child: MainApp()));
 }
 
 class MainApp extends StatelessWidget {
