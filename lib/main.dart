@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-// Importar la configuración de tema personalizada
+//theme personalizado
 import 'config/theme/theme_data.dart';
+//material symbols
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 void main() {
   runApp(const MainApp());
@@ -48,6 +50,11 @@ class MyHomePage extends StatelessWidget {
             Text(
               'Tu aplicación con tema personalizado',
               style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            Icon(
+              Symbols.cycle,
+              size: 100,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ],
         ),
