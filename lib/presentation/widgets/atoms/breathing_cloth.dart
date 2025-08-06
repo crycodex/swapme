@@ -32,11 +32,11 @@ class _BreathingClothState extends State<BreathingCloth>
     _breathingAnimation =
         Tween<double>(
           begin: 1.0,
-          end: 1.15, // Crece un 15%
+          end: 1.12, // Crece un 12% para ser más sutil
         ).animate(
           CurvedAnimation(
             parent: _breathingController,
-            curve: Curves.easeInOut,
+            curve: Curves.elasticOut,
           ),
         );
 

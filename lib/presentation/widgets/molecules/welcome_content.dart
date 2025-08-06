@@ -51,8 +51,6 @@ class WelcomeContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
-
                 // Sol rotatorio personalizado en el lado derecho
                 Align(
                   alignment: Alignment.topRight,
@@ -62,8 +60,6 @@ class WelcomeContent extends StatelessWidget {
                     scaleAnimation: scaleAnimation,
                   ),
                 ),
-
-                const SizedBox(height: 30),
 
                 // Textos principales con animación escalonada
                 Expanded(
@@ -76,10 +72,10 @@ class WelcomeContent extends StatelessWidget {
                         style: theme.textTheme.headlineLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 36,
+                          fontSize: 48,
                         ),
                         animation: slideAnimation,
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: const EdgeInsets.only(bottom: 2.0),
                       ),
 
                       // "Descubre"
@@ -88,49 +84,51 @@ class WelcomeContent extends StatelessWidget {
                         style: theme.textTheme.headlineLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 36,
+                          fontSize: 48,
                         ),
                         animation: slideAnimation,
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: const EdgeInsets.only(bottom: 2.0),
                       ),
 
                       // "Estrena" con fondo especial
                       Container(
-                        margin: const EdgeInsets.only(bottom: 16.0),
+                        margin: const EdgeInsets.only(bottom: 12.0),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0,
-                          vertical: 6.0,
+                          horizontal: 10.0,
+                          vertical: 4.0,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(16),
+                          color: colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: AnimatedText(
                           text: 'Estrena',
                           style: theme.textTheme.headlineLarge?.copyWith(
-                            color: Colors.black,
+                            color: colorScheme.onSecondaryContainer,
                             fontWeight: FontWeight.bold,
-                            fontSize: 36,
+                            fontSize: 48,
                           ),
                           animation: scaleAnimation,
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                      // Contenedor con camiseta y texto
+                      // Contenedor con camiseta y texto lado a lado
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Camiseta con animación de respiración
-                          BreathingCloth(
-                            size: 150,
-                            animation: bounceAnimation,
-                            scaleAnimation: scaleAnimation,
+                          // Camiseta con animación de respiración (lado izquierdo)
+                          Transform.rotate(
+                            angle: -0.2, // Rotar un poco el buzo
+                            child: BreathingCloth(
+                              size: 130,
+                              animation: bounceAnimation,
+                              scaleAnimation: scaleAnimation,
+                            ),
                           ),
 
-                          const SizedBox(width: 12),
-
-                          // Textos "Dale una nueva vida a tu clóset"
+                          // Textos "Dale una nueva vida a tu clóset" (lado derecho)
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +139,7 @@ class WelcomeContent extends StatelessWidget {
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 36,
+                                        fontSize: 48,
                                       ),
                                   animation: slideAnimation,
                                   padding: const EdgeInsets.only(bottom: 2.0),
@@ -152,7 +150,7 @@ class WelcomeContent extends StatelessWidget {
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 36,
+                                        fontSize: 48,
                                       ),
                                   animation: slideAnimation,
                                   padding: const EdgeInsets.only(bottom: 2.0),
@@ -163,7 +161,7 @@ class WelcomeContent extends StatelessWidget {
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 36,
+                                        fontSize: 48,
                                       ),
                                   animation: slideAnimation,
                                   padding: const EdgeInsets.only(bottom: 2.0),
@@ -174,7 +172,7 @@ class WelcomeContent extends StatelessWidget {
                                       ?.copyWith(
                                         color: Colors.pink[200],
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 36,
+                                        fontSize: 48,
                                       ),
                                   animation: slideAnimation,
                                 ),
@@ -182,20 +180,6 @@ class WelcomeContent extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
-
-                      const Spacer(),
-
-                      // Flecha animada apuntando al botón
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: custom.AnimatedIcon(
-                          icon: Icons.keyboard_arrow_down,
-                          size: 30,
-                          color: Colors.white,
-                          animation: bounceAnimation,
-                          scaleAnimation: scaleAnimation,
-                        ),
                       ),
                     ],
                   ),
