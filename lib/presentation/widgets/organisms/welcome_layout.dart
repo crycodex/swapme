@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../molecules/welcome_content.dart';
 import '../atoms/animated_button.dart';
+import 'package:glossy/glossy.dart';
 
 class WelcomeLayout extends StatelessWidget {
   final AnimationController fadeController;
@@ -44,61 +45,63 @@ class WelcomeLayout extends StatelessWidget {
             ),
           ),
 
-          // Área del botón
-          Container(
-            padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
-              ),
+          // Área del botón con efecto glassmorphism
+          GlossyContainer(
+            width: double.infinity,
+            height: 150, // Altura fija para el contenedor glossy
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Botón "Empezar" animado
-                AnimatedBuilder(
-                  animation: buttonAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: buttonAnimation.value,
-                      child: AnimatedButton(
-                        text: 'Empezar',
-                        onPressed: isLoading ? null : onStartPressed,
-                        backgroundColor: colorScheme.primary,
-                        textColor: colorScheme.onPrimary,
-                        width: double.infinity,
-                        height: 56,
-                        borderRadius: BorderRadius.circular(16),
-                        isLoading: isLoading,
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                // Texto de ayuda opcional
-                if (!isLoading)
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Botón "Empezar" animado
                   AnimatedBuilder(
                     animation: buttonAnimation,
                     builder: (context, child) {
-                      return Opacity(
-                        opacity: buttonAnimation.value.clamp(0.0, 1.0),
-                        child: Text(
-                          'Toca para comenzar tu experiencia',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                          textAlign: TextAlign.center,
+                      return Transform.scale(
+                        scale: buttonAnimation.value,
+                        child: AnimatedButton(
+                          text: 'Empezar',
+                          onPressed: isLoading ? null : onStartPressed,
+                          backgroundColor: colorScheme.primary,
+                          textColor: colorScheme.onPrimary,
+                          width: double.infinity,
+                          height: 56,
+                          borderRadius: BorderRadius.circular(16),
+                          isLoading: isLoading,
                         ),
                       );
                     },
                   ),
 
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 12),
+
+                  // Texto de ayuda opcional
+                  if (!isLoading)
+                    AnimatedBuilder(
+                      animation: buttonAnimation,
+                      builder: (context, child) {
+                        return Opacity(
+                          opacity: buttonAnimation.value.clamp(0.0, 1.0),
+                          child: Text(
+                            'Toca para comenzar tu experiencia',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.outlineVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      },
+                    ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ],
