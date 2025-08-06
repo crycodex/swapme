@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'config/theme/theme_data.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MainApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
