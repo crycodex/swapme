@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../atoms/animated_text.dart';
-import '../atoms/animated_icon.dart' as custom;
 import '../atoms/rotating_sun.dart';
 import '../atoms/breathing_cloth.dart';
 
@@ -61,36 +60,42 @@ class WelcomeContent extends StatelessWidget {
                   ),
                 ),
 
-                // Textos principales con animación escalonada
+                // Textos principales con animación de cascada
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // "Intercambia"
-                      AnimatedText(
-                        text: 'Intercambia,',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 48,
-                        ),
-                        animation: slideAnimation,
+                      // "Intercambia" y "Descubre" con animación de cascada
+                      CascadeAnimatedText(
+                        texts: ['Intercambia,', 'Descubre,'],
+                        styles: [
+                          theme.textTheme.headlineLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 48,
+                              ) ??
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 48,
+                              ),
+                          theme.textTheme.headlineLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 48,
+                              ) ??
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 48,
+                              ),
+                        ],
+                        cascadeDuration: const Duration(milliseconds: 2500),
+                        pauseDuration: const Duration(milliseconds: 1500),
                         padding: const EdgeInsets.only(bottom: 2.0),
                       ),
 
-                      // "Descubre"
-                      AnimatedText(
-                        text: 'Descubre,',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 48,
-                        ),
-                        animation: slideAnimation,
-                        padding: const EdgeInsets.only(bottom: 2.0),
-                      ),
-
-                      // "Estrena" con fondo especial
+                      // "Estrena" con fondo especial (cinta)
                       Container(
                         margin: const EdgeInsets.only(bottom: 12.0),
                         padding: const EdgeInsets.symmetric(
@@ -101,16 +106,26 @@ class WelcomeContent extends StatelessWidget {
                           color: colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: AnimatedText(
-                          text: 'Estrena',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: colorScheme.onSecondaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 48,
-                          ),
-                          animation: scaleAnimation,
+                        child: CascadeAnimatedText(
+                          texts: ['Estrena'],
+                          styles: [
+                            theme.textTheme.headlineLarge?.copyWith(
+                                  color: colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 48,
+                                ) ??
+                                TextStyle(
+                                  color: colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 48,
+                                ),
+                          ],
+                          cascadeDuration: const Duration(milliseconds: 2500),
+                          pauseDuration: const Duration(milliseconds: 1500),
                         ),
                       ),
+
+                      const SizedBox(height: 12),
 
                       const SizedBox(height: 20),
 
@@ -130,53 +145,60 @@ class WelcomeContent extends StatelessWidget {
 
                           // Textos "Dale una nueva vida a tu clóset" (lado derecho)
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AnimatedText(
-                                  text: 'Dale',
-                                  style: theme.textTheme.headlineLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 48,
-                                      ),
-                                  animation: slideAnimation,
-                                  padding: const EdgeInsets.only(bottom: 2.0),
-                                ),
-                                AnimatedText(
-                                  text: 'una nueva',
-                                  style: theme.textTheme.headlineLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 48,
-                                      ),
-                                  animation: slideAnimation,
-                                  padding: const EdgeInsets.only(bottom: 2.0),
-                                ),
-                                AnimatedText(
-                                  text: 'vida a tu',
-                                  style: theme.textTheme.headlineLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 48,
-                                      ),
-                                  animation: slideAnimation,
-                                  padding: const EdgeInsets.only(bottom: 2.0),
-                                ),
-                                AnimatedText(
-                                  text: 'clóset',
-                                  style: theme.textTheme.headlineLarge
-                                      ?.copyWith(
-                                        color: Colors.pink[200],
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 48,
-                                      ),
-                                  animation: slideAnimation,
-                                ),
+                            child: CascadeAnimatedText(
+                              texts: [
+                                'Dale',
+                                'una nueva',
+                                'vida a tu',
+                                'clóset',
                               ],
+                              styles: [
+                                theme.textTheme.headlineLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ) ??
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ),
+                                theme.textTheme.headlineLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ) ??
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ),
+                                theme.textTheme.headlineLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ) ??
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ),
+                                theme.textTheme.headlineLarge?.copyWith(
+                                      color: Colors.pink[200],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ) ??
+                                    TextStyle(
+                                      color: Colors.pink[200],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 48,
+                                    ),
+                              ],
+                              cascadeDuration: const Duration(
+                                milliseconds: 2000,
+                              ),
+                              pauseDuration: const Duration(milliseconds: 1000),
+                              padding: const EdgeInsets.only(bottom: 2.0),
                             ),
                           ),
                         ],
