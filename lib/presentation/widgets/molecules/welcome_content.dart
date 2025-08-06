@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../atoms/animated_text.dart';
 import '../atoms/animated_icon.dart' as custom;
 import '../atoms/rotating_sun.dart';
+import '../atoms/breathing_cloth.dart';
 
 class WelcomeContent extends StatelessWidget {
   final AnimationController fadeController;
@@ -120,11 +121,9 @@ class WelcomeContent extends StatelessWidget {
                       // Contenedor con camiseta y texto
                       Row(
                         children: [
-                          // Icono de camiseta
-                          custom.AnimatedIcon(
-                            icon: Icons.checkroom,
-                            size: 60,
-                            color: Colors.white,
+                          // Camiseta con animación de respiración
+                          BreathingCloth(
+                            size: 150,
                             animation: bounceAnimation,
                             scaleAnimation: scaleAnimation,
                           ),
