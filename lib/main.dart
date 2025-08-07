@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 //theme personalizado
 import 'config/theme/theme_data.dart';
-//material symbols
-import 'package:material_symbols_icons/material_symbols_icons.dart';
 //splash screen
 import 'splash_screen.dart';
 //routes

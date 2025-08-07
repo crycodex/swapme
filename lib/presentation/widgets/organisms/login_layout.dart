@@ -231,7 +231,7 @@ class _LoginLayoutState extends State<LoginLayout>
                             Text(
                               _getCardTitle(),
                               style: theme.textTheme.headlineMedium?.copyWith(
-                                color: colorScheme.primary,
+                                color: colorScheme.secondary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -282,25 +282,19 @@ class _LoginLayoutState extends State<LoginLayout>
         Row(
           children: [
             Expanded(
-              child: Container(
-                height: 1,
-                color: colorScheme.outline.withValues(alpha: 0.3),
-              ),
+              child: Container(height: 1, color: colorScheme.onSecondary),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 'o inicia con',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.outline,
+                  color: colorScheme.onSecondary,
                 ),
               ),
             ),
             Expanded(
-              child: Container(
-                height: 1,
-                color: colorScheme.outline.withValues(alpha: 0.3),
-              ),
+              child: Container(height: 1, color: colorScheme.onSecondary),
             ),
           ],
         ),

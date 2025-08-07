@@ -21,7 +21,7 @@ class ForgotForm extends GetView<LoginController> {
           Text(
             'Correo',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -44,8 +44,8 @@ class ForgotForm extends GetView<LoginController> {
           AnimatedButton(
             text: 'Cambiar Contraseña',
             onPressed: isLoading ? null : onSubmit,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            textColor: Colors.grey,
             width: double.infinity,
             height: 52,
             borderRadius: BorderRadius.circular(16),

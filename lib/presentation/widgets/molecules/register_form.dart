@@ -21,7 +21,7 @@ class RegisterForm extends GetView<LoginController> {
           Text(
             'Nombre',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -43,7 +43,7 @@ class RegisterForm extends GetView<LoginController> {
           Text(
             'Correo',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -66,7 +66,7 @@ class RegisterForm extends GetView<LoginController> {
           Text(
             'Contraseña',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -89,7 +89,7 @@ class RegisterForm extends GetView<LoginController> {
           Text(
             'Confirmar Contraseña',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -112,8 +112,8 @@ class RegisterForm extends GetView<LoginController> {
           AnimatedButton(
             text: 'Crear Cuenta',
             onPressed: isLoading ? null : onSubmit,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            textColor: Colors.grey,
             width: double.infinity,
             height: 52,
             borderRadius: BorderRadius.circular(16),

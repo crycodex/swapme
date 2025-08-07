@@ -28,7 +28,7 @@ class LoginForm extends GetView<LoginController> {
           Text(
             'Correo',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -74,7 +74,7 @@ class LoginForm extends GetView<LoginController> {
           Text(
             'Contraseña',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -121,7 +121,9 @@ class LoginForm extends GetView<LoginController> {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onForgotPressed,
-              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.secondary,
+              ),
               child: const Text('¿Olvidaste tu contraseña?'),
             ),
           ),
@@ -145,8 +147,8 @@ class LoginForm extends GetView<LoginController> {
           AnimatedButton(
             text: 'Iniciar',
             onPressed: isLoading ? null : () => onLoginPressed?.call(),
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            textColor: Colors.grey,
             width: double.infinity,
             height: 52,
             borderRadius: BorderRadius.circular(16),
