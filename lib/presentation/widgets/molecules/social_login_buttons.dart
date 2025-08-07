@@ -19,7 +19,7 @@ class SocialLoginButtons extends StatelessWidget {
         // Botón de Google
         Container(
           width: double.infinity,
-          height: 56,
+          height: 48, // Reducido de 56 a 48
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -74,12 +74,11 @@ class SocialLoginButtons extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 12),
-
+        const SizedBox(height: 10), // Reducido de 12 a 10
         // Botón de Apple
         Container(
           width: double.infinity,
-          height: 56,
+          height: 48, // Reducido de 56 a 48
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),

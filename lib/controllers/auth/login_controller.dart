@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../routes/routes.dart';
 
 class LoginController extends GetxController {
   final email = ''.obs;
@@ -39,7 +40,8 @@ class LoginController extends GetxController {
       await Future.delayed(const Duration(seconds: 2));
 
       // Aquí iría la lógica real de autenticación
-      Get.offAllNamed('/home');
+      // Por ahora navegamos de vuelta a welcome
+      Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión: ${e.toString()}');
     } finally {
@@ -55,7 +57,8 @@ class LoginController extends GetxController {
       // Simular login con Google
       await Future.delayed(const Duration(seconds: 1));
 
-      Get.offAllNamed('/home');
+      // Por ahora navegamos de vuelta a welcome
+      Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Google');
     } finally {
@@ -71,7 +74,8 @@ class LoginController extends GetxController {
       // Simular login con Apple
       await Future.delayed(const Duration(seconds: 1));
 
-      Get.offAllNamed('/home');
+      // Por ahora navegamos de vuelta a welcome
+      Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Apple');
     } finally {
@@ -80,6 +84,8 @@ class LoginController extends GetxController {
   }
 
   void handleRegisterPressed(BuildContext context) {
-    Get.toNamed('/register');
+    // Por ahora navegamos de vuelta a welcome
+    // En el futuro aquí iría la ruta de registro
+    Get.offAllNamed(Routes.welcome);
   }
 }

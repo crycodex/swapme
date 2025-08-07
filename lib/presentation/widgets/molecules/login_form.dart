@@ -27,7 +27,7 @@ class LoginForm extends GetView<LoginController> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6), // Reducido de 8 a 6
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -47,7 +47,7 @@ class LoginForm extends GetView<LoginController> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 16,
+                  vertical: 14, // Reducido de 16 a 14
                 ),
               ),
               onChanged: (value) {
@@ -65,8 +65,7 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 20),
-
+          const SizedBox(height: 16), // Reducido de 20 a 16
           // Campo Contraseña
           Text(
             'Contraseña',
@@ -75,7 +74,7 @@ class LoginForm extends GetView<LoginController> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6), // Reducido de 8 a 6
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -95,7 +94,7 @@ class LoginForm extends GetView<LoginController> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 16,
+                  vertical: 14, // Reducido de 16 a 14
                 ),
               ),
               onChanged: (value) {
@@ -113,13 +112,12 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 6), // Reducido de 8 a 6
           // Mensaje de error
           Obx(() {
             if (controller.errorMessage.value.isNotEmpty) {
               return Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 6), // Reducido de 8 a 6
                 child: Text(
                   controller.errorMessage.value,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -131,8 +129,7 @@ class LoginForm extends GetView<LoginController> {
             return const SizedBox.shrink();
           }),
 
-          const SizedBox(height: 24),
-
+          const SizedBox(height: 20), // Reducido de 24 a 20
           // Botón de login
           AnimatedButton(
             text: 'Iniciar',
@@ -144,7 +141,7 @@ class LoginForm extends GetView<LoginController> {
             backgroundColor: Colors.green,
             textColor: Colors.white,
             width: double.infinity,
-            height: 56,
+            height: 52, // Reducido de 56 a 52
             borderRadius: BorderRadius.circular(16),
             isLoading: isLoading,
           ),

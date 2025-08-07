@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'presentation/pages/welcome/welcome_page.dart';
+import 'package:get/get.dart';
+import 'routes/routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,16 +13,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToHome();
+    _navigateToWelcome();
   }
 
-  void _navigateToHome() {
+  void _navigateToWelcome() {
     Future.delayed(const Duration(milliseconds: 3500), () {
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomePage()),
-        );
+        Get.offAllNamed(Routes.welcome);
       }
     });
   }

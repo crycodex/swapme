@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../presentation/pages/auth/login_page.dart';
+import '../../routes/routes.dart';
 
 class WelcomeController extends GetxController {
   final isLoading = false.obs;
@@ -14,8 +14,8 @@ class WelcomeController extends GetxController {
       // Simular una carga
       await Future.delayed(const Duration(milliseconds: 1500));
 
-      // Navegar a la página de login
-      Get.off(() => const LoginPage());
+      // Navegar a la página de login usando rutas
+      Get.offAllNamed(Routes.login);
     } catch (error) {
       isLoading.value = false;
       hasError.value = true;
