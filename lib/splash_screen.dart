@@ -17,10 +17,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToHome() {
     Future.delayed(const Duration(milliseconds: 3500), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomePage()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomePage()),
+        );
+      }
     });
   }
 

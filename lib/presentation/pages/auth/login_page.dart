@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:glossy/glossy.dart';
 import '../../../controllers/auth/login_controller.dart';
 import '../../widgets/organisms/login_layout.dart';
 

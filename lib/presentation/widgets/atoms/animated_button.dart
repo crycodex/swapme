@@ -100,12 +100,12 @@ class _AnimatedButtonState extends State<AnimatedButton>
                 color: effectiveBackgroundColor,
                 borderRadius: effectiveBorderRadius,
                 border: Border.all(
-                  color: effectiveBackgroundColor.withOpacity(0.3),
+                  color: effectiveBackgroundColor.withValues(alpha: 0.3),
                   width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: effectiveBackgroundColor.withOpacity(0.3),
+                    color: effectiveBackgroundColor.withValues(alpha: 0.3),
                     blurRadius: 8.0,
                     offset: const Offset(0, 4),
                   ),

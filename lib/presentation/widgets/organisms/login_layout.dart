@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:glossy/glossy.dart';
-import '../atoms/animated_button.dart';
 import '../molecules/login_form.dart';
 import '../molecules/social_login_buttons.dart';
 
@@ -89,9 +88,9 @@ class _LoginLayoutState extends State<LoginLayout>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.secondary.withOpacity(0.8),
-              colorScheme.secondary.withOpacity(0.6),
-              colorScheme.secondary.withOpacity(0.4),
+              colorScheme.secondary.withValues(alpha: 0.8),
+              colorScheme.secondary.withValues(alpha: 0.6),
+              colorScheme.secondary.withValues(alpha: 0.4),
             ],
           ),
         ),
@@ -101,7 +100,7 @@ class _LoginLayoutState extends State<LoginLayout>
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.secondary.withOpacity(0.3),
+                  color: colorScheme.secondary.withValues(alpha: 0.3),
                 ),
                 child: CustomPaint(
                   painter: ClothesPatternPainter(colorScheme: colorScheme),
@@ -182,8 +181,8 @@ class _LoginLayoutState extends State<LoginLayout>
                                     Expanded(
                                       child: Container(
                                         height: 1,
-                                        color: colorScheme.outline.withOpacity(
-                                          0.3,
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.3,
                                         ),
                                       ),
                                     ),
@@ -202,8 +201,8 @@ class _LoginLayoutState extends State<LoginLayout>
                                     Expanded(
                                       child: Container(
                                         height: 1,
-                                        color: colorScheme.outline.withOpacity(
-                                          0.3,
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.3,
                                         ),
                                       ),
                                     ),
@@ -260,7 +259,7 @@ class ClothesPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = colorScheme.onSecondary.withOpacity(0.1)
+      ..color = colorScheme.onSecondary.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     // Dibujar círculos que simulan ropa colgada

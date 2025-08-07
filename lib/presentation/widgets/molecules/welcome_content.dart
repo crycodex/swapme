@@ -22,7 +22,7 @@ class WelcomeContent extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: slideController, curve: Curves.easeOutCubic),
     );
 
@@ -125,19 +125,17 @@ class WelcomeContent extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
-
                       const SizedBox(height: 20),
 
                       // Contenedor con camiseta y texto lado a lado
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Camiseta con animación de respiración (lado izquierdo)
                           Transform.rotate(
                             angle: -0.2, // Rotar un poco el buzo
                             child: BreathingCloth(
-                              size: 130,
+                              size: 135,
                               animation: bounceAnimation,
                               scaleAnimation: scaleAnimation,
                             ),

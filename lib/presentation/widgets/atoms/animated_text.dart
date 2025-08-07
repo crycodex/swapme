@@ -113,8 +113,6 @@ class _CascadeAnimatedTextState extends State<CascadeAnimatedText>
     with TickerProviderStateMixin {
   late AnimationController _cascadeController;
   late AnimationController _pauseController;
-  late Animation<double> _cascadeAnimation;
-  late Animation<double> _pauseAnimation;
 
   @override
   void initState() {
@@ -132,14 +130,7 @@ class _CascadeAnimatedTextState extends State<CascadeAnimatedText>
       vsync: this,
     );
 
-    _cascadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _cascadeController, curve: Curves.easeInOut),
-    );
 
-    _pauseAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pauseController, curve: Curves.linear));
 
     _startCascadeAnimation();
   }
