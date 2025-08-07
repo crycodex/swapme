@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:glossy/glossy.dart';
+import 'package:video_player/video_player.dart';
 import '../molecules/login_form.dart';
 import '../molecules/social_login_buttons.dart';
 
@@ -27,11 +28,13 @@ class _LoginLayoutState extends State<LoginLayout>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  VideoPlayerController? _videoController;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _initializeVideo();
     _startAnimations();
   }
 
@@ -45,6 +48,21 @@ class _LoginLayoutState extends State<LoginLayout>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+  }
+
+  void _initializeVideo() async {
+    _videoController = VideoPlayerController.asset('assets/vids/login/bg.mp4');
+
+    try {
+      await _videoController!.initialize();
+      _videoController!.setLooping(true);
+      _videoController!.play();
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error al cargar el video: $e');
+    }
   }
 
   void _startAnimations() {
@@ -61,6 +79,7 @@ class _LoginLayoutState extends State<LoginLayout>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
@@ -85,30 +104,43 @@ class _LoginLayoutState extends State<LoginLayout>
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          // Placeholder background - en el futuro será una imagen de ropa
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              colorScheme.secondary.withValues(alpha: 0.8),
-              colorScheme.secondary.withValues(alpha: 0.6),
-              colorScheme.secondary.withValues(alpha: 0.4),
-            ],
-          ),
+          color: colorScheme.secondary.withValues(alpha: 0.3),
         ),
         child: Stack(
           children: [
-            // Fondo placeholder con patrón de ropa
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.secondary.withValues(alpha: 0.3),
+            // Video de fondo
+            if (_videoController != null &&
+                _videoController!.value.isInitialized)
+              Positioned.fill(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _videoController!.value.size.width,
+                    height: _videoController!.value.size.height,
+                    child: VideoPlayer(_videoController!),
+                  ),
                 ),
-                child: CustomPaint(
-                  painter: ClothesPatternPainter(colorScheme: colorScheme),
+              )
+            else
+              // Fallback mientras se carga el video
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colorScheme.secondary.withValues(alpha: 0.8),
+                        colorScheme.secondary.withValues(alpha: 0.6),
+                        colorScheme.secondary.withValues(alpha: 0.4),
+                      ],
+                    ),
+                  ),
+                  child: CustomPaint(
+                    painter: ClothesPatternPainter(colorScheme: colorScheme),
+                  ),
                 ),
               ),
-            ),
 
             // Título en la parte superior
             SafeArea(

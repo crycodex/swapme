@@ -49,6 +49,8 @@ dependencies:
   glossy: ^0.0.5
   #getx
   get: ^4.7.2
+  #video player
+  video_player: ^2.10.0
 
 dev_dependencies:
   flutter_test:
@@ -101,8 +103,8 @@ flutter:
     - assets/app/icon/logo_ligth.png
     - assets/app/icon/logo_dark.png
     - assets/welcome/
-    - assets/vids/login
     - assets/vids/login/bg.mp4
+  
     
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
