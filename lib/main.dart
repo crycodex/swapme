@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 //theme personalizado
 import 'config/theme/theme_data.dart';
 //material symbols
@@ -8,14 +8,14 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'splash_screen.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MainApp()));
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SwapMe',
       // Usar el tema claro personalizado

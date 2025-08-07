@@ -1,64 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
+import '../../presentation/pages/auth/login_page.dart';
 
-class WelcomeState {
-  final bool isLoading;
-  final bool hasError;
-  final String? errorMessage;
-
-  const WelcomeState({
-    this.isLoading = false,
-    this.hasError = false,
-    this.errorMessage,
-  });
-
-  WelcomeState copyWith({
-    bool? isLoading,
-    bool? hasError,
-    String? errorMessage,
-  }) {
-    return WelcomeState(
-      isLoading: isLoading ?? this.isLoading,
-      hasError: hasError ?? this.hasError,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
-}
-
-class WelcomeController extends StateNotifier<WelcomeState> {
-  WelcomeController() : super(const WelcomeState());
+class WelcomeController extends GetxController {
+  final isLoading = false.obs;
+  final hasError = false.obs;
+  final errorMessage = ''.obs;
 
   Future<void> handleStartPressed(BuildContext context) async {
-    state = state.copyWith(isLoading: true);
+    isLoading.value = true;
 
     try {
       // Simular una carga
       await Future.delayed(const Duration(milliseconds: 1500));
 
-      // Aquí iría la navegación a la siguiente pantalla
-      if (context.mounted) {
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const HomePage()),
-        // );
-      }
+      // Navegar a la página de login
+      Get.off(() => const LoginPage());
     } catch (error) {
-      state = state.copyWith(
-        isLoading: false,
-        hasError: true,
-        errorMessage: error.toString(),
-      );
+      isLoading.value = false;
+      hasError.value = true;
+      errorMessage.value = error.toString();
     } finally {
-      state = state.copyWith(isLoading: false);
+      isLoading.value = false;
     }
   }
 
   void resetError() {
-    state = state.copyWith(hasError: false, errorMessage: null);
+    hasError.value = false;
+    errorMessage.value = '';
   }
 }
-
-final welcomeControllerProvider =
-    StateNotifierProvider<WelcomeController, WelcomeState>((ref) {
-      return WelcomeController();
-    });

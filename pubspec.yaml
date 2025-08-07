@@ -47,6 +47,8 @@ dependencies:
   json_annotation: ^4.9.0
   #glassmorphism
   glossy: ^0.0.5
+  #getx
+  get: ^4.7.2
 
 dev_dependencies:
   flutter_test:
