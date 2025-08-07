@@ -10,7 +10,7 @@ class LoginPage extends GetView<LoginController> {
   Widget build(BuildContext context) {
     return GetBuilder<LoginController>(
       init: LoginController(),
-      builder: (controller) {
+      builder: (LoginController controller) {
         return Scaffold(
           body: LoginLayout(
             onLoginPressed: () => controller.handleLoginPressed(context),
@@ -18,7 +18,8 @@ class LoginPage extends GetView<LoginController> {
                 controller.handleGoogleLoginPressed(context),
             onAppleLoginPressed: () =>
                 controller.handleAppleLoginPressed(context),
-            onRegisterPressed: () => controller.handleRegisterPressed(context),
+            onRegisterSubmit: () => controller.handleRegisterPressed(context),
+            onForgotSubmit: () => controller.handleForgotSubmit(context),
             isLoading: controller.isLoading.value,
           ),
         );

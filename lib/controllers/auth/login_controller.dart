@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import '../../routes/routes.dart';
 
 class LoginController extends GetxController {
-  final email = ''.obs;
-  final password = ''.obs;
-  final isLoading = false.obs;
-  final errorMessage = ''.obs;
+  final RxString email = ''.obs;
+  final RxString password = ''.obs;
+  final RxBool isLoading = false.obs;
+  final RxString errorMessage = ''.obs;
 
   void setEmail(String value) {
     email.value = value;
@@ -36,11 +36,7 @@ class LoginController extends GetxController {
     errorMessage.value = '';
 
     try {
-      // Simular llamada a API
       await Future.delayed(const Duration(seconds: 2));
-
-      // Aquí iría la lógica real de autenticación
-      // Por ahora navegamos de vuelta a welcome
       Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión: ${e.toString()}');
@@ -54,10 +50,7 @@ class LoginController extends GetxController {
     errorMessage.value = '';
 
     try {
-      // Simular login con Google
       await Future.delayed(const Duration(seconds: 1));
-
-      // Por ahora navegamos de vuelta a welcome
       Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Google');
@@ -71,10 +64,7 @@ class LoginController extends GetxController {
     errorMessage.value = '';
 
     try {
-      // Simular login con Apple
       await Future.delayed(const Duration(seconds: 1));
-
-      // Por ahora navegamos de vuelta a welcome
       Get.offAllNamed(Routes.welcome);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Apple');
@@ -84,8 +74,38 @@ class LoginController extends GetxController {
   }
 
   void handleRegisterPressed(BuildContext context) {
-    // Por ahora navegamos de vuelta a welcome
-    // En el futuro aquí iría la ruta de registro
-    Get.offAllNamed(Routes.welcome);
+    // Simular registro exitoso por ahora
+    Get.snackbar(
+      'Registro',
+      'Cuenta creada correctamente',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<void> handleForgotSubmit(BuildContext context) async {
+    if (email.value.isEmpty) {
+      setErrorMessage(
+        'Por favor ingresa tu correo para recuperar la contraseña',
+      );
+      return;
+    }
+
+    isLoading.value = true;
+    errorMessage.value = '';
+
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+      Get.snackbar(
+        'Recuperación',
+        'Te hemos enviado un correo para restablecer tu contraseña',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      setErrorMessage('No se pudo enviar el correo. Inténtalo nuevamente');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

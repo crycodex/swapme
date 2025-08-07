@@ -5,21 +5,26 @@ import '../atoms/animated_button.dart';
 
 class LoginForm extends GetView<LoginController> {
   final VoidCallback? onLoginPressed;
+  final VoidCallback? onForgotPressed;
   final bool isLoading;
 
-  const LoginForm({super.key, this.onLoginPressed, this.isLoading = false});
+  const LoginForm({
+    super.key,
+    this.onLoginPressed,
+    this.onForgotPressed,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final controller = Get.find<LoginController>();
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    final LoginController controller = Get.find<LoginController>();
 
     return Form(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Campo Email
           Text(
             'Correo',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -27,7 +32,7 @@ class LoginForm extends GetView<LoginController> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6), // Reducido de 8 a 6
+          const SizedBox(height: 6),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -47,13 +52,13 @@ class LoginForm extends GetView<LoginController> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14, // Reducido de 16 a 14
+                  vertical: 14,
                 ),
               ),
-              onChanged: (value) {
+              onChanged: (String value) {
                 controller.setEmail(value);
               },
-              validator: (value) {
+              validator: (String? value) {
                 if (value == null || value.isEmpty) {
                   return 'Por favor ingresa tu correo';
                 }
@@ -65,8 +70,7 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 16), // Reducido de 20 a 16
-          // Campo Contraseña
+          const SizedBox(height: 16),
           Text(
             'Contraseña',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -74,7 +78,7 @@ class LoginForm extends GetView<LoginController> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6), // Reducido de 8 a 6
+          const SizedBox(height: 6),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -94,13 +98,13 @@ class LoginForm extends GetView<LoginController> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14, // Reducido de 16 a 14
+                  vertical: 14,
                 ),
               ),
-              onChanged: (value) {
+              onChanged: (String value) {
                 controller.setPassword(value);
               },
-              validator: (value) {
+              validator: (String? value) {
                 if (value == null || value.isEmpty) {
                   return 'Por favor ingresa tu contraseña';
                 }
@@ -112,12 +116,20 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 6), // Reducido de 8 a 6
-          // Mensaje de error
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: onForgotPressed,
+              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              child: const Text('¿Olvidaste tu contraseña?'),
+            ),
+          ),
+
           Obx(() {
             if (controller.errorMessage.value.isNotEmpty) {
               return Padding(
-                padding: const EdgeInsets.only(top: 6), // Reducido de 8 a 6
+                padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   controller.errorMessage.value,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -129,19 +141,14 @@ class LoginForm extends GetView<LoginController> {
             return const SizedBox.shrink();
           }),
 
-          const SizedBox(height: 20), // Reducido de 24 a 20
-          // Botón de login
+          const SizedBox(height: 20),
           AnimatedButton(
             text: 'Iniciar',
-            onPressed: isLoading
-                ? null
-                : () {
-                    onLoginPressed?.call();
-                  },
+            onPressed: isLoading ? null : () => onLoginPressed?.call(),
             backgroundColor: Colors.green,
             textColor: Colors.white,
             width: double.infinity,
-            height: 52, // Reducido de 56 a 52
+            height: 52,
             borderRadius: BorderRadius.circular(16),
             isLoading: isLoading,
           ),
