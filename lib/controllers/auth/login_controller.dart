@@ -37,7 +37,7 @@ class LoginController extends GetxController {
 
     try {
       await Future.delayed(const Duration(seconds: 2));
-      Get.offAllNamed(Routes.welcome);
+      Get.offAllNamed(Routes.home);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión: ${e.toString()}');
     } finally {
@@ -51,7 +51,7 @@ class LoginController extends GetxController {
 
     try {
       await Future.delayed(const Duration(seconds: 1));
-      Get.offAllNamed(Routes.welcome);
+      Get.offAllNamed(Routes.home);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Google');
     } finally {
@@ -65,7 +65,7 @@ class LoginController extends GetxController {
 
     try {
       await Future.delayed(const Duration(seconds: 1));
-      Get.offAllNamed(Routes.welcome);
+      Get.offAllNamed(Routes.home);
     } catch (e) {
       setErrorMessage('Error al iniciar sesión con Apple');
     } finally {
@@ -74,7 +74,6 @@ class LoginController extends GetxController {
   }
 
   void handleRegisterPressed(BuildContext context) {
-    // Simular registro exitoso por ahora
     Get.snackbar(
       'Registro',
       'Cuenta creada correctamente',
