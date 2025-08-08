@@ -43,3 +43,68 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+#ios
+ios/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/
+
+
+#android
+android/
+
+#macos
+macos/
+
+#linux
+linux/
+
+#web
+web/
+
+#firebase
+firebase/
+
+#locks
+*.lock
+pubspec.lock
+
+
+# Firebase build and deployment files
+/firebase-debug.log
+/firebase-debug.*.log
+.firebaserc
+
+# Firebase Hosting
+/firebase.json
+*.cache
+hosting/.cache
+
+# Firebase Functions
+/functions/node_modules/
+/functions/.env
+/functions/package-lock.json
+
+# Firebase Emulators
+/firebase-*.zip
+/.firebase/
+/emulator-ui/
+
+# Firebase keys
+lib/firebase_options.dart
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (local configs)
+/.env.*
+
+# Build files
+build/
+
