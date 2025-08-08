@@ -97,17 +97,6 @@ class _LoginLayoutState extends State<LoginLayout>
     });
   }
 
-  String _getTopBarTitle() {
-    switch (_currentPage) {
-      case 0:
-        return 'Forgot';
-      case 2:
-        return 'Create';
-      default:
-        return 'Login';
-    }
-  }
-
   String _getCardTitle() {
     switch (_currentPage) {
       case 0:
@@ -138,11 +127,6 @@ class _LoginLayoutState extends State<LoginLayout>
         Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
           CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
         );
-
-    final Animation<double> fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     return Scaffold(
       body: Container(
@@ -183,30 +167,7 @@ class _LoginLayoutState extends State<LoginLayout>
                 ),
               ),
 
-            SafeArea(
-              child: AnimatedBuilder(
-                animation: fadeAnimation,
-                builder: (BuildContext context, Widget? child) {
-                  return Opacity(
-                    opacity: fadeAnimation.value,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 20),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _getTopBarTitle(),
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: colorScheme.onSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
+            // Título superior eliminado
             Positioned(
               bottom: 0,
               left: 0,
@@ -239,7 +200,7 @@ class _LoginLayoutState extends State<LoginLayout>
                             Expanded(
                               child: PageView(
                                 controller: _pageController,
-                                physics: const PageScrollPhysics(),
+                                physics: const NeverScrollableScrollPhysics(),
                                 onPageChanged: (int index) {
                                   setState(() => _currentPage = index);
                                 },
