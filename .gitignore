@@ -45,14 +45,9 @@ app.*.map.json
 /android/app/release
 
 #ios
-ios/
 ios/Pods/
 ios/Runner.xcworkspace/
 ios/Runner.xcodeproj/
-
-
-#android
-android/
 
 #macos
 macos/
@@ -60,8 +55,6 @@ macos/
 #linux
 linux/
 
-#web
-web/
 
 #firebase
 firebase/
