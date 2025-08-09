@@ -16,7 +16,6 @@ class EditProfilePage extends GetView<AuthController> {
     return Scaffold(
       appBar: AppBar(title: const Text('Editar perfil')),
       body: Obx(() {
-        final bool darkMode = controller.isDarkMode.value;
         final String lang = controller.language.value.isEmpty
             ? 'es'
             : controller.language.value;
@@ -136,6 +135,39 @@ class EditProfilePage extends GetView<AuthController> {
               },
               child: const Text('Guardar cambios'),
             ),
+
+            const SizedBox(height: 24),
+            _SectionTitle(title: 'Zona de peligro'),
+            _SettingsCard(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Eliminar cuenta y datos',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ),
+                      FilledButton.tonal(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        ),
+                        onPressed: () => _confirmDelete(context),
+                        child: const Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         );
       }),
@@ -216,4 +248,26 @@ class _FormTile extends StatelessWidget {
       ),
     );
   }
+}
+
+void _confirmDelete(BuildContext context) {
+  final AuthController controller = Get.find<AuthController>();
+  Get.dialog(
+    AlertDialog(
+      title: const Text('Eliminar cuenta'),
+      content: const Text(
+        'Esta acción eliminará tu foto, tus colecciones y tu usuario. ¿Deseas continuar?',
+      ),
+      actions: [
+        TextButton(onPressed: () => Get.back(), child: const Text('Cancelar')),
+        FilledButton(
+          onPressed: () async {
+            Get.back();
+            await controller.deleteAccount();
+          },
+          child: const Text('Eliminar'),
+        ),
+      ],
+    ),
+  );
 }
