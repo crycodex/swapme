@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/models/user_model.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../routes/routes.dart';
@@ -24,6 +27,8 @@ class AuthController extends GetxController {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final ImagePicker _imagePicker = ImagePicker();
 
   UserModel? user;
 
@@ -560,11 +565,37 @@ class AuthController extends GetxController {
 
   Future<void> updateProfileImage(String imagePath) async {
     try {
-      profileImage.value = imagePath;
+      if (uid.value.isEmpty) return;
+      final String fileName = 'profile.jpg';
+      final Reference ref = _storage.ref().child(
+        'users/${uid.value}/$fileName',
+      );
+      final UploadTask task = ref.putFile(
+        Uri.parse(imagePath).isAbsolute ? File(imagePath) : File(imagePath),
+      );
+      final TaskSnapshot snap = await task;
+      final String downloadUrl = await snap.ref.getDownloadURL();
+      await _firestore.collection('users').doc(uid.value).set({
+        'photoUrl': downloadUrl,
+      }, SetOptions(merge: true));
+      profileImage.value = downloadUrl;
+      profilePicture.value = downloadUrl;
       Get.snackbar('Éxito', 'Imagen de perfil actualizada');
     } catch (e) {
       Get.snackbar('Error', 'No se pudo actualizar la imagen de perfil');
     }
+  }
+
+  Future<void> pickAndUploadProfileImage() async {
+    try {
+      final XFile? picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1080,
+      );
+      if (picked == null) return;
+      await updateProfileImage(picked.path);
+    } catch (_) {}
   }
 
   Future<void> updateUserName(String newName) async {

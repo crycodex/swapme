@@ -349,16 +349,27 @@ class _ProfileView extends GetView<AuthController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 44,
-                    backgroundColor: colorScheme.primary.withValues(
-                      alpha: 0.18,
-                    ),
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: colorScheme.primary,
-                      size: 40,
-                    ),
+                  GestureDetector(
+                    onTap: () => controller.pickAndUploadProfileImage(),
+                    child: Obx(() {
+                      final String? url = controller.profileImage.value;
+                      return CircleAvatar(
+                        radius: 44,
+                        backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.18,
+                        ),
+                        backgroundImage: (url != null && url.isNotEmpty)
+                            ? NetworkImage(url)
+                            : null,
+                        child: (url == null || url.isEmpty)
+                            ? Icon(
+                                Icons.person_rounded,
+                                color: colorScheme.primary,
+                                size: 40,
+                              )
+                            : null,
+                      );
+                    }),
                   ),
                   const SizedBox(height: 14),
                   Text(
