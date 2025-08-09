@@ -120,7 +120,9 @@ class LoginForm extends GetView<LoginController> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: onForgotPressed,
+              onPressed:
+                  onForgotPressed ??
+                  () => controller.handleForgotSubmit(context),
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.secondary,
               ),
@@ -146,7 +148,11 @@ class LoginForm extends GetView<LoginController> {
           const SizedBox(height: 20),
           AnimatedButton(
             text: 'Iniciar',
-            onPressed: isLoading ? null : () => onLoginPressed?.call(),
+            onPressed: isLoading
+                ? null
+                : () => (onLoginPressed != null
+                      ? onLoginPressed!.call()
+                      : controller.handleLoginPressed(context)),
             backgroundColor: colorScheme.primary,
             textColor: Colors.grey,
             width: double.infinity,

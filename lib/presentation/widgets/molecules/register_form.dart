@@ -36,6 +36,7 @@ class RegisterForm extends GetView<LoginController> {
                   vertical: 14,
                 ),
               ),
+              onChanged: (String v) => controller.setRegisterName(v),
             ),
           ),
 
@@ -59,6 +60,7 @@ class RegisterForm extends GetView<LoginController> {
                   vertical: 14,
                 ),
               ),
+              onChanged: (String v) => controller.setRegisterEmail(v),
             ),
           ),
 
@@ -82,6 +84,7 @@ class RegisterForm extends GetView<LoginController> {
                   vertical: 14,
                 ),
               ),
+              onChanged: (String v) => controller.setRegisterPassword(v),
             ),
           ),
 
@@ -105,13 +108,16 @@ class RegisterForm extends GetView<LoginController> {
                   vertical: 14,
                 ),
               ),
+              onChanged: (String v) => controller.setRegisterPasswordConfirm(v),
             ),
           ),
 
           const SizedBox(height: 20),
           AnimatedButton(
             text: 'Crear Cuenta',
-            onPressed: isLoading ? null : onSubmit,
+            onPressed: isLoading
+                ? null
+                : (onSubmit ?? () => controller.handleRegisterPressed(context)),
             backgroundColor: colorScheme.primary,
             textColor: Colors.grey,
             width: double.infinity,

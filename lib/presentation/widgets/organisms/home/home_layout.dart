@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
+import '../../../../controllers/auth/auth_controller.dart';
 
 class HomeLayout extends GetView<HomeController> {
   const HomeLayout({super.key});
@@ -56,14 +57,14 @@ class HomeLayout extends GetView<HomeController> {
               child: Container(
                 color: colorScheme.surface,
                 child: PageView(
-                  controller: Get.find<HomeController>().pageController,
-                  onPageChanged: Get.find<HomeController>().handlePageChanged,
+                  controller: Get.put(HomeController()).pageController,
+                  onPageChanged: Get.put(HomeController()).handlePageChanged,
                   children: const [
                     _HomePlaceholder(),
                     _StorePlaceholder(),
                     _SwapsPlaceholder(),
                     _MessagesPlaceholder(),
-                    _ProfilePlaceholder(),
+                    _ProfileView(),
                   ],
                 ),
               ),
@@ -312,10 +313,179 @@ class _MessagesPlaceholder extends StatelessWidget {
   }
 }
 
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder();
+class _ProfileView extends GetView<AuthController> {
+  const _ProfileView();
+
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Profile'));
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+
+    return Obx(() {
+      final String name = controller.userName.value;
+      final String email = controller.userEmail.value;
+
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.of(context).size.height * 0.22),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.2),
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: colorScheme.primary,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    name.isEmpty ? 'Usuario' : name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileCard(
+                    child: Column(
+                      children: [
+                        _ProfileTile(
+                          icon: Icons.logout_rounded,
+                          title: 'Logout',
+                          titleColor: colorScheme.error,
+                          onTap: () => _confirmLogout(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      );
+    });
+  }
+
+  void _confirmLogout(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: theme.colorScheme.secondary),
+            ),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back();
+              await controller.logout();
+            },
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+  }
+}
+
+class _ProfileCard extends StatelessWidget {
+  final Widget child;
+  const _ProfileCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _ProfileTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Color? titleColor;
+
+  const _ProfileTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.titleColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: colorScheme.secondary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: colorScheme.secondary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: titleColor ?? colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

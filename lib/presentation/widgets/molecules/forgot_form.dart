@@ -37,13 +37,16 @@ class ForgotForm extends GetView<LoginController> {
                   vertical: 14,
                 ),
               ),
+              onChanged: (String v) => controller.setEmail(v),
             ),
           ),
 
           const SizedBox(height: 20),
           AnimatedButton(
             text: 'Cambiar Contraseña',
-            onPressed: isLoading ? null : onSubmit,
+            onPressed: isLoading
+                ? null
+                : (onSubmit ?? () => controller.handleForgotSubmit(context)),
             backgroundColor: colorScheme.primary,
             textColor: Colors.grey,
             width: double.infinity,

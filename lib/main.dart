@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-//theme personalizado
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 import 'config/theme/theme_data.dart';
-//splash screen
-import 'splash_screen.dart';
-//routes
 import './routes/routes.dart';
+import 'splash_screen.dart';
+import 'presentation/pages/home/home_page.dart';
+import 'presentation/pages/welcome/welcome_page.dart';
+import 'controllers/auth/auth_controller.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  Get.put<AuthController>(AuthController(), permanent: true);
   runApp(const MainApp());
 }
 
@@ -18,16 +24,22 @@ class MainApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SwapMe',
-      // Usar el tema claro personalizado
       theme: AppTheme.light,
-      // Usar el tema oscuro personalizado
       darkTheme: AppTheme.dark,
-      // Usar tema oscuro o claro basado en la configuración del sistema
       themeMode: ThemeMode.system,
-      // Configurar las rutas
       getPages: Routes.routes,
-      // Página inicial - splash screen
-      home: const SplashScreen(),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SplashScreen();
+          }
+          if (snapshot.hasData) {
+            return const HomePage();
+          }
+          return const WelcomePage();
+        },
+      ),
     );
   }
 }
