@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/auth/auth_controller.dart';
+import '../../widgets/atoms/section_title.dart';
+import '../../widgets/molecules/settings_card.dart';
+import '../../widgets/molecules/form_tile.dart';
 
 class EditProfilePage extends GetView<AuthController> {
   const EditProfilePage({super.key});
@@ -78,10 +81,10 @@ class EditProfilePage extends GetView<AuthController> {
             const SizedBox(height: 20),
 
             // Card: Información básica
-            _SectionTitle(title: 'Información básica'),
-            _SettingsCard(
+            const SectionTitle(title: 'Información básica'),
+            SettingsCard(
               children: [
-                _FormTile(
+                FormTile(
                   label: 'Correo',
                   child: Text(
                     email,
@@ -90,7 +93,7 @@ class EditProfilePage extends GetView<AuthController> {
                   ),
                 ),
                 const Divider(height: 1),
-                _FormTile(
+                FormTile(
                   label: 'Nombre',
                   child: TextField(
                     controller: nameCtrl,
@@ -101,7 +104,7 @@ class EditProfilePage extends GetView<AuthController> {
                   ),
                 ),
                 const Divider(height: 1),
-                _FormTile(
+                FormTile(
                   label: 'Idioma',
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -137,8 +140,8 @@ class EditProfilePage extends GetView<AuthController> {
             ),
 
             const SizedBox(height: 24),
-            _SectionTitle(title: 'Zona de peligro'),
-            _SettingsCard(
+            const SectionTitle(title: 'Zona de peligro'),
+            SettingsCard(
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -175,80 +178,7 @@ class EditProfilePage extends GetView<AuthController> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          title,
-          style: theme.textTheme.labelMedium?.copyWith(color: theme.hintColor),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
-  const _SettingsCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(children: children),
-    );
-  }
-}
-
-class _FormTile extends StatelessWidget {
-  final String label;
-  final Widget child;
-  const _FormTile({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Flexible(child: child),
-        ],
-      ),
-    );
-  }
-}
+// Shared atoms/molecules moved to their own files (SectionTitle, SettingsCard, FormTile)
 
 void _confirmDelete(BuildContext context) {
   final AuthController controller = Get.find<AuthController>();
