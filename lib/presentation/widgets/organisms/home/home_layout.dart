@@ -13,85 +13,98 @@ class HomeLayout extends GetView<HomeController> {
     final ColorScheme colorScheme = theme.colorScheme;
     final MediaQueryData media = MediaQuery.of(context);
 
-    return Scaffold(
-      backgroundColor: colorScheme.secondary.withValues(alpha: 0.5),
-      body: Stack(
-        children: [
-          // Header verde (placeholder para carrusel) ocupa todo el ancho hasta el notch
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                height: media.size.height * 0.35,
-                color: colorScheme.primary,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    top: media.padding.top + 8,
-                    left: 20,
-                    right: 20,
-                    bottom: 16,
-                  ),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'SwapMe',
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w800,
+    return Obx(() {
+      final bool isProfile = controller.currentIndex.value == 4;
+      final double headerHeight = isProfile ? 0 : media.size.height * 0.35;
+      final double contentTop = isProfile ? 0 : media.size.height * 0.18;
+      return Scaffold(
+        backgroundColor: isProfile
+            ? colorScheme.surface
+            : colorScheme.secondary.withValues(alpha: 0.5),
+        body: Stack(
+          children: [
+            if (!isProfile)
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    height: headerHeight,
+                    color: colorScheme.primary,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: media.padding.top + 8,
+                        left: 20,
+                        right: 20,
+                        bottom: 16,
+                      ),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'SwapMe',
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Card blanco scrollable
-          Positioned.fill(
-            top: media.size.height * 0.18,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(28),
-                topRight: Radius.circular(28),
-              ),
-              child: Container(
-                color: colorScheme.surface,
-                child: PageView(
-                  controller: Get.put(HomeController()).pageController,
-                  onPageChanged: Get.put(HomeController()).handlePageChanged,
-                  children: const [
-                    _HomePlaceholder(),
-                    _StorePlaceholder(),
-                    _SwapsPlaceholder(),
-                    _MessagesPlaceholder(),
-                    _ProfileView(),
-                  ],
+            // Contenido scrollable
+            Positioned.fill(
+              top: contentTop,
+              child: ClipRRect(
+                borderRadius: isProfile
+                    ? BorderRadius.zero
+                    : const BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                child: Container(
+                  color: colorScheme.surface,
+                  child: isProfile
+                      ? const SafeArea(child: _ProfileView())
+                      : PageView(
+                          controller: controller.pageController,
+                          onPageChanged: controller.handlePageChanged,
+                          children: const [
+                            _HomePlaceholder(),
+                            _StorePlaceholder(),
+                            _SwapsPlaceholder(),
+                            _MessagesPlaceholder(),
+                            _ProfileView(),
+                          ],
+                        ),
                 ),
               ),
             ),
-          ),
 
-          // Nav bar flotante con efecto glass
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16 + media.padding.bottom,
-            child: _BottomNavBar(colorScheme: colorScheme),
-          ),
-        ],
-      ),
-    );
+            // Nav bar flotante con efecto glass
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16 + media.padding.bottom,
+              child: _BottomNavBar(
+                controller: controller,
+                colorScheme: colorScheme,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
 class _BottomNavBar extends StatelessWidget {
+  final HomeController controller;
   final ColorScheme colorScheme;
-  const _BottomNavBar({required this.colorScheme});
+  const _BottomNavBar({required this.controller, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller = Get.put(HomeController());
-
     return Obx(() {
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -328,28 +341,30 @@ class _ProfileView extends GetView<AuthController> {
       return CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.of(context).size.height * 0.22),
+            child: SizedBox(height: MediaQuery.of(context).size.height * 0.14),
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircleAvatar(
-                    radius: 36,
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.2),
+                    radius: 44,
+                    backgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.18,
+                    ),
                     child: Icon(
                       Icons.person_rounded,
                       color: colorScheme.primary,
-                      size: 36,
+                      size: 40,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Text(
                     name.isEmpty ? 'Usuario' : name,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -359,24 +374,85 @@ class _ProfileView extends GetView<AuthController> {
                       color: theme.hintColor,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _ProfileCard(
-                    child: Column(
-                      children: [
-                        _ProfileTile(
-                          icon: Icons.logout_rounded,
-                          title: 'Logout',
-                          titleColor: colorScheme.error,
-                          onTap: () => _confirmLogout(context),
-                        ),
-                      ],
+                  const SizedBox(height: 12),
+                  FilledButton.tonal(
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: const StadiumBorder(),
                     ),
+                    child: const Text('Edit profile'),
                   ),
+                  const SizedBox(height: 22),
+                  _SectionTitle(title: 'Inventories'),
+                  _SettingsCard(
+                    children: [
+                      _SettingsTile(
+                        leadingIcon: Icons.home_outlined,
+                        title: 'My stores',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _CountPill(value: 2),
+                            const SizedBox(width: 10),
+                            const Icon(Icons.chevron_right_rounded),
+                          ],
+                        ),
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
+                      _SettingsTile(
+                        leadingIcon: Icons.support_agent_outlined,
+                        title: 'Support',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  _SectionTitle(title: 'Preferences'),
+                  _SettingsCard(
+                    children: [
+                      _SettingsSwitchTile(
+                        leadingIcon: Icons.notifications_outlined,
+                        title: 'Push notifications',
+                        value: controller.isAppLockEnabled.value,
+                        onChanged: (bool v) => controller.toggleAppLock(v),
+                      ),
+                      const Divider(height: 1),
+                      _SettingsSwitchTile(
+                        leadingIcon: Icons.face_retouching_natural_rounded,
+                        title: 'Face ID',
+                        value: controller.isBiometricEnabled.value,
+                        onChanged: (bool v) => controller.toggleBiometric(v),
+                      ),
+                      const Divider(height: 1),
+                      _SettingsTile(
+                        leadingIcon: Icons.pin_rounded,
+                        title: 'PIN Code',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
+                      _SettingsTile(
+                        leadingIcon: Icons.logout_rounded,
+                        title: 'Logout',
+                        titleColor: colorScheme.error,
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _confirmLogout(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       );
     });
@@ -410,16 +486,35 @@ class _ProfileView extends GetView<AuthController> {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  final Widget child;
-  const _ProfileCard({required this.child});
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          title,
+          style: theme.textTheme.labelMedium?.copyWith(color: theme.hintColor),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+  const _SettingsCard({required this.children});
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -431,21 +526,23 @@ class _ProfileCard extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      child: Column(children: children),
     );
   }
 }
 
-class _ProfileTile extends StatelessWidget {
-  final IconData icon;
+class _SettingsTile extends StatelessWidget {
+  final IconData leadingIcon;
   final String title;
-  final VoidCallback onTap;
+  final Widget? trailing;
+  final VoidCallback? onTap;
   final Color? titleColor;
 
-  const _ProfileTile({
-    required this.icon,
+  const _SettingsTile({
+    required this.leadingIcon,
     required this.title,
-    required this.onTap,
+    this.trailing,
+    this.onTap,
     this.titleColor,
   });
 
@@ -455,9 +552,9 @@ class _ProfileTile extends StatelessWidget {
     final ColorScheme colorScheme = theme.colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         child: Row(
           children: [
             Container(
@@ -467,7 +564,7 @@ class _ProfileTile extends StatelessWidget {
                 color: colorScheme.secondary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: colorScheme.secondary),
+              child: Icon(leadingIcon, color: colorScheme.secondary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -479,11 +576,54 @@ class _ProfileTile extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
+            trailing ?? const SizedBox.shrink(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSwitchTile extends StatelessWidget {
+  final IconData leadingIcon;
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SettingsSwitchTile({
+    required this.leadingIcon,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      leadingIcon: leadingIcon,
+      title: title,
+      trailing: Switch.adaptive(value: value, onChanged: onChanged),
+    );
+  }
+}
+
+class _CountPill extends StatelessWidget {
+  final int value;
+  const _CountPill({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$value',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onPrimary,
         ),
       ),
     );

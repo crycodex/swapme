@@ -21,11 +21,19 @@ class HomeController extends GetxController {
   void changeIndex(int newIndex) {
     if (newIndex == currentIndex.value) return;
     currentIndex.value = newIndex;
-    pageController.animateToPage(
-      newIndex,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-    );
+    if (pageController.hasClients) {
+      pageController.animateToPage(
+        newIndex,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (pageController.hasClients) {
+          pageController.jumpToPage(newIndex);
+        }
+      });
+    }
   }
 
   void handlePageChanged(int index) {
