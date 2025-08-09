@@ -376,7 +376,9 @@ class _ProfileView extends GetView<AuthController> {
                   ),
                   const SizedBox(height: 12),
                   FilledButton.tonal(
-                    onPressed: () {},
+                    onPressed: () {
+                      Get.toNamed("/edit-profile");
+                    },
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
