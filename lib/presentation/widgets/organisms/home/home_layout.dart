@@ -90,7 +90,7 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller = Get.find<HomeController>();
+    final HomeController controller = Get.put(HomeController());
 
     return Obx(() {
       return ClipRRect(

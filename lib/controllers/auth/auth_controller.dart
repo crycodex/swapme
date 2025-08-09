@@ -336,6 +336,7 @@ class AuthController extends GetxController {
   Future<void> register({
     required String email,
     required String password,
+    String? name,
     required VoidCallback onSuccess,
     required Function(String) onError,
   }) async {
@@ -353,10 +354,17 @@ class AuthController extends GetxController {
       }
       await newUser.sendEmailVerification();
       await _createUserDocument(newUser);
+      if ((name ?? '').trim().isNotEmpty) {
+        await _firestore.collection('users').doc(newUser.uid).set({
+          'name': name!.trim(),
+        }, SetOptions(merge: true));
+      }
       Get.snackbar(
         'Registro exitoso',
         'Verifica tu correo para activar la cuenta.',
       );
+      await _auth.signOut();
+      _clearUserState();
       onSuccess();
     } on FirebaseAuthException catch (e) {
       _handleAuthErrors(e, onError);

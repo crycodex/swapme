@@ -13,6 +13,7 @@ class LoginController extends GetxController {
   final RxString registerEmail = ''.obs;
   final RxString registerPassword = ''.obs;
   final RxString registerPasswordConfirm = ''.obs;
+  final RxBool registrationCompleted = false.obs;
 
   void setEmail(String value) {
     email.value = value;
@@ -50,7 +51,7 @@ class LoginController extends GetxController {
 
   AuthController _getAuth() {
     return Get.isRegistered<AuthController>()
-        ? Get.find<AuthController>()
+        ? Get.put(AuthController())
         : Get.put(AuthController());
   }
 
@@ -127,7 +128,17 @@ class LoginController extends GetxController {
       await auth.register(
         email: registerEmail.value,
         password: registerPassword.value,
-        onSuccess: () => Get.offAllNamed(Routes.home),
+        name: registerName.value,
+        onSuccess: () {
+          registrationCompleted.value = true;
+          Get.snackbar(
+            'Registro exitoso',
+            'Te enviamos un correo para verificar tu cuenta. Revisa tu bandeja.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 3),
+          );
+          Get.offAllNamed(Routes.login);
+        },
         onError: (String msg) => setErrorMessage(msg),
       );
     } catch (e) {

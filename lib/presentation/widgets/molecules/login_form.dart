@@ -19,7 +19,7 @@ class LoginForm extends GetView<LoginController> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final LoginController controller = Get.find<LoginController>();
+    final LoginController controller = Get.put(LoginController());
 
     return Form(
       child: Column(

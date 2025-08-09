@@ -8,6 +8,7 @@ import './routes/routes.dart';
 import 'splash_screen.dart';
 import 'presentation/pages/home/home_page.dart';
 import 'presentation/pages/welcome/welcome_page.dart';
+import 'presentation/pages/auth/login_page.dart';
 import 'controllers/auth/auth_controller.dart';
 
 Future<void> main() async {
@@ -34,8 +35,12 @@ class MainApp extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
-          if (snapshot.hasData) {
-            return const HomePage();
+          final User? user = snapshot.data;
+          if (user != null) {
+            if (user.emailVerified) {
+              return const HomePage();
+            }
+            return const LoginPage();
           }
           return const WelcomePage();
         },
