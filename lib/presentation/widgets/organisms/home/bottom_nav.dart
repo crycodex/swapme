@@ -99,7 +99,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isActive = controller.currentIndex.value == index;
-    final Color activeColor = colorScheme.primary;
+    final Color activeColor = colorScheme.secondary;
     final Color inactiveColor = colorScheme.onSurface.withValues(alpha: 0.6);
 
     return Expanded(
@@ -156,7 +156,7 @@ class _CenterAction extends StatelessWidget {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: isActive ? colorScheme.primary : colorScheme.secondary,
+          color: colorScheme.primary,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -166,10 +166,7 @@ class _CenterAction extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(
-          Icons.sync_alt_rounded,
-          color: isActive ? colorScheme.onPrimary : colorScheme.onSecondary,
-        ),
+        child: Icon(Icons.sync_alt_rounded, color: colorScheme.onPrimary),
       ),
     );
   }

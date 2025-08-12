@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
-// auth controller not needed here after splitting profile view
 import '../profile/profile_view.dart';
 import 'bottom_nav.dart';
 
@@ -99,8 +98,6 @@ class HomeLayout extends GetView<HomeController> {
   }
 }
 
-// Bottom nav and aux classes moved to organisms/home/bottom_nav.dart
-
 // Placeholders
 class _HomePlaceholder extends StatelessWidget {
   const _HomePlaceholder();
@@ -160,7 +157,3 @@ class _MessagesPlaceholder extends StatelessWidget {
     return const Center(child: Text('Messages'));
   }
 }
-
-// ProfileView moved to organisms/profile/profile_view.dart
-
-// Settings helpers moved to molecules/widgets
