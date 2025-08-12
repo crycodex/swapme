@@ -89,6 +89,12 @@ lib/firebase_options.dart
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 
+# Android signing keys
+android/key.properties
+android/app/keystore/
+*.jks
+*.keystore
+
 # Logs
 *.log
 npm-debug.log*

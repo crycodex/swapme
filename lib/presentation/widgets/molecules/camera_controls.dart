@@ -15,9 +15,6 @@ class CameraControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
     return Obx(() {
       final File? capturedImage = controller.capturedImage.value;
 
@@ -31,9 +28,6 @@ class CameraControls extends StatelessWidget {
   }
 
   Widget _buildCameraControls(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
