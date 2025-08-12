@@ -54,7 +54,7 @@ class BottomNavBar extends StatelessWidget {
                   colorScheme: colorScheme,
                 ),
                 _CenterAction(
-                  onPressed: () => controller.changeIndex(2),
+                  onPressed: () => Get.toNamed('/create-swap'),
                   isActive: controller.currentIndex.value == 2,
                   colorScheme: colorScheme,
                 ),

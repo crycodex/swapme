@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../data/models/swap_item_model.dart';
+import '../swap/swap_controller.dart';
 
 class HomeController extends GetxController {
   // Índices: 0: home, 1: store, 2: swaps, 3: messages, 4: profile
   final RxInt currentIndex = 0.obs;
   late final PageController pageController;
+  
+  // Swap controller for getting user swaps
+  final SwapController _swapController = Get.put(SwapController());
+  
+  // User swaps stream
+  Stream<List<SwapItemModel>> get userSwaps => _swapController.getUserSwaps();
 
   @override
   void onInit() {

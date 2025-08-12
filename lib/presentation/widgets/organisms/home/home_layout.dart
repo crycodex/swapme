@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
 import '../profile/profile_view.dart';
+import '../../molecules/swaps_section.dart';
 import 'bottom_nav.dart';
 
 class HomeLayout extends GetView<HomeController> {
@@ -69,12 +70,12 @@ class HomeLayout extends GetView<HomeController> {
                       : PageView(
                           controller: controller.pageController,
                           onPageChanged: controller.handlePageChanged,
-                          children: const [
-                            _HomePlaceholder(),
-                            _StorePlaceholder(),
-                            _SwapsPlaceholder(),
-                            _MessagesPlaceholder(),
-                            ProfileView(),
+                          children: [
+                            _HomePlaceholder(controller: controller),
+                            const _StorePlaceholder(),
+                            const _SwapsPlaceholder(),
+                            const _MessagesPlaceholder(),
+                            const ProfileView(),
                           ],
                         ),
                 ),
@@ -100,7 +101,9 @@ class HomeLayout extends GetView<HomeController> {
 
 // Placeholders
 class _HomePlaceholder extends StatelessWidget {
-  const _HomePlaceholder();
+  final HomeController controller;
+  const _HomePlaceholder({required this.controller});
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -108,13 +111,14 @@ class _HomePlaceholder extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: Container(height: 320, color: Colors.transparent),
+          child: Container(height: 20, color: Colors.transparent),
         ),
+        SliverToBoxAdapter(child: SwapsSection(controller: controller)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Container(
-              height: 600,
+              height: 400,
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
@@ -125,6 +129,33 @@ class _HomePlaceholder extends StatelessWidget {
                     offset: const Offset(0, 4),
                   ),
                 ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Explorar Swaps',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Próximamente...',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
