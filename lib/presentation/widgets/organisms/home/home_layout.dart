@@ -4,9 +4,7 @@ import '../profile/profile_view.dart';
 import '../../molecules/swaps_section.dart';
 import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
-import '../../../../controllers/auth/auth_controller.dart';
 import 'bottom_nav.dart';
-import 'package:material_symbols_icons/symbols.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
@@ -220,82 +218,31 @@ class _MessagesPlaceholder extends StatelessWidget {
   }
 }
 
-class _HeaderCard extends GetView<AuthController> {
+class _HeaderCard extends StatelessWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
   const _HeaderCard({required this.theme, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final String username = controller.userName.value.isEmpty
-          ? 'Usuario'
-          : controller.userName.value;
-      final int coins = controller.tokens.value;
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SwapMe',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SwapMe',
+              style: theme.textTheme.displaySmall?.copyWith(
+                color: colorScheme.onPrimary,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.onPrimary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'Bienvenido $username',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Symbols.swap_vertical_circle,
-                  color: colorScheme.onPrimary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  coins.toString(),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    });
+            const SizedBox(height: 8),
+          ],
+        ),
+      ],
+    );
   }
 }
 
