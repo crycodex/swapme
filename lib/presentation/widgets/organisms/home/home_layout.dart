@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:get/get.dart';
-import '../../../../controllers/home/home_controller.dart';
 import '../profile/profile_view.dart';
 import '../../molecules/swaps_section.dart';
 import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
 import '../../../../controllers/auth/auth_controller.dart';
 import 'bottom_nav.dart';
+import 'package:material_symbols_icons/symbols.dart';
+//controllers
+import 'package:get/get.dart';
+import '../../../../controllers/home/home_controller.dart';
 
 class HomeLayout extends GetView<HomeController> {
   const HomeLayout({super.key});
@@ -254,10 +256,7 @@ class _HeaderCard extends GetView<AuthController> {
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.waving_hand_rounded, color: Colors.white),
-                    const SizedBox(width: 8),
                     Text(
                       'Bienvenido $username',
                       style: theme.textTheme.labelLarge?.copyWith(
@@ -274,20 +273,20 @@ class _HeaderCard extends GetView<AuthController> {
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: colorScheme.onPrimary.withValues(alpha: 0.15),
+              color: colorScheme.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.token_rounded,
-                  color: Colors.white.withValues(alpha: 0.95),
+                  Symbols.swap_vertical_circle,
+                  color: colorScheme.onPrimary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   coins.toString(),
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
