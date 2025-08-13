@@ -20,6 +20,7 @@ class SwapController extends GetxController {
   final RxString selectedSize = 'S'.obs;
   final RxDouble estimatedPrice = 50.0.obs;
   final RxString selectedCondition = 'Nuevo'.obs;
+  final RxString selectedCategory = 'Otros'.obs;
 
   // Captured image
   final Rx<File?> capturedImage = Rx<File?>(null);
@@ -37,6 +38,15 @@ class SwapController extends GetxController {
     'Muy bueno',
     'Bueno',
     'Regular',
+  ];
+  final List<String> categories = [
+    'Todos',
+    'Camisetas',
+    'Pantalones',
+    'Chaquetas',
+    'Calzado',
+    'Accesorios',
+    'Otros',
   ];
 
   @override
@@ -126,6 +136,10 @@ class SwapController extends GetxController {
     selectedCondition.value = condition;
   }
 
+  void updateCategory(String category) {
+    selectedCategory.value = category;
+  }
+
   bool validateForm() {
     if (capturedImage.value == null) {
       Get.snackbar(
@@ -199,6 +213,7 @@ class SwapController extends GetxController {
         estimatedPrice: estimatedPrice.value,
         condition: selectedCondition.value,
         imageUrl: downloadUrl,
+        category: selectedCategory.value,
         createdAt: now,
         updatedAt: now,
       );
@@ -257,6 +272,22 @@ class SwapController extends GetxController {
         .collection('users')
         .doc(currentUser.uid)
         .collection('swaps')
+        .where('isActive', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((QuerySnapshot snapshot) {
+          return snapshot.docs.map((QueryDocumentSnapshot doc) {
+            final Map<String, dynamic> data =
+                doc.data() as Map<String, dynamic>;
+            return SwapItemModel.fromMap(data);
+          }).toList();
+        });
+  }
+
+  // Catalog: get all active swaps from all users
+  Stream<List<SwapItemModel>> getAllSwaps() {
+    return _firestore
+        .collectionGroup('swaps')
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .snapshots()

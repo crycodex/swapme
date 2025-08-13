@@ -10,6 +10,7 @@ import '../presentation/pages/home/home_page.dart';
 import '../presentation/pages/profile/edit_profile_page.dart';
 //swap
 import '../presentation/pages/swap/create_swap_page.dart';
+import '../presentation/pages/swap/swap_detail_page.dart';
 
 class Routes {
   //welcome page
@@ -18,6 +19,7 @@ class Routes {
   static const String home = '/home';
   static const String editProfile = '/edit-profile';
   static const String createSwap = '/create-swap';
+  static const String swapDetail = '/swap-detail';
 
   static final List<GetPage> routes = [
     GetPage(name: Routes.welcome, page: () => const WelcomePage()),
@@ -29,6 +31,11 @@ class Routes {
       page: () => const CreateSwapPage(),
       transition: Transition.circularReveal,
       transitionDuration: const Duration(milliseconds: 800),
+    ),
+    GetPage(
+      name: Routes.swapDetail,
+      page: () => const SwapDetailPage(),
+      transition: Transition.rightToLeft,
     ),
   ];
 }

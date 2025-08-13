@@ -4,6 +4,8 @@ import '../../atoms/section_title.dart';
 import '../../molecules/settings_card.dart';
 import '../../molecules/settings_tile.dart';
 import '../../../../controllers/auth/auth_controller.dart';
+import '../../../../controllers/home/home_controller.dart';
+import '../../molecules/swaps_section.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -103,6 +105,15 @@ class ProfileView extends GetView<AuthController> {
                   const SizedBox(height: 120),
                 ],
               ),
+            ),
+          ),
+          // Mis swaps del usuario en perfil
+          SliverToBoxAdapter(
+            child: GetBuilder<HomeController>(
+              init: Get.find<HomeController>(),
+              builder: (HomeController home) {
+                return SwapsSection(controller: home);
+              },
             ),
           ),
         ],
