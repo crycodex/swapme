@@ -135,7 +135,7 @@ class SwapItemCard extends StatelessWidget {
                         size: 14,
                       ),
                       Text(
-                        '${swapItem.estimatedPrice.toStringAsFixed(0)}',
+                        swapItem.estimatedPrice.toStringAsFixed(0),
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,

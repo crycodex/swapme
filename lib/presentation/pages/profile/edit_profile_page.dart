@@ -133,7 +133,7 @@ class EditProfilePage extends GetView<AuthController> {
                 Get.snackbar(
                   'Perfil',
                   'Datos guardados',
-                  backgroundColor: colorScheme.surfaceVariant,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                 );
               },
               child: const Text('Guardar cambios'),
