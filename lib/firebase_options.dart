@@ -3,7 +3,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -47,32 +46,32 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static FirebaseOptions get web => FirebaseOptions(
-    apiKey: dotenv.env['FIREBASE_WEB_API_KEY'] ?? '',
-    appId: dotenv.env['FIREBASE_WEB_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['FIREBASE_WEB_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['FIREBASE_WEB_PROJECT_ID'] ?? '',
-    authDomain: dotenv.env['FIREBASE_WEB_AUTH_DOMAIN'] ?? '',
-    storageBucket: dotenv.env['FIREBASE_WEB_STORAGE_BUCKET'] ?? '',
-    measurementId: dotenv.env['FIREBASE_WEB_MEASUREMENT_ID'] ?? '',
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyD1s5wVVb7g7OjoRcJQPuGdzZ6LDS4CmoQ',
+    appId: '1:138107844519:web:c51c142f9ab62783abe882',
+    messagingSenderId: '138107844519',
+    projectId: 'swapme-72da1',
+    authDomain: 'swapme-72da1.firebaseapp.com',
+    storageBucket: 'swapme-72da1.firebasestorage.app',
+    measurementId: 'G-K60C2RTN48',
   );
 
-  static FirebaseOptions get android => FirebaseOptions(
-    apiKey: dotenv.env['FIREBASE_ANDROID_API_KEY'] ?? '',
-    appId: dotenv.env['FIREBASE_ANDROID_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['FIREBASE_ANDROID_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['FIREBASE_ANDROID_PROJECT_ID'] ?? '',
-    storageBucket: dotenv.env['FIREBASE_ANDROID_STORAGE_BUCKET'] ?? '',
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyCEw5u6c5WX6zl6-SsfGE9Xt7nISkgSN9E',
+    appId: '1:138107844519:android:20ef7c8eb5c60fa1abe882',
+    messagingSenderId: '138107844519',
+    projectId: 'swapme-72da1',
+    storageBucket: 'swapme-72da1.firebasestorage.app',
   );
 
-  static FirebaseOptions get ios => FirebaseOptions(
-    apiKey: dotenv.env['FIREBASE_IOS_API_KEY'] ?? '',
-    appId: dotenv.env['FIREBASE_IOS_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['FIREBASE_IOS_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['FIREBASE_IOS_PROJECT_ID'] ?? '',
-    storageBucket: dotenv.env['FIREBASE_IOS_STORAGE_BUCKET'] ?? '',
-    androidClientId: dotenv.env['FIREBASE_IOS_ANDROID_CLIENT_ID'] ?? '',
-    iosClientId: dotenv.env['FIREBASE_IOS_CLIENT_ID'] ?? '',
-    iosBundleId: dotenv.env['FIREBASE_IOS_BUNDLE_ID'] ?? '',
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyAdiUuHJyXe-1F7ArUVknj5zfNzrYPBX0o',
+    appId: '1:138107844519:ios:9b5c0e51e6941d7dabe882',
+    messagingSenderId: '138107844519',
+    projectId: 'swapme-72da1',
+    storageBucket: 'swapme-72da1.firebasestorage.app',
+    androidClientId: '138107844519-25m1qvtoj1dcje6g9ja7gnddvtpjq6jj.apps.googleusercontent.com',
+    iosClientId: '138107844519-2mrj6rtdrh01n84j5ct6tl7rohr4ka7h.apps.googleusercontent.com',
+    iosBundleId: 'com.swapapp.me',
   );
 }
