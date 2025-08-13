@@ -1,4 +1,4 @@
-package com.example.swapme
+package com.swapapp.me
 
 import io.flutter.embedding.android.FlutterActivity
 

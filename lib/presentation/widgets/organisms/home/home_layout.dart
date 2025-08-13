@@ -1,0 +1,190 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../../controllers/home/home_controller.dart';
+import '../profile/profile_view.dart';
+import '../../molecules/swaps_section.dart';
+import 'bottom_nav.dart';
+
+class HomeLayout extends GetView<HomeController> {
+  const HomeLayout({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    final MediaQueryData media = MediaQuery.of(context);
+
+    return Obx(() {
+      final bool isProfile = controller.currentIndex.value == 4;
+      final double headerHeight = isProfile ? 0 : media.size.height * 0.35;
+      final double contentTop = isProfile ? 0 : media.size.height * 0.18;
+      return Scaffold(
+        backgroundColor: isProfile
+            ? colorScheme.surface
+            : colorScheme.secondary.withValues(alpha: 0.5),
+        body: Stack(
+          children: [
+            if (!isProfile)
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    height: headerHeight,
+                    color: colorScheme.primary,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: media.padding.top + 8,
+                        left: 20,
+                        right: 20,
+                        bottom: 16,
+                      ),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'SwapMe',
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // Contenido scrollable
+            Positioned.fill(
+              top: contentTop,
+              child: ClipRRect(
+                borderRadius: isProfile
+                    ? BorderRadius.zero
+                    : const BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                child: Container(
+                  color: colorScheme.surface,
+                  child: isProfile
+                      ? const SafeArea(child: ProfileView())
+                      : PageView(
+                          controller: controller.pageController,
+                          onPageChanged: controller.handlePageChanged,
+                          children: [
+                            _HomePlaceholder(controller: controller),
+                            const _StorePlaceholder(),
+                            const _SwapsPlaceholder(),
+                            const _MessagesPlaceholder(),
+                            const ProfileView(),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+
+            // Nav bar flotante con efecto glass
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16 + media.padding.bottom,
+              child: BottomNavBar(
+                controller: controller,
+                colorScheme: colorScheme,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+// Placeholders
+class _HomePlaceholder extends StatelessWidget {
+  final HomeController controller;
+  const _HomePlaceholder({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Container(height: 20, color: Colors.transparent),
+        ),
+        SliverToBoxAdapter(child: SwapsSection(controller: controller)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              height: 400,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Explorar Swaps',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Próximamente...',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StorePlaceholder extends StatelessWidget {
+  const _StorePlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text('Store'));
+  }
+}
+
+class _SwapsPlaceholder extends StatelessWidget {
+  const _SwapsPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text('Swaps'));
+  }
+}
+
+class _MessagesPlaceholder extends StatelessWidget {
+  const _MessagesPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text('Messages'));
+  }
+}

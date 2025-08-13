@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores del tema light -->
+    <color name="secondary_light">#6044FF</color>
+    
+    <!-- Colores del tema dark -->
+    <color name="secondary_dark">#6044FF</color>
+	<color name="ic_launcher_background">#6044FF</color>
+</resources>
