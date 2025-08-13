@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'config/theme/theme_data.dart';
+import 'config/app_config.dart';
 import './routes/routes.dart';
 import 'splash_screen.dart';
 import 'presentation/pages/home/home_page.dart';
@@ -15,8 +15,8 @@ import 'controllers/auth/auth_controller.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Cargar variables de entorno
-  await dotenv.load(fileName: ".env");
+  // Configuración de la aplicación
+  print('Iniciando ${AppConfig.appName} v${AppConfig.appVersion}');
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Get.put<AuthController>(AuthController(), permanent: true);
@@ -28,8 +28,8 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SwapMe',
+      debugShowCheckedModeBanner: AppConfig.isDebugMode,
+      title: AppConfig.appName,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
