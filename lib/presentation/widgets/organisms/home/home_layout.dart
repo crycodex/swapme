@@ -22,28 +22,28 @@ class HomeLayout extends GetView<HomeController> {
       final bool isProfile = controller.currentIndex.value == 4;
       return Scaffold(
         backgroundColor: colorScheme.surface,
-        body: isProfile
-            ? const SafeArea(child: ProfileView())
-            : NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    backgroundColor: colorScheme.surface,
-                    expandedHeight: media.size.height * 0.26,
-                    floating: false,
-                    pinned: true,
-                    elevation: 0,
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: _HeaderHeroCarousel(
-                        theme: theme,
-                        colorScheme: colorScheme,
-                        media: media,
+        body: Stack(
+          children: [
+            isProfile
+                ? const SafeArea(child: ProfileView())
+                : NestedScrollView(
+                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                      SliverAppBar(
+                        backgroundColor: colorScheme.surface,
+                        expandedHeight: media.size.height * 0.26,
+                        floating: false,
+                        pinned: true,
+                        elevation: 0,
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: _HeaderHeroCarousel(
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            media: media,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-                body: Stack(
-                  children: [
-                    PageView(
+                    ],
+                    body: PageView(
                       controller: controller.pageController,
                       onPageChanged: controller.handlePageChanged,
                       children: [
@@ -54,18 +54,18 @@ class HomeLayout extends GetView<HomeController> {
                         const ProfileView(),
                       ],
                     ),
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 16 + media.padding.bottom,
-                      child: BottomNavBar(
-                        controller: controller,
-                        colorScheme: colorScheme,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16 + media.padding.bottom,
+              child: BottomNavBar(
+                controller: controller,
+                colorScheme: colorScheme,
               ),
+            ),
+          ],
+        ),
       );
     });
   }
