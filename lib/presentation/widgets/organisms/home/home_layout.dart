@@ -27,7 +27,7 @@ class HomeLayout extends GetView<HomeController> {
             : NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) => [
                   SliverAppBar(
-                    backgroundColor: colorScheme.primary,
+                    backgroundColor: colorScheme.surface,
                     expandedHeight: media.size.height * 0.26,
                     floating: false,
                     pinned: true,
@@ -355,7 +355,7 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
             return Container(
               margin: EdgeInsets.only(left: 1, right: 1, bottom: 2),
               decoration: BoxDecoration(
-                color: colorScheme.secondary, // placeholder verde
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
               ),
             );
