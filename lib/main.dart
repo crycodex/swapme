@@ -16,7 +16,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configuración de la aplicación
-  print('Iniciando ${AppConfig.appName} v${AppConfig.appVersion}');
+  debugPrint('Iniciando ${AppConfig.appName} v${AppConfig.appVersion}');
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Get.put<AuthController>(AuthController(), permanent: true);
