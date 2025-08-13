@@ -42,9 +42,9 @@ class SwapsSection extends StatelessWidget {
               return _buildLoadingState(context);
             }
 
-            if (snapshot.hasError) {
-              return _buildErrorState(context);
-            }
+            // En producción, mostramos vacío en vez de error genérico para no romper UX
+            // pero puedes volver a mostrar el error detallado si lo deseas
+            // if (snapshot.hasError) return _buildErrorState(context);
 
             final List<SwapItemModel> all = snapshot.data ?? [];
             final List<SwapItemModel> swaps = streamOverride == null
@@ -91,37 +91,7 @@ class SwapsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
-    return Container(
-      height: 220,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: colorScheme.error, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar swaps',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Intenta de nuevo más tarde',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Error state removido del flujo principal para evitar romper la UX.
 
   Widget _buildEmptyState(BuildContext context) {
     final ThemeData theme = Theme.of(context);
