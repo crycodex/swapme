@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
 import '../profile/profile_view.dart';
@@ -32,17 +33,10 @@ class HomeLayout extends GetView<HomeController> {
                     pinned: true,
                     elevation: 0,
                     flexibleSpace: FlexibleSpaceBar(
-                      background: Padding(
-                        padding: EdgeInsets.only(
-                          top: media.padding.top + 8,
-                          left: 20,
-                          right: 20,
-                          bottom: 16,
-                        ),
-                        child: _HeaderCard(
-                          theme: theme,
-                          colorScheme: colorScheme,
-                        ),
+                      background: _HeaderHeroCarousel(
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        media: media,
                       ),
                     ),
                   ),
@@ -303,5 +297,103 @@ class _HeaderCard extends GetView<AuthController> {
         ],
       );
     });
+  }
+}
+
+class _HeaderHeroCarousel extends StatefulWidget {
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final MediaQueryData media;
+  const _HeaderHeroCarousel({
+    required this.theme,
+    required this.colorScheme,
+    required this.media,
+  });
+
+  @override
+  State<_HeaderHeroCarousel> createState() => _HeaderHeroCarouselState();
+}
+
+class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
+  final PageController _pageController = PageController();
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      _index = (_index + 1) % 3;
+      _pageController.animateToPage(
+        _index,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = widget.theme;
+    final ColorScheme colorScheme = widget.colorScheme;
+    final MediaQueryData media = widget.media;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: 3,
+          itemBuilder: (_, int i) {
+            return Container(
+              margin: EdgeInsets.only(left: 1, right: 1, bottom: 2),
+              decoration: BoxDecoration(
+                color: colorScheme.secondary, // placeholder verde
+                borderRadius: BorderRadius.circular(20),
+              ),
+            );
+          },
+        ),
+        // Overlay con el saludo y tokens en la misma posición
+        Padding(
+          padding: EdgeInsets.only(
+            top: media.padding.top + 16,
+            left: 20,
+            right: 20,
+            bottom: 16,
+          ),
+          child: _HeaderCard(theme: theme, colorScheme: colorScheme),
+        ),
+        // Indicadores
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(3, (int i) {
+              final bool active = i == _index;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: active ? 22 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
   }
 }
