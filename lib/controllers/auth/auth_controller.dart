@@ -554,6 +554,7 @@ class AuthController extends GetxController {
       }, SetOptions(merge: true));
       Get.offAllNamed(Routes.home);
     } catch (e) {
+      debugPrint('Error al iniciar sesión con Apple: $e');
       Get.snackbar(
         'Error',
         'No se pudo completar el inicio de sesión con Apple',
