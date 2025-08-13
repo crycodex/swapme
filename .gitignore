@@ -85,7 +85,6 @@ hosting/.cache
 /emulator-ui/
 
 # Firebase keys
-lib/firebase_options.dart
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 
@@ -102,7 +101,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment files (local configs)
+.env
 /.env.*
+!.env.example
 
 # Build files
 build/
