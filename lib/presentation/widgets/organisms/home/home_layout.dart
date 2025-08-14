@@ -78,8 +78,7 @@ class _HomePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
+    Theme.of(context);
     return NotificationListener<UserScrollNotification>(
       onNotification: (UserScrollNotification n) {
         // futuro: colapsar header con animaciones si se requiere
@@ -131,7 +130,7 @@ class _HomePlaceholder extends StatelessWidget {
               }),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
           // Catálogo global (todos menos mis swaps)
           SliverToBoxAdapter(
             child: SwapsSection(
@@ -140,52 +139,6 @@ class _HomePlaceholder extends StatelessWidget {
               onItemTap: (SwapItemModel item) {
                 Get.toNamed(Routes.swapDetail, arguments: item);
               },
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                height: 400,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.grid_view_rounded,
-                        color: colorScheme.onSurface.withValues(alpha: 0.4),
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Explorar Swaps',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Próximamente...',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ),
         ],

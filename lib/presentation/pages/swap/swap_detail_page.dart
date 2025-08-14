@@ -42,15 +42,20 @@ class SwapDetailPage extends StatelessWidget {
                   // Imagen del artículo
                   Hero(
                     tag: 'swap-${item.id}',
-                    child: Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.image_not_supported_outlined,
-                          color: colorScheme.onSurfaceVariant,
-                          size: 48,
+                    child: Semantics(
+                      label: 'Imagen del artículo ${item.name}',
+                      image: true,
+                      child: Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 48,
+                            semanticLabel: 'Imagen no disponible',
+                          ),
                         ),
                       ),
                     ),
@@ -114,21 +119,25 @@ class SwapDetailPage extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // Precio
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.attach_money,
-                        color: colorScheme.primary,
-                        size: 22,
-                      ),
-                      Text(
-                        item.estimatedPrice.toStringAsFixed(0),
-                        style: theme.textTheme.titleLarge?.copyWith(
+                  Semantics(
+                    label:
+                        'Precio estimado ${item.estimatedPrice.toStringAsFixed(0)} dólares',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.attach_money,
                           color: colorScheme.primary,
-                          fontWeight: FontWeight.w800,
+                          size: 22,
                         ),
-                      ),
-                    ],
+                        Text(
+                          item.estimatedPrice.toStringAsFixed(0),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -208,9 +217,14 @@ class SwapDetailPage extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             height: 52,
-            child: FilledButton(
-              onPressed: () {},
-              child: const Text('Intercambiar'),
+            child: Semantics(
+              button: true,
+              label: 'Intercambiar este artículo',
+              hint: 'Abre el flujo para proponer un intercambio',
+              child: FilledButton(
+                onPressed: () {},
+                child: const Text('Intercambiar'),
+              ),
             ),
           ),
         ),
@@ -231,25 +245,28 @@ class SwapDetailPage extends StatelessWidget {
   }) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme color = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.secondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color.secondary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: color.secondary,
-              fontWeight: FontWeight.w600,
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.secondary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color.secondary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color.secondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -33,7 +33,7 @@ class SwapsSection extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 2),
 
         StreamBuilder<List<SwapItemModel>>(
           stream: streamOverride ?? controller.userSwaps,
@@ -118,7 +118,7 @@ class SwapsSection extends StatelessWidget {
                 size: 40,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Text(
               isCatalog ? 'No hay prendas disponibles' : 'No tienes swaps aún',
               style: theme.textTheme.titleMedium?.copyWith(
