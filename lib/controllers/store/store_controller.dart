@@ -83,12 +83,41 @@ class StoreController extends GetxController {
         .collection('stores')
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((QuerySnapshot snapshot) {
-          return snapshot.docs.map((QueryDocumentSnapshot doc) {
+        .asyncMap((QuerySnapshot snapshot) async {
+          final List<StoreModel> stores = [];
+
+          for (final QueryDocumentSnapshot doc in snapshot.docs) {
             final Map<String, dynamic> data =
                 doc.data() as Map<String, dynamic>;
-            return StoreModel.fromMap(data, doc.id);
-          }).toList();
+
+            // Obtener el conteo real de items para cada tienda
+            final QuerySnapshot itemsSnapshot = await _firestore
+                .collection('stores')
+                .doc(doc.id)
+                .collection('items')
+                .where('isActive', isEqualTo: true)
+                .get();
+
+            final int actualItemsCount = itemsSnapshot.docs.length;
+
+            // Actualizar el conteo en el documento si es diferente
+            final int storedItemsCount = data['itemsCount'] as int? ?? 0;
+            if (actualItemsCount != storedItemsCount) {
+              _firestore.collection('stores').doc(doc.id).update(
+                <String, dynamic>{'itemsCount': actualItemsCount},
+              );
+            }
+
+            // Crear el modelo con el conteo actualizado
+            final Map<String, dynamic> updatedData = <String, dynamic>{
+              ...data,
+              'itemsCount': actualItemsCount,
+            };
+
+            stores.add(StoreModel.fromMap(updatedData, doc.id));
+          }
+
+          return stores;
         });
   }
 
@@ -145,8 +174,22 @@ class StoreController extends GetxController {
       Get.snackbar('Datos incompletos', 'Nombre y descripción son requeridos');
       return;
     }
+
     try {
       isLoading.value = true;
+
+      // Verificar si el usuario ya tiene una tienda (solo para creación)
+      if (storeId == null) {
+        final StoreModel? existingStore = await getMyStoreOnce();
+        if (existingStore != null) {
+          Get.snackbar(
+            'Error',
+            'Ya tienes una tienda creada. Solo puedes tener una tienda por usuario.',
+          );
+          return;
+        }
+      }
+
       String bannerUrl = '';
       String logoUrl = '';
       if (bannerImage.value != null) {
@@ -165,33 +208,36 @@ class StoreController extends GetxController {
       }
 
       final DateTime now = DateTime.now();
-      final Map<String, dynamic> data = <String, dynamic>{
-        'ownerId': uid,
-        'name': nameController.text.trim(),
-        'description': descriptionController.text.trim(),
-        if (bannerUrl.isNotEmpty) 'bannerUrl': bannerUrl,
-        if (logoUrl.isNotEmpty) 'logoUrl': logoUrl,
-        'updatedAt': Timestamp.fromDate(now),
-        'isActive': true,
-      };
 
       if (storeId == null) {
-        final DocumentReference ref = await _firestore.collection('stores').add(
-          <String, dynamic>{
-            ...data,
-            'rating': 4.5,
-            'itemsCount': 0,
-            'createdAt': Timestamp.fromDate(now),
-          },
-        );
+        // Crear nueva tienda
+        await _firestore.collection('stores').add(<String, dynamic>{
+          'ownerId': uid,
+          'name': nameController.text.trim(),
+          'description': descriptionController.text.trim(),
+          if (bannerUrl.isNotEmpty) 'bannerUrl': bannerUrl,
+          if (logoUrl.isNotEmpty) 'logoUrl': logoUrl,
+          'rating': 4.5, // Rating inicial
+          'itemsCount': 0, // Se actualizará automáticamente
+          'isActive': true,
+          'createdAt': Timestamp.fromDate(now),
+          'updatedAt': Timestamp.fromDate(now),
+        });
         Get.back();
         Get.snackbar('Éxito', 'Tienda creada');
-        await ref.update(<String, dynamic>{'id': ref.id});
       } else {
+        // Actualizar tienda existente (no cambiar rating ni itemsCount)
+        final Map<String, dynamic> updateData = <String, dynamic>{
+          'name': nameController.text.trim(),
+          'description': descriptionController.text.trim(),
+          if (bannerUrl.isNotEmpty) 'bannerUrl': bannerUrl,
+          if (logoUrl.isNotEmpty) 'logoUrl': logoUrl,
+          'updatedAt': Timestamp.fromDate(now),
+        };
         await _firestore
             .collection('stores')
             .doc(storeId)
-            .set(data, SetOptions(merge: true));
+            .set(updateData, SetOptions(merge: true));
         Get.back();
         Get.snackbar('Éxito', 'Tienda actualizada');
       }
@@ -270,6 +316,8 @@ class StoreController extends GetxController {
               ...data,
               'createdAt': Timestamp.fromDate(now),
             });
+        // Actualizar contador de items al crear
+        await _updateStoreItemCount(storeId);
       } else {
         await _firestore
             .collection('stores')
@@ -299,9 +347,31 @@ class StoreController extends GetxController {
           await _storage.refFromURL(item.imageUrl).delete();
         } catch (_) {}
       }
+      // Actualizar contador de items al eliminar
+      await _updateStoreItemCount(storeId);
       Get.snackbar('Eliminado', 'Artículo eliminado');
     } catch (_) {
       Get.snackbar('Error', 'No se pudo eliminar el artículo');
+    }
+  }
+
+  // Método privado para actualizar el contador de items de la tienda
+  Future<void> _updateStoreItemCount(String storeId) async {
+    try {
+      final QuerySnapshot itemsSnapshot = await _firestore
+          .collection('stores')
+          .doc(storeId)
+          .collection('items')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      final int itemsCount = itemsSnapshot.docs.length;
+
+      await _firestore.collection('stores').doc(storeId).update(
+        <String, dynamic>{'itemsCount': itemsCount},
+      );
+    } catch (e) {
+      debugPrint('Error updating items count: $e');
     }
   }
 

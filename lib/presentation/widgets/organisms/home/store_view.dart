@@ -39,13 +39,28 @@ class StoreView extends GetView<StoreController> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  IconButton(
-                    onPressed: () => Get.toNamed(Routes.storeEditor),
-                    style: IconButton.styleFrom(
-                      backgroundColor: color.primary,
-                      foregroundColor: color.onPrimary,
-                    ),
-                    icon: const Icon(Icons.add_business_rounded),
+                  StreamBuilder<StoreModel?>(
+                    stream: controller.getMyStore(),
+                    builder: (context, snapshot) {
+                      final bool hasStore = snapshot.data != null;
+                      return IconButton(
+                        onPressed: hasStore
+                            ? () => Get.toNamed(
+                                Routes.storeDetail,
+                                arguments: snapshot.data,
+                              )
+                            : () => Get.toNamed(Routes.storeEditor),
+                        style: IconButton.styleFrom(
+                          backgroundColor: color.primary,
+                          foregroundColor: color.onPrimary,
+                        ),
+                        icon: Icon(
+                          hasStore
+                              ? Icons.storefront_rounded
+                              : Icons.add_business_rounded,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
