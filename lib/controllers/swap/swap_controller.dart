@@ -316,4 +316,34 @@ class SwapController extends GetxController {
           }).toList();
         });
   }
+
+  // Get swaps for a specific user (for marketplace profile view)
+  Stream<List<SwapItemModel>> getSwapsByUser(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('swaps')
+        .where('isActive', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((QuerySnapshot snapshot) {
+          return snapshot.docs.map((QueryDocumentSnapshot doc) {
+            final Map<String, dynamic> data =
+                doc.data() as Map<String, dynamic>;
+            return SwapItemModel.fromMap(data);
+          }).toList();
+        });
+  }
+
+  Future<Map<String, dynamic>?> fetchUserProfile(String userId) async {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .get();
+      return doc.data();
+    } catch (_) {
+      return null;
+    }
+  }
 }

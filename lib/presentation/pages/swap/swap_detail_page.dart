@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/models/swap_item_model.dart';
+import '../../../controllers/swap/swap_controller.dart';
+
+class _SellerArguments {
+  final String userId;
+  final String userName;
+  final String? photoUrl;
+  const _SellerArguments({
+    required this.userId,
+    required this.userName,
+    this.photoUrl,
+  });
+}
 
 class SwapDetailPage extends StatelessWidget {
   const SwapDetailPage({super.key});
@@ -10,6 +22,7 @@ class SwapDetailPage extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
     final SwapItemModel item = Get.arguments as SwapItemModel;
+    final SwapController swapController = Get.put(SwapController());
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -119,6 +132,27 @@ class SwapDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
+                  // Vendedor
+                  const SizedBox(height: 8),
+                  _SellerCard(
+                    userId: item.userId,
+                    swapController: swapController,
+                    onOpenSeller:
+                        (String userId, String userName, String? photo) {
+                          Get.to(
+                            () => _SellerSwapsPage(
+                              args: _SellerArguments(
+                                userId: userId,
+                                userName: userName,
+                                photoUrl: photo,
+                              ),
+                            ),
+                            transition: Transition.cupertino,
+                          );
+                        },
+                  ),
+                  const SizedBox(height: 16),
+
                   // Descripción
                   Text(
                     'Descripción',
@@ -216,6 +250,172 @@ class SwapDetailPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SellerCard extends StatelessWidget {
+  final String userId;
+  final SwapController swapController;
+  final void Function(String userId, String userName, String? photoUrl)
+  onOpenSeller;
+  const _SellerCard({
+    required this.userId,
+    required this.swapController,
+    required this.onOpenSeller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme color = theme.colorScheme;
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: swapController.fetchUserProfile(userId),
+      builder: (context, snapshot) {
+        final Map<String, dynamic>? data = snapshot.data;
+        final String userName = (data?['name'] ?? 'usuario') as String;
+        final String? photoUrl = data?['photoUrl'] as String?;
+        return InkWell(
+          onTap: () => onOpenSeller(userId, userName, photoUrl),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.secondary.withValues(alpha: 0.15),
+                backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: (photoUrl == null || photoUrl.isEmpty)
+                    ? Icon(Icons.person, color: color.secondary)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    userName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'Ver perfil y artículos',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.hintColor,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Icon(Icons.chevron_right_rounded, color: theme.hintColor),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SellerSwapsPage extends StatelessWidget {
+  final _SellerArguments args;
+  const _SellerSwapsPage({required this.args});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme color = theme.colorScheme;
+    final SwapController controller = Get.find<SwapController>();
+    return Scaffold(
+      appBar: AppBar(title: Text(args.userName)),
+      body: StreamBuilder<List<SwapItemModel>>(
+        stream: controller.getSwapsByUser(args.userId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final List<SwapItemModel> items = snapshot.data ?? <SwapItemModel>[];
+          if (items.isEmpty) {
+            return Center(
+              child: Text(
+                'Este usuario aún no tiene swaps',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.hintColor,
+                ),
+              ),
+            );
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.76,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final SwapItemModel item = items[index];
+              return GestureDetector(
+                onTap: () => Get.to(() => SwapDetailPage(), arguments: item),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.network(item.imageUrl, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        left: 8,
+                        right: 8,
+                        bottom: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.surface.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.attach_money,
+                                    size: 14,
+                                    color: color.primary,
+                                  ),
+                                  Text(
+                                    item.estimatedPrice.toStringAsFixed(0),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: color.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
