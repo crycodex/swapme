@@ -8,10 +8,7 @@ import '../atoms/capture_button.dart';
 class CameraControls extends StatelessWidget {
   final SwapController controller;
 
-  const CameraControls({
-    super.key,
-    required this.controller,
-  });
+  const CameraControls({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -32,25 +29,30 @@ class CameraControls extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         // Flash toggle
-        Obx(() => CameraControlButton(
-              icon: controller.isFlashOn.value
-                  ? Icons.flash_on
-                  : Icons.flash_off,
-              onTap: controller.toggleFlash,
-              isActive: controller.isFlashOn.value,
-            )),
+        Obx(
+          () => CameraControlButton(
+            icon: controller.isFlashOn.value ? Icons.flash_on : Icons.flash_off,
+            onTap: controller.toggleFlash,
+            isActive: controller.isFlashOn.value,
+          ),
+        ),
 
         // Capture button
-        Obx(() => CaptureButton(
-              onTap: controller.capturePhoto,
-              isLoading: controller.isLoading.value,
-            )),
+        Obx(
+          () => CaptureButton(
+            onTap: controller.capturePhoto,
+            isLoading: controller.isLoading.value,
+          ),
+        ),
+
+        // Pick from gallery
+        CameraControlButton(
+          icon: Icons.photo_library_rounded,
+          onTap: controller.pickFromGallery,
+        ),
 
         // Close button
-        CameraControlButton(
-          icon: Icons.close,
-          onTap: () => Get.back(),
-        ),
+        CameraControlButton(icon: Icons.close, onTap: () => Get.back()),
       ],
     );
   }
@@ -78,10 +80,7 @@ class CameraControls extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.file(
-              image,
-              fit: BoxFit.cover,
-            ),
+            child: Image.file(image, fit: BoxFit.cover),
           ),
         ),
 
@@ -143,10 +142,7 @@ class CameraControls extends StatelessWidget {
             ),
 
             // Close button
-            CameraControlButton(
-              icon: Icons.close,
-              onTap: () => Get.back(),
-            ),
+            CameraControlButton(icon: Icons.close, onTap: () => Get.back()),
           ],
         ),
       ],

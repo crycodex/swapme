@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/models/swap_item_model.dart';
 
 class SwapController extends GetxController {
@@ -122,6 +123,22 @@ class SwapController extends GetxController {
 
   void retakePhoto() {
     capturedImage.value = null;
+  }
+
+  Future<void> pickFromGallery() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1440,
+      );
+      if (picked == null) return;
+      capturedImage.value = File(picked.path);
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      Get.snackbar('Error', 'No se pudo seleccionar la imagen');
+    }
   }
 
   void updateSize(String size) {
