@@ -35,6 +35,18 @@ class HomeLayout extends GetView<HomeController> {
                         pinned: true,
                         elevation: 0,
                         flexibleSpace: FlexibleSpaceBar(
+                          centerTitle: false,
+                          expandedTitleScale: 1.4,
+                          titlePadding: const EdgeInsetsDirectional.only(
+                            start: 16,
+                            bottom: 12,
+                          ),
+                          title: Text(
+                            'SwapMe',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           background: _HeaderHeroCarousel(
                             theme: theme,
                             colorScheme: colorScheme,
@@ -171,34 +183,6 @@ class _MessagesPlaceholder extends StatelessWidget {
   }
 }
 
-class _HeaderCard extends StatelessWidget {
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-  const _HeaderCard({required this.theme, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'SwapMe',
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _HeaderHeroCarousel extends StatefulWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
@@ -241,9 +225,7 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = widget.theme;
     final ColorScheme colorScheme = widget.colorScheme;
-    final MediaQueryData media = widget.media;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -259,16 +241,6 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
               ),
             );
           },
-        ),
-        // Overlay con el saludo y tokens en la misma posición
-        Padding(
-          padding: EdgeInsets.only(
-            top: media.padding.top + 16,
-            left: 20,
-            right: 20,
-            bottom: 16,
-          ),
-          child: _HeaderCard(theme: theme, colorScheme: colorScheme),
         ),
         // Indicadores
         Positioned(
