@@ -25,6 +25,8 @@ class SwapController extends GetxController {
 
   // Captured image
   final Rx<File?> capturedImage = Rx<File?>(null);
+  final RxnString editingSwapId = RxnString();
+  String? editingImageUrl;
 
   // Firebase instances
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -276,6 +278,8 @@ class SwapController extends GetxController {
     selectedCondition.value = 'Nuevo';
     capturedImage.value = null;
     isFlashOn.value = false;
+    editingSwapId.value = null;
+    editingImageUrl = null;
   }
 
   // Method to get user's swap items for home page
@@ -344,6 +348,90 @@ class SwapController extends GetxController {
       return doc.data();
     } catch (_) {
       return null;
+    }
+  }
+
+  // Editar / eliminar
+  void startEditing(SwapItemModel item) {
+    editingSwapId.value = item.id;
+    nameController.text = item.name;
+    descriptionController.text = item.description;
+    selectedSize.value = item.size;
+    estimatedPrice.value = item.estimatedPrice;
+    selectedCondition.value = item.condition;
+    selectedCategory.value = item.category;
+    editingImageUrl = item.imageUrl;
+    capturedImage.value = null;
+  }
+
+  Future<void> saveEditedSwap() async {
+    final User? currentUser = _auth.currentUser;
+    if (currentUser == null || (editingSwapId.value ?? '').isEmpty) {
+      Get.snackbar('Error', 'No hay artículo para editar');
+      return;
+    }
+    try {
+      isLoading.value = true;
+      String imageUrl = editingImageUrl ?? '';
+      if (capturedImage.value != null) {
+        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final Reference ref = _storage
+            .ref()
+            .child('users')
+            .child(currentUser.uid)
+            .child('swaps')
+            .child(fileName);
+        final UploadTask uploadTask = ref.putFile(capturedImage.value!);
+        final TaskSnapshot snapshot = await uploadTask;
+        imageUrl = await snapshot.ref.getDownloadURL();
+        if ((editingImageUrl ?? '').isNotEmpty) {
+          try {
+            await _storage.refFromURL(editingImageUrl!).delete();
+          } catch (_) {}
+        }
+      }
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('swaps')
+          .doc(editingSwapId.value)
+          .set(<String, dynamic>{
+            'name': nameController.text.trim(),
+            'description': descriptionController.text.trim(),
+            'size': selectedSize.value,
+            'estimatedPrice': estimatedPrice.value,
+            'condition': selectedCondition.value,
+            'category': selectedCategory.value,
+            'imageUrl': imageUrl,
+            'updatedAt': Timestamp.now(),
+          }, SetOptions(merge: true));
+      Get.snackbar('Éxito', 'Artículo actualizado');
+      resetForm();
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo actualizar el artículo');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteSwap(SwapItemModel item) async {
+    final User? currentUser = _auth.currentUser;
+    if (currentUser == null) return;
+    try {
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('swaps')
+          .doc(item.id)
+          .delete();
+      if (item.imageUrl.isNotEmpty) {
+        try {
+          await _storage.refFromURL(item.imageUrl).delete();
+        } catch (_) {}
+      }
+      Get.snackbar('Eliminado', 'Artículo eliminado');
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo eliminar el artículo');
     }
   }
 }

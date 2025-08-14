@@ -9,12 +9,14 @@ class SwapsSection extends StatelessWidget {
   final HomeController controller;
   final Stream<List<SwapItemModel>>? streamOverride;
   final void Function(SwapItemModel)? onItemTap;
+  final VoidCallback? onSeeAll;
 
   const SwapsSection({
     super.key,
     required this.controller,
     this.streamOverride,
     this.onItemTap,
+    this.onSeeAll,
   });
 
   @override
@@ -29,9 +31,7 @@ class SwapsSection extends StatelessWidget {
             subtitle: streamOverride == null
                 ? 'Artículos que has subido'
                 : 'Descubre prendas para intercambiar',
-            onSeeAll: () {
-              // Navigate to full swaps list
-            },
+            onSeeAll: onSeeAll,
           ),
         ),
         const SizedBox(height: 2),
@@ -133,7 +133,7 @@ class SwapsSection extends StatelessWidget {
             Text(
               isCatalog
                   ? 'Vuelve más tarde o ajusta los filtros'
-                  : 'Toca el botón + para crear tu primer swap',
+                  : 'Toca el botón central para crear tu primer swap',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),

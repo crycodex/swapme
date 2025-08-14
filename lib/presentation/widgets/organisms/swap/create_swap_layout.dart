@@ -10,24 +10,26 @@ class CreateSwapLayout extends GetView<SwapController> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Obx(() {
           final bool hasImage = controller.capturedImage.value != null;
-          
+
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             transitionBuilder: (Widget child, Animation<double> animation) {
               return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOutCubic,
-                )),
+                position:
+                    Tween<Offset>(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInOutCubic,
+                      ),
+                    ),
                 child: child,
               );
             },
@@ -61,11 +63,7 @@ class CreateSwapLayout extends GetView<SwapController> {
                     color: Colors.black.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
                 ),
               ),
               const Spacer(),
@@ -86,10 +84,12 @@ class CreateSwapLayout extends GetView<SwapController> {
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
-            child: Obx(() => CameraPreviewWidget(
-                  controller: controller.cameraController,
-                  isInitialized: controller.isCameraInitialized.value,
-                )),
+            child: Obx(
+              () => CameraPreviewWidget(
+                controller: controller.cameraController,
+                isInitialized: controller.isCameraInitialized.value,
+              ),
+            ),
           ),
         ),
 
@@ -205,14 +205,14 @@ class CreateSwapLayout extends GetView<SwapController> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Obx(() => controller.capturedImage.value != null
-                        ? Image.file(
-                            controller.capturedImage.value!,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            color: colorScheme.surface,
-                          )),
+                    child: Obx(
+                      () => controller.capturedImage.value != null
+                          ? Image.file(
+                              controller.capturedImage.value!,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(color: colorScheme.surface),
+                    ),
                   ),
                 ),
               ),
@@ -222,7 +222,37 @@ class CreateSwapLayout extends GetView<SwapController> {
 
         // Form section
         Expanded(
-          child: SwapFormSection(controller: controller),
+          child: Column(
+            children: [
+              Expanded(child: SwapFormSection(controller: controller)),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Obx(() {
+                    final bool isEditing =
+                        (controller.editingSwapId.value ?? '').isNotEmpty;
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: controller.isLoading.value
+                                ? null
+                                : () => isEditing
+                                      ? controller.saveEditedSwap()
+                                      : controller.createSwapItem(),
+                            child: Text(
+                              isEditing ? 'Guardar cambios' : 'Crear Swap',
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
