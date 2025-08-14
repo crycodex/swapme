@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../controllers/home/home_controller.dart';
 import '../../../data/models/swap_item_model.dart';
 import '../atoms/section_title.dart';
@@ -35,29 +36,31 @@ class SwapsSection extends StatelessWidget {
         ),
         const SizedBox(height: 2),
 
-        StreamBuilder<List<SwapItemModel>>(
-          stream: streamOverride ?? controller.userSwaps,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingState(context);
-            }
+        Obx(() {
+          // Dependencias reactivas explícitas para que el catálogo se
+          // reconstruya al cambiar búsqueda o categoría
+          final String _ = controller.searchQuery.value;
+          controller.selectedCategory.value;
+          return StreamBuilder<List<SwapItemModel>>(
+            stream: streamOverride ?? controller.userSwaps,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingState(context);
+              }
 
-            // En producción, mostramos vacío en vez de error genérico para no romper UX
-            // pero puedes volver a mostrar el error detallado si lo deseas
-            // if (snapshot.hasError) return _buildErrorState(context);
+              final List<SwapItemModel> all = snapshot.data ?? [];
+              final List<SwapItemModel> swaps = streamOverride == null
+                  ? all
+                  : controller.filterSwaps(all);
 
-            final List<SwapItemModel> all = snapshot.data ?? [];
-            final List<SwapItemModel> swaps = streamOverride == null
-                ? all
-                : controller.filterSwaps(all);
+              if (swaps.isEmpty) {
+                return _buildEmptyState(context);
+              }
 
-            if (swaps.isEmpty) {
-              return _buildEmptyState(context);
-            }
-
-            return _buildSwapsList(context, swaps);
-          },
-        ),
+              return _buildSwapsList(context, swaps);
+            },
+          );
+        }),
       ],
     );
   }

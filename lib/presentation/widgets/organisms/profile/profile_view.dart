@@ -23,7 +23,7 @@ class ProfileView extends GetView<AuthController> {
       return CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.of(context).size.height * 0.14),
+            child: SizedBox(height: MediaQuery.of(context).size.height * 0.05),
           ),
           SliverToBoxAdapter(
             child: Padding(

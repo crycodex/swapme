@@ -35,6 +35,8 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     pageController = PageController(initialPage: currentIndex.value);
+    // Debounce de búsqueda para no recalcular en cada tecla
+    ever<String>(searchQuery, (_) {});
   }
 
   @override
