@@ -9,6 +9,7 @@ class SwapItemModel {
   final double estimatedPrice;
   final String condition;
   final String imageUrl;
+  final String category; // e.g., Camisetas, Pantalones, Chaquetas
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
@@ -22,6 +23,7 @@ class SwapItemModel {
     required this.estimatedPrice,
     required this.condition,
     required this.imageUrl,
+    this.category = 'Otros',
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
@@ -37,6 +39,7 @@ class SwapItemModel {
       'estimatedPrice': estimatedPrice,
       'condition': condition,
       'imageUrl': imageUrl,
+      'category': category,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isActive': isActive,
@@ -44,6 +47,19 @@ class SwapItemModel {
   }
 
   factory SwapItemModel.fromMap(Map<String, dynamic> map) {
+    DateTime _parseDate(dynamic value) {
+      if (value is Timestamp) return value.toDate();
+      if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
     return SwapItemModel(
       id: map['id'] ?? '',
       userId: map['userId'] ?? '',
@@ -53,8 +69,9 @@ class SwapItemModel {
       estimatedPrice: (map['estimatedPrice'] ?? 0.0).toDouble(),
       condition: map['condition'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      category: (map['category'] ?? 'Otros') as String,
+      createdAt: _parseDate(map['createdAt']),
+      updatedAt: _parseDate(map['updatedAt']),
       isActive: map['isActive'] ?? true,
     );
   }
@@ -68,6 +85,7 @@ class SwapItemModel {
     double? estimatedPrice,
     String? condition,
     String? imageUrl,
+    String? category,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
@@ -81,6 +99,7 @@ class SwapItemModel {
       estimatedPrice: estimatedPrice ?? this.estimatedPrice,
       condition: condition ?? this.condition,
       imageUrl: imageUrl ?? this.imageUrl,
+      category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,

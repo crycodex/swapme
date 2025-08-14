@@ -1,12 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../controllers/swap/swap_controller.dart';
-import '../../atoms/camera_preview_widget.dart';
-import '../../molecules/camera_controls.dart';
-import '../../molecules/swap_form_section.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../controllers/store/store_controller.dart';
+import '../../molecules/store_item_form_section.dart';
 
-class CreateSwapLayout extends GetView<SwapController> {
-  const CreateSwapLayout({super.key});
+class CreateStoreItemLayout extends GetView<StoreController> {
+  const CreateStoreItemLayout({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class CreateSwapLayout extends GetView<SwapController> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Obx(() {
-          final bool hasImage = controller.capturedImage.value != null;
+          final bool hasImage = controller.selectedItemImage.value != null;
 
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
@@ -35,19 +35,19 @@ class CreateSwapLayout extends GetView<SwapController> {
             },
             child: hasImage
                 ? _buildFormView(context)
-                : _buildCameraView(context),
+                : _buildImagePickerView(context),
           );
         }),
       ),
     );
   }
 
-  Widget _buildCameraView(BuildContext context) {
+  Widget _buildImagePickerView(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final MediaQueryData media = MediaQuery.of(context);
 
     return Column(
-      key: const ValueKey('camera'),
+      key: const ValueKey('picker'),
       children: [
         // Header
         Container(
@@ -68,7 +68,7 @@ class CreateSwapLayout extends GetView<SwapController> {
               ),
               const Spacer(),
               Text(
-                'Tomar Foto',
+                'Seleccionar Imagen',
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -80,21 +80,74 @@ class CreateSwapLayout extends GetView<SwapController> {
           ),
         ),
 
-        // Camera preview
+        // Image picker area
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
-            child: Obx(
-              () => CameraPreviewWidget(
-                controller: controller.cameraController,
-                isInitialized: controller.isCameraInitialized.value,
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.image_rounded,
+                    size: 80,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Selecciona una imagen\npara tu artículo',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
 
-        // Camera controls
-        CameraControls(controller: controller),
+        // Picker controls
+        Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage(ImageSource.gallery),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Galería'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage(ImageSource.camera),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Cámara'),
+                ),
+              ),
+            ],
+          ),
+        ),
         SizedBox(height: media.padding.bottom),
       ],
     );
@@ -163,7 +216,7 @@ class CreateSwapLayout extends GetView<SwapController> {
                 top: 16,
                 right: 20,
                 child: GestureDetector(
-                  onTap: controller.retakePhoto,
+                  onTap: controller.retakeItemPhoto,
                   child: Container(
                     width: 40,
                     height: 40,
@@ -187,7 +240,7 @@ class CreateSwapLayout extends GetView<SwapController> {
                 ),
               ),
 
-              // Captured image
+              // Selected image
               Center(
                 child: Container(
                   width: 200,
@@ -206,9 +259,9 @@ class CreateSwapLayout extends GetView<SwapController> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Obx(
-                      () => controller.capturedImage.value != null
+                      () => controller.selectedItemImage.value != null
                           ? Image.file(
-                              controller.capturedImage.value!,
+                              controller.selectedItemImage.value!,
                               fit: BoxFit.cover,
                             )
                           : Container(color: colorScheme.surface),
@@ -224,14 +277,14 @@ class CreateSwapLayout extends GetView<SwapController> {
         Expanded(
           child: Column(
             children: [
-              Expanded(child: SwapFormSection(controller: controller)),
+              Expanded(child: StoreItemFormSection(controller: controller)),
               SafeArea(
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Obx(() {
                     final bool isEditing =
-                        (controller.editingSwapId.value ?? '').isNotEmpty;
+                        controller.editingStoreItem.value != null;
                     return Row(
                       children: [
                         Expanded(
@@ -239,10 +292,10 @@ class CreateSwapLayout extends GetView<SwapController> {
                             onPressed: controller.isLoading.value
                                 ? null
                                 : () => isEditing
-                                      ? controller.saveEditedSwap()
-                                      : controller.createSwapItem(),
+                                      ? controller.saveEditedStoreItem()
+                                      : controller.createStoreItem(),
                             child: Text(
-                              isEditing ? 'Guardar cambios' : 'Crear Swap',
+                              isEditing ? 'Guardar cambios' : 'Crear Artículo',
                             ),
                           ),
                         ),
@@ -256,5 +309,21 @@ class CreateSwapLayout extends GetView<SwapController> {
         ),
       ],
     );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? file = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1440,
+      );
+      if (file != null) {
+        controller.selectedItemImage.value = File(file.path);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo seleccionar la imagen');
+    }
   }
 }

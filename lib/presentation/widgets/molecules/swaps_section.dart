@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../controllers/home/home_controller.dart';
 import '../../../data/models/swap_item_model.dart';
 import '../atoms/section_title.dart';
@@ -6,8 +7,19 @@ import 'swap_item_card.dart';
 
 class SwapsSection extends StatelessWidget {
   final HomeController controller;
+  final Stream<List<SwapItemModel>>? streamOverride;
+  final void Function(SwapItemModel)? onItemTap;
+  final VoidCallback? onSeeAll;
+  final int? maxItems;
 
-  const SwapsSection({super.key, required this.controller});
+  const SwapsSection({
+    super.key,
+    required this.controller,
+    this.streamOverride,
+    this.onItemTap,
+    this.onSeeAll,
+    this.maxItems,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,35 +29,43 @@ class SwapsSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SectionTitle(
-            title: 'Mis Swaps',
-            subtitle: 'Artículos que has subido',
-            onSeeAll: () {
-              // Navigate to full swaps list
-            },
+            title: streamOverride == null ? 'Mis Swaps' : 'Explorar',
+            subtitle: streamOverride == null
+                ? 'Artículos que has subido'
+                : 'Descubre prendas para intercambiar',
+            onSeeAll: onSeeAll,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 2),
 
-        StreamBuilder<List<SwapItemModel>>(
-          stream: controller.userSwaps,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingState(context);
-            }
+        Obx(() {
+          // Dependencias reactivas explícitas para que el catálogo se
+          // reconstruya al cambiar búsqueda o categoría
+          final String _ = controller.searchQuery.value;
+          controller.selectedCategory.value;
+          return StreamBuilder<List<SwapItemModel>>(
+            stream: streamOverride ?? controller.userSwaps,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingState(context);
+              }
 
-            if (snapshot.hasError) {
-              return _buildErrorState(context);
-            }
+              final List<SwapItemModel> all = snapshot.data ?? [];
+              List<SwapItemModel> swaps = streamOverride == null
+                  ? all
+                  : controller.filterSwaps(all);
+              if ((maxItems ?? 0) > 0 && swaps.length > maxItems!) {
+                swaps = swaps.take(maxItems!).toList();
+              }
 
-            final List<SwapItemModel> swaps = snapshot.data ?? [];
+              if (swaps.isEmpty) {
+                return _buildEmptyState(context);
+              }
 
-            if (swaps.isEmpty) {
-              return _buildEmptyState(context);
-            }
-
-            return _buildSwapsList(context, swaps);
-          },
-        ),
+              return _buildSwapsList(context, swaps);
+            },
+          );
+        }),
       ],
     );
   }
@@ -79,41 +99,12 @@ class SwapsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
-    return Container(
-      height: 220,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: colorScheme.error, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar swaps',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Intenta de nuevo más tarde',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Error state removido del flujo principal para evitar romper la UX.
 
   Widget _buildEmptyState(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
+    final bool isCatalog = streamOverride != null;
 
     return Container(
       height: 220,
@@ -130,14 +121,14 @@ class SwapsSection extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.sync_alt_rounded,
+                isCatalog ? Icons.search_rounded : Icons.sync_alt_rounded,
                 color: colorScheme.primary,
                 size: 40,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Text(
-              'No tienes swaps aún',
+              isCatalog ? 'No hay prendas disponibles' : 'No tienes swaps aún',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -145,7 +136,9 @@ class SwapsSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Toca el botón + para crear tu primer swap',
+              isCatalog
+                  ? 'Vuelve más tarde o ajusta los filtros'
+                  : 'Toca el botón central para crear tu primer swap',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
@@ -158,19 +151,42 @@ class SwapsSection extends StatelessWidget {
   }
 
   Widget _buildSwapsList(BuildContext context, List<SwapItemModel> swaps) {
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+    final bool isHorizontal = streamOverride == null;
+    if (isHorizontal) {
+      return SizedBox(
+        height: 220,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: swaps.length,
+          itemBuilder: (context, index) {
+            final SwapItemModel swap = swaps[index];
+            return SwapItemCard(
+              swapItem: swap,
+              onTap: () => onItemTap?.call(swap),
+            );
+          },
+        ),
+      );
+    }
+    // Grid para explorar
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.76,
+        ),
         itemCount: swaps.length,
-        itemBuilder: (context, index) {
+        itemBuilder: (BuildContext context, int index) {
           final SwapItemModel swap = swaps[index];
           return SwapItemCard(
             swapItem: swap,
-            onTap: () {
-              // Handle tap - could open swap details
-            },
+            onTap: () => onItemTap?.call(swap),
           );
         },
       ),
