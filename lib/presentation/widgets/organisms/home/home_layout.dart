@@ -6,6 +6,7 @@ import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
 import 'bottom_nav.dart';
 import 'store_view.dart';
+import 'messages_view.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
@@ -20,13 +21,16 @@ class HomeLayout extends GetView<HomeController> {
     final MediaQueryData media = MediaQuery.of(context);
 
     return Obx(() {
-      final bool isProfile = controller.currentIndex.value == 4;
+      final int currentIndex = controller.currentIndex.value;
+      final bool isFullScreenView =
+          currentIndex >= 3; // Messages (3) y Profile (4)
+
       return Scaffold(
         backgroundColor: colorScheme.surface,
         body: Stack(
           children: [
-            isProfile
-                ? const SafeArea(child: ProfileView())
+            isFullScreenView
+                ? _buildFullScreenView(currentIndex)
                 : NestedScrollView(
                     headerSliverBuilder: (context, innerBoxIsScrolled) => [
                       SliverAppBar(
@@ -62,9 +66,6 @@ class HomeLayout extends GetView<HomeController> {
                       children: [
                         _HomePlaceholder(controller: controller),
                         const StoreView(),
-                        const _SwapsPlaceholder(),
-                        const _MessagesPlaceholder(),
-                        const ProfileView(),
                       ],
                     ),
                   ),
@@ -81,6 +82,17 @@ class HomeLayout extends GetView<HomeController> {
         ),
       );
     });
+  }
+
+  Widget _buildFullScreenView(int index) {
+    switch (index) {
+      case 3:
+        return const SafeArea(child: MessagesView());
+      case 4:
+        return const SafeArea(child: ProfileView());
+      default:
+        return const SizedBox.shrink();
+    }
   }
 }
 
@@ -179,21 +191,7 @@ class _HomePlaceholder extends StatelessWidget {
 
 // removed Store placeholder; real StoreView is used
 
-class _SwapsPlaceholder extends StatelessWidget {
-  const _SwapsPlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Swaps'));
-  }
-}
-
-class _MessagesPlaceholder extends StatelessWidget {
-  const _MessagesPlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Messages'));
-  }
-}
+// Messages placeholder removed - now uses full screen MessagesView
 
 class _ExploreMorePage extends GetView<HomeController> {
   const _ExploreMorePage();

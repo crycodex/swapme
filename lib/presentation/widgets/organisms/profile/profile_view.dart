@@ -24,123 +24,135 @@ class ProfileView extends GetView<AuthController> {
       final String email = controller.userEmail.value;
       final bool isDark = controller.isDarkMode.value;
 
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () => controller.pickAndUploadProfileImage(),
-                    child: CircleAvatar(
-                      radius: 44,
-                      backgroundColor: colorScheme.primary.withValues(
-                        alpha: 0.18,
-                      ),
-                      backgroundImage:
-                          (controller.profileImage.value != null &&
-                              controller.profileImage.value!.isNotEmpty)
-                          ? NetworkImage(controller.profileImage.value!)
-                          : null,
-                      child:
-                          (controller.profileImage.value == null ||
-                              controller.profileImage.value!.isEmpty)
-                          ? Icon(
-                              Icons.person_rounded,
-                              color: colorScheme.primary,
-                              size: 40,
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    name.isEmpty ? 'Usuario' : name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    email,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.hintColor,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonal(
-                    onPressed: () => Get.toNamed('/edit-profile'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Text('Edit profile'),
-                  ),
-                  const SizedBox(height: 22),
-                  const SectionTitle(title: 'Preferences'),
-                  SettingsCard(
-                    children: [
-                      SettingsTile(
-                        leadingIcon: Icons.storefront_rounded,
-                        title: 'My store',
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () async {
-                          final StoreController store = Get.put(
-                            StoreController(),
-                          );
-                          final StoreModel? mine = await store.getMyStoreOnce();
-                          if (mine == null) {
-                            Get.toNamed('/store-editor');
-                          } else {
-                            Get.toNamed('/store-detail', arguments: mine);
-                          }
-                        },
-                      ),
-                      const Divider(height: 1),
-                      SettingsSwitchTile(
-                        leadingIcon: Icons.dark_mode_outlined,
-                        title: 'Dark mode',
-                        value: isDark,
-                        onChanged: (_) => controller.toggleTheme(),
-                      ),
-                      const Divider(height: 1),
-                      SettingsTile(
-                        leadingIcon: Icons.logout_rounded,
-                        title: 'Logout',
-                        titleColor: colorScheme.error,
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => _confirmLogout(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 120),
-                ],
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              title: const Text('Perfil'),
+              elevation: 0,
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.02,
               ),
             ),
-          ),
-          // Mis swaps del usuario en perfil
-          SliverToBoxAdapter(
-            child: GetBuilder<HomeController>(
-              init: Get.put(HomeController()),
-              builder: (HomeController home) {
-                return SwapsSection(
-                  controller: home,
-                  onSeeAll: () => Get.to(() => const _MySwapsPage()),
-                );
-              },
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () => controller.pickAndUploadProfileImage(),
+                      child: CircleAvatar(
+                        radius: 44,
+                        backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.18,
+                        ),
+                        backgroundImage:
+                            (controller.profileImage.value != null &&
+                                controller.profileImage.value!.isNotEmpty)
+                            ? NetworkImage(controller.profileImage.value!)
+                            : null,
+                        child:
+                            (controller.profileImage.value == null ||
+                                controller.profileImage.value!.isEmpty)
+                            ? Icon(
+                                Icons.person_rounded,
+                                color: colorScheme.primary,
+                                size: 40,
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      name.isEmpty ? 'Usuario' : name,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      email,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.hintColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.tonal(
+                      onPressed: () => Get.toNamed('/edit-profile'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: const Text('Edit profile'),
+                    ),
+                    const SizedBox(height: 22),
+                    const SectionTitle(title: 'Preferences'),
+                    SettingsCard(
+                      children: [
+                        SettingsTile(
+                          leadingIcon: Icons.storefront_rounded,
+                          title: 'My store',
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () async {
+                            final StoreController store = Get.put(
+                              StoreController(),
+                            );
+                            final StoreModel? mine = await store
+                                .getMyStoreOnce();
+                            if (mine == null) {
+                              Get.toNamed('/store-editor');
+                            } else {
+                              Get.toNamed('/store-detail', arguments: mine);
+                            }
+                          },
+                        ),
+                        const Divider(height: 1),
+                        SettingsSwitchTile(
+                          leadingIcon: Icons.dark_mode_outlined,
+                          title: 'Dark mode',
+                          value: isDark,
+                          onChanged: (_) => controller.toggleTheme(),
+                        ),
+                        const Divider(height: 1),
+                        SettingsTile(
+                          leadingIcon: Icons.logout_rounded,
+                          title: 'Logout',
+                          titleColor: colorScheme.error,
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => _confirmLogout(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 120),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            // Mis swaps del usuario en perfil
+            SliverToBoxAdapter(
+              child: GetBuilder<HomeController>(
+                init: Get.put(HomeController()),
+                builder: (HomeController home) {
+                  return SwapsSection(
+                    controller: home,
+                    onSeeAll: () => Get.to(() => const _MySwapsPage()),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
