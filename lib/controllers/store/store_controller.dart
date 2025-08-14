@@ -21,6 +21,10 @@ class StoreController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxnString editingStoreId = RxnString();
 
+  // Search functionality
+  final TextEditingController searchController = TextEditingController();
+  final RxString searchQuery = ''.obs;
+
   // Store item form
   final TextEditingController itemNameController = TextEditingController();
   final TextEditingController itemDescriptionController =
@@ -119,6 +123,21 @@ class StoreController extends GetxController {
 
           return stores;
         });
+  }
+
+  // Filtered stores based on search query
+  List<StoreModel> filterStores(List<StoreModel> stores) {
+    final String query = searchQuery.value.toLowerCase().trim();
+    if (query.isEmpty) return stores;
+
+    return stores.where((StoreModel store) {
+      return store.name.toLowerCase().contains(query) ||
+          store.description.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
   }
 
   Stream<StoreModel?> getMyStore() {
@@ -504,6 +523,7 @@ class StoreController extends GetxController {
   void onClose() {
     nameController.dispose();
     descriptionController.dispose();
+    searchController.dispose();
     itemNameController.dispose();
     itemDescriptionController.dispose();
     itemPriceController.dispose();

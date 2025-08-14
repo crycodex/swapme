@@ -27,14 +27,27 @@ class StoreView extends GetView<StoreController> {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: controller.searchController,
+                      onChanged: controller.updateSearchQuery,
                       decoration: InputDecoration(
-                        hintText: 'Search stores',
+                        hintText: 'Buscar tiendas',
                         prefixIcon: const Icon(Icons.search_rounded),
                         filled: true,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
                         ),
+                        suffixIcon: Obx(() {
+                          return controller.searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  onPressed: () {
+                                    controller.searchController.clear();
+                                    controller.updateSearchQuery('');
+                                  },
+                                  icon: const Icon(Icons.clear),
+                                )
+                              : const SizedBox.shrink();
+                        }),
                       ),
                     ),
                   ),
@@ -67,50 +80,91 @@ class StoreView extends GetView<StoreController> {
             ),
           ),
           SliverToBoxAdapter(
-            child: StreamBuilder<List<StoreModel>>(
-              stream: controller.getStores(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final List<StoreModel> stores = snapshot.data ?? <StoreModel>[];
-                if (stores.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.storefront_rounded,
-                          size: 64,
-                          color: theme.hintColor,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Aún no hay tiendas',
-                          style: theme.textTheme.bodyMedium?.copyWith(
+            child: Obx(() {
+              // Trigger rebuild when search query changes
+              controller.searchQuery.value;
+
+              return StreamBuilder<List<StoreModel>>(
+                stream: controller.getStores(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  final List<StoreModel> allStores =
+                      snapshot.data ?? <StoreModel>[];
+                  final List<StoreModel> filteredStores = controller
+                      .filterStores(allStores);
+
+                  if (allStores.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.storefront_rounded,
+                            size: 64,
                             color: theme.hintColor,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Aún no hay tiendas',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (filteredStores.isEmpty &&
+                      controller.searchQuery.value.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 64,
+                            color: theme.hintColor,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No se encontraron tiendas',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Intenta con otro término de búsqueda',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredStores.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final StoreModel s = filteredStores[index];
+                      return _StoreTile(store: s, theme: theme, color: color);
+                    },
                   );
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  itemCount: stores.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final StoreModel s = stores[index];
-                    return _StoreTile(store: s, theme: theme, color: color);
-                  },
-                );
-              },
-            ),
+                },
+              );
+            }),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
