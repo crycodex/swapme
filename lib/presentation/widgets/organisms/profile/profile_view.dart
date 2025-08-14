@@ -110,7 +110,7 @@ class ProfileView extends GetView<AuthController> {
           // Mis swaps del usuario en perfil
           SliverToBoxAdapter(
             child: GetBuilder<HomeController>(
-              init: Get.find<HomeController>(),
+              init: Get.put(HomeController()),
               builder: (HomeController home) {
                 return SwapsSection(controller: home);
               },

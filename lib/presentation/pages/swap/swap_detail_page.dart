@@ -33,8 +33,15 @@ class SwapDetailPage extends StatelessWidget {
             expandedHeight: 320,
             backgroundColor: colorScheme.surface,
             elevation: 0,
-            iconTheme: IconThemeData(color: colorScheme.onSurface),
-            title: Text('Detalles', style: theme.textTheme.titleMedium),
+            iconTheme: IconThemeData(color: Colors.white, size: 24),
+            title: Text(
+              'Detalles',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -67,9 +74,9 @@ class SwapDetailPage extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.25),
+                          Colors.black.withValues(alpha: 0.5),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.25),
+                          Colors.black.withValues(alpha: 0.5),
                         ],
                       ),
                     ),
@@ -343,7 +350,7 @@ class _SellerSwapsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme color = theme.colorScheme;
-    final SwapController controller = Get.find<SwapController>();
+    final SwapController controller = Get.put(SwapController());
     return Scaffold(
       appBar: AppBar(title: Text(args.userName)),
       body: StreamBuilder<List<SwapItemModel>>(
