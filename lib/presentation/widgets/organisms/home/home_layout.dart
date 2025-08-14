@@ -5,6 +5,7 @@ import '../../molecules/swaps_section.dart';
 import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
 import 'bottom_nav.dart';
+import 'store_view.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
@@ -60,7 +61,7 @@ class HomeLayout extends GetView<HomeController> {
                       onPageChanged: controller.handlePageChanged,
                       children: [
                         _HomePlaceholder(controller: controller),
-                        const _StorePlaceholder(),
+                        const StoreView(),
                         const _SwapsPlaceholder(),
                         const _MessagesPlaceholder(),
                         const ProfileView(),
@@ -176,13 +177,7 @@ class _HomePlaceholder extends StatelessWidget {
   }
 }
 
-class _StorePlaceholder extends StatelessWidget {
-  const _StorePlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Store'));
-  }
-}
+// removed Store placeholder; real StoreView is used
 
 class _SwapsPlaceholder extends StatelessWidget {
   const _SwapsPlaceholder();
@@ -276,7 +271,7 @@ class _ExploreGridState extends State<_ExploreGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final HomeController home = Get.find<HomeController>();
+    final HomeController home = Get.put(HomeController());
     return Obx(() {
       // trigger rebuild on filters
       home.searchQuery.value;

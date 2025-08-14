@@ -7,6 +7,8 @@ import '../../../../controllers/auth/auth_controller.dart';
 import '../../../../controllers/home/home_controller.dart';
 import '../../molecules/swaps_section.dart';
 import '../../../../controllers/swap/swap_controller.dart';
+import '../../../../controllers/store/store_controller.dart';
+import '../../../../data/models/store_model.dart';
 import '../../../../data/models/swap_item_model.dart';
 
 class ProfileView extends GetView<AuthController> {
@@ -88,6 +90,23 @@ class ProfileView extends GetView<AuthController> {
                   const SectionTitle(title: 'Preferences'),
                   SettingsCard(
                     children: [
+                      SettingsTile(
+                        leadingIcon: Icons.storefront_rounded,
+                        title: 'My store',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () async {
+                          final StoreController store = Get.put(
+                            StoreController(),
+                          );
+                          final StoreModel? mine = await store.getMyStoreOnce();
+                          if (mine == null) {
+                            Get.toNamed('/store-editor');
+                          } else {
+                            Get.toNamed('/store-detail', arguments: mine);
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
                       SettingsSwitchTile(
                         leadingIcon: Icons.dark_mode_outlined,
                         title: 'Dark mode',

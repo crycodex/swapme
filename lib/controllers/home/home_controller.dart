@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/swap_item_model.dart';
 import '../swap/swap_controller.dart';
+import '../store/store_controller.dart';
 
 class HomeController extends GetxController {
   // Índices: 0: home, 1: store, 2: swaps, 3: messages, 4: profile
@@ -35,6 +36,8 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     pageController = PageController(initialPage: currentIndex.value);
+    // Ensure StoreController is available when needed
+    Get.put(StoreController(), permanent: true);
     // Debounce de búsqueda para no recalcular en cada tecla
     ever<String>(searchQuery, (_) {});
   }
