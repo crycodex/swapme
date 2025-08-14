@@ -10,6 +10,7 @@ class SwapsSection extends StatelessWidget {
   final Stream<List<SwapItemModel>>? streamOverride;
   final void Function(SwapItemModel)? onItemTap;
   final VoidCallback? onSeeAll;
+  final int? maxItems;
 
   const SwapsSection({
     super.key,
@@ -17,6 +18,7 @@ class SwapsSection extends StatelessWidget {
     this.streamOverride,
     this.onItemTap,
     this.onSeeAll,
+    this.maxItems,
   });
 
   @override
@@ -49,9 +51,12 @@ class SwapsSection extends StatelessWidget {
               }
 
               final List<SwapItemModel> all = snapshot.data ?? [];
-              final List<SwapItemModel> swaps = streamOverride == null
+              List<SwapItemModel> swaps = streamOverride == null
                   ? all
                   : controller.filterSwaps(all);
+              if ((maxItems ?? 0) > 0 && swaps.length > maxItems!) {
+                swaps = swaps.take(maxItems!).toList();
+              }
 
               if (swaps.isEmpty) {
                 return _buildEmptyState(context);

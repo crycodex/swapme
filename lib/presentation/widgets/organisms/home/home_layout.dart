@@ -163,6 +163,8 @@ class _HomePlaceholder extends StatelessWidget {
             child: SwapsSection(
               controller: controller,
               streamOverride: controller.allSwaps,
+              maxItems: 15,
+              onSeeAll: () => Get.to(() => const _ExploreMorePage()),
               onItemTap: (SwapItemModel item) {
                 Get.toNamed(Routes.swapDetail, arguments: item);
               },
@@ -195,6 +197,185 @@ class _MessagesPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('Messages'));
+  }
+}
+
+class _ExploreMorePage extends GetView<HomeController> {
+  const _ExploreMorePage();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme color = theme.colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Explorar')),
+      body: Column(
+        children: [
+          // Buscador
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              onChanged: controller.updateSearch,
+              decoration: InputDecoration(
+                hintText: 'Buscar prendas',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          // Filtros
+          SizedBox(
+            height: 40,
+            child: Obx(() {
+              final String selected = controller.selectedCategory.value;
+              final List<String> categories = controller.categories;
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final String cat = categories[index];
+                  final bool isSelected = selected == cat;
+                  return ChoiceChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    onSelected: (_) => controller.selectCategory(cat),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          // Grid con paginación simple por lotes
+          Expanded(child: _ExploreGrid(color: color)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExploreGrid extends StatefulWidget {
+  final ColorScheme color;
+  const _ExploreGrid({required this.color});
+
+  @override
+  State<_ExploreGrid> createState() => _ExploreGridState();
+}
+
+class _ExploreGridState extends State<_ExploreGrid> {
+  static const int pageSize = 24;
+  int _loaded = pageSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final HomeController home = Get.find<HomeController>();
+    return Obx(() {
+      // trigger rebuild on filters
+      home.searchQuery.value;
+      home.selectedCategory.value;
+      return StreamBuilder<List<SwapItemModel>>(
+        stream: home.allSwaps,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          List<SwapItemModel> items = home.filterSwaps(
+            snapshot.data ?? <SwapItemModel>[],
+          );
+          if (items.isEmpty) {
+            return const Center(child: Text('No hay resultados'));
+          }
+          items = items.take(_loaded).toList();
+          return NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification n) {
+              if (n.metrics.pixels >= n.metrics.maxScrollExtent - 240) {
+                setState(() => _loaded += pageSize);
+              }
+              return false;
+            },
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.76,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final SwapItemModel item = items[index];
+                return GestureDetector(
+                  onTap: () => Get.toNamed(Routes.swapDetail, arguments: item),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Image.network(
+                            item.imageUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          bottom: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: widget.color.surface.withValues(
+                                alpha: 0.9,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.attach_money,
+                                      size: 14,
+                                      color: widget.color.primary,
+                                    ),
+                                    Text(
+                                      item.estimatedPrice.toStringAsFixed(0),
+                                      style: TextStyle(
+                                        color: widget.color.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      );
+    });
   }
 }
 
