@@ -111,6 +111,18 @@ class _HomePlaceholder extends StatelessWidget {
                   hintText: 'Buscar prendas',
                   prefixIcon: const Icon(Icons.search_rounded),
                   filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
@@ -134,6 +146,9 @@ class _HomePlaceholder extends StatelessWidget {
                       label: Text(cat),
                       selected: isSelected,
                       onSelected: (_) => controller.selectCategory(cat),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     );
                   },
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
