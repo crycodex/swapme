@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -31,12 +30,12 @@ class NotificationService extends GetxService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('Usuario otorgó permisos para notificaciones');
+        debugPrint('Usuario otorgó permisos para notificaciones');
 
         // Obtener token FCM
         _fcmToken = await _messaging.getToken();
         if (_fcmToken != null) {
-          print('Token FCM: $_fcmToken');
+          debugPrint('Token FCM: $_fcmToken');
         }
 
         // Configurar manejadores de mensajes
@@ -45,30 +44,30 @@ class NotificationService extends GetxService {
         // Escuchar cambios de token
         _messaging.onTokenRefresh.listen((String token) {
           _fcmToken = token;
-          print('Token FCM actualizado: $token');
+          debugPrint('Token FCM actualizado: $token');
           // Aquí podrías actualizar el token en Firestore
         });
       } else if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        print('Usuario denegó permisos para notificaciones');
+        debugPrint('Usuario denegó permisos para notificaciones');
       } else if (settings.authorizationStatus ==
           AuthorizationStatus.provisional) {
-        print('Usuario otorgó permisos provisionales para notificaciones');
+        debugPrint('Usuario otorgó permisos provisionales para notificaciones');
       }
     } catch (e) {
-      print('Error inicializando notificaciones: $e');
+      debugPrint('Error inicializando notificaciones: $e');
     }
   }
 
   void _setupMessageHandlers() {
     // Manejar mensajes cuando la app está en primer plano
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Mensaje recibido en primer plano: ${message.messageId}');
+      debugPrint('Mensaje recibido en primer plano: ${message.messageId}');
       _handleMessage(message);
     });
 
     // Manejar mensajes cuando la app está en segundo plano pero no terminada
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Mensaje abrió la app desde segundo plano: ${message.messageId}');
+      debugPrint('Mensaje abrió la app desde segundo plano: ${message.messageId}');
       _handleMessageTap(message);
     });
 
@@ -79,7 +78,7 @@ class NotificationService extends GetxService {
   Future<void> _handleInitialMessage() async {
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      print(
+      debugPrint(
         'Mensaje abrió la app desde estado cerrado: ${initialMessage.messageId}',
       );
       _handleMessageTap(initialMessage);
@@ -87,7 +86,6 @@ class NotificationService extends GetxService {
   }
 
   void _handleMessage(RemoteMessage message) {
-    final String? type = message.data['type'];
     final String? title = message.notification?.title;
     final String? body = message.notification?.body;
 
@@ -136,7 +134,7 @@ class NotificationService extends GetxService {
         break;
 
       default:
-        print('Tipo de notificación no manejado: $type');
+        debugPrint('Tipo de notificación no manejado: $type');
     }
   }
 
@@ -146,7 +144,7 @@ class NotificationService extends GetxService {
     try {
       Get.toNamed('/chat', arguments: {'chatId': chatId});
     } catch (e) {
-      print('Error navegando al chat: $e');
+      debugPrint('Error navegando al chat: $e');
       // Fallback: navegar a la lista de mensajes
       Get.toNamed('/messages');
     }
@@ -156,9 +154,9 @@ class NotificationService extends GetxService {
   Future<void> subscribeToTopic(String topic) async {
     try {
       await _messaging.subscribeToTopic(topic);
-      print('Suscrito al tema: $topic');
+      debugPrint('Suscrito al tema: $topic');
     } catch (e) {
-      print('Error suscribiéndose al tema $topic: $e');
+      debugPrint('Error suscribiéndose al tema $topic: $e');
     }
   }
 
@@ -166,9 +164,9 @@ class NotificationService extends GetxService {
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await _messaging.unsubscribeFromTopic(topic);
-      print('Desuscrito del tema: $topic');
+      debugPrint('Desuscrito del tema: $topic');
     } catch (e) {
-      print('Error desuscribiéndose del tema $topic: $e');
+      debugPrint('Error desuscribiéndose del tema $topic: $e');
     }
   }
 
@@ -177,7 +175,7 @@ class NotificationService extends GetxService {
     try {
       return await _messaging.getToken();
     } catch (e) {
-      print('Error obteniendo token FCM: $e');
+      debugPrint('Error obteniendo token FCM: $e');
       return null;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../data/models/chat_model.dart';
 import '../../data/models/message_model.dart';
@@ -100,7 +101,7 @@ class ChatController extends GetxController {
             'status': ChatStatus.expired.name,
           });
         } catch (e) {
-          print('Error actualizando chat expirado ${chat.id}: $e');
+          debugPrint('Error actualizando chat expirado ${chat.id}: $e');
         }
       }
     }
@@ -301,7 +302,7 @@ class ChatController extends GetxController {
 
       return true;
     } catch (e) {
-      print('Error enviando mensaje del sistema: $e');
+      debugPrint('Error enviando mensaje del sistema: $e');
       return false;
     }
   }
@@ -358,7 +359,7 @@ class ChatController extends GetxController {
         _updateLocalChatReadStatus(chatId, newReadBy, hasUnreadMessages);
       }
     } catch (e) {
-      print('Error marcando chat como leído: $e');
+      debugPrint('Error marcando chat como leído: $e');
     }
   }
 
@@ -409,9 +410,9 @@ class ChatController extends GetxController {
       // Actualizar badge count después de limpiar contadores
       await _cloudMessagingService.updateBadgeFromDatabase();
 
-      print('Contadores de mensajes no leídos limpiados para chat: $chatId');
+      debugPrint('Contadores de mensajes no leídos limpiados para chat: $chatId');
     } catch (e) {
-      print('Error limpiando contadores no leídos: $e');
+      debugPrint('Error limpiando contadores no leídos: $e');
     }
   }
 
@@ -427,7 +428,7 @@ class ChatController extends GetxController {
 
       return unreadMessages.docs.isNotEmpty;
     } catch (e) {
-      print('Error verificando mensajes no leídos: $e');
+      debugPrint('Error verificando mensajes no leídos: $e');
       return false;
     }
   }
@@ -616,7 +617,7 @@ class ChatController extends GetxController {
             message.senderName.toLowerCase().contains(query.toLowerCase());
       }).toList();
     } catch (e) {
-      print('Error buscando mensajes: $e');
+      debugPrint('Error buscando mensajes: $e');
       return [];
     }
   }

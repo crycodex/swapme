@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'cloud_messaging_service.dart';
 
@@ -25,7 +26,7 @@ class AdminMessagingService extends GetxService {
     try {
       // Verificar permisos de administrador
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -42,7 +43,7 @@ class AdminMessagingService extends GetxService {
         imageUrl: imageUrl,
       );
     } catch (e) {
-      print('Error enviando notificación masiva: $e');
+      debugPrint('Error enviando notificación masiva: $e');
       return false;
     }
   }
@@ -56,7 +57,7 @@ class AdminMessagingService extends GetxService {
   }) async {
     try {
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -106,7 +107,7 @@ class AdminMessagingService extends GetxService {
 
       return generalNotification && categoryNotification && cityNotification;
     } catch (e) {
-      print('Error enviando notificación de nuevo swap: $e');
+      debugPrint('Error enviando notificación de nuevo swap: $e');
       return false;
     }
   }
@@ -120,7 +121,7 @@ class AdminMessagingService extends GetxService {
   }) async {
     try {
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -131,7 +132,7 @@ class AdminMessagingService extends GetxService {
         data: {'type': 'city_announcement', 'city': city, ...?data},
       );
     } catch (e) {
-      print('Error enviando notificación a ciudad: $e');
+      debugPrint('Error enviando notificación a ciudad: $e');
       return false;
     }
   }
@@ -145,7 +146,7 @@ class AdminMessagingService extends GetxService {
   }) async {
     try {
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -156,7 +157,7 @@ class AdminMessagingService extends GetxService {
         data: {'type': 'category_announcement', 'category': category, ...?data},
       );
     } catch (e) {
-      print('Error enviando notificación a categoría: $e');
+      debugPrint('Error enviando notificación a categoría: $e');
       return false;
     }
   }
@@ -170,7 +171,7 @@ class AdminMessagingService extends GetxService {
   }) async {
     try {
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -185,10 +186,10 @@ class AdminMessagingService extends GetxService {
         if (success) successCount++;
       }
 
-      print('Notificaciones enviadas: $successCount/${userIds.length}');
+      debugPrint('Notificaciones enviadas: $successCount/${userIds.length}');
       return successCount == userIds.length;
     } catch (e) {
-      print('Error enviando notificaciones específicas: $e');
+      debugPrint('Error enviando notificaciones específicas: $e');
       return false;
     }
   }
@@ -204,7 +205,7 @@ class AdminMessagingService extends GetxService {
   }) async {
     try {
       if (!await _isAdmin()) {
-        print('Error: Usuario no tiene permisos de administrador');
+        debugPrint('Error: Usuario no tiene permisos de administrador');
         return false;
       }
 
@@ -221,10 +222,10 @@ class AdminMessagingService extends GetxService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print('Notificación programada para: $scheduledTime');
+      debugPrint('Notificación programada para: $scheduledTime');
       return true;
     } catch (e) {
-      print('Error programando notificación: $e');
+      debugPrint('Error programando notificación: $e');
       return false;
     }
   }
@@ -286,7 +287,7 @@ class AdminMessagingService extends GetxService {
         },
       };
     } catch (e) {
-      print('Error obteniendo estadísticas: $e');
+      debugPrint('Error obteniendo estadísticas: $e');
       return {};
     }
   }
@@ -321,7 +322,7 @@ class AdminMessagingService extends GetxService {
         };
       }).toList();
     } catch (e) {
-      print('Error obteniendo usuarios activos: $e');
+      debugPrint('Error obteniendo usuarios activos: $e');
       return [];
     }
   }
@@ -345,7 +346,7 @@ class AdminMessagingService extends GetxService {
           userData?['role'] == 'admin' ||
           userData?['permissions']?['canSendNotifications'] == true;
     } catch (e) {
-      print('Error verificando permisos de administrador: $e');
+      debugPrint('Error verificando permisos de administrador: $e');
       return false;
     }
   }
@@ -389,7 +390,7 @@ class AdminMessagingService extends GetxService {
         });
       }
     } catch (e) {
-      print('Error procesando notificaciones programadas: $e');
+      debugPrint('Error procesando notificaciones programadas: $e');
     }
   }
 }

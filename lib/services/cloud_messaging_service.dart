@@ -55,7 +55,7 @@ class CloudMessagingService extends GetxService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('Usuario otorgó permisos para notificaciones');
+        debugPrint('Usuario otorgó permisos para notificaciones');
 
         // Obtener token FCM
         _fcmToken = await _messaging.getToken();
@@ -70,16 +70,16 @@ class CloudMessagingService extends GetxService {
         // Escuchar cambios de token
         _messaging.onTokenRefresh.listen((String token) async {
           _fcmToken = token;
-          print('Token FCM actualizado: $token');
+          debugPrint('Token FCM actualizado: $token');
           if (currentUserId != null) {
             await _saveTokenToDatabase(token);
           }
         });
       } else {
-        print('Usuario denegó permisos para notificaciones');
+        debugPrint('Usuario denegó permisos para notificaciones');
       }
     } catch (e) {
-      print('Error inicializando Cloud Messaging: $e');
+      debugPrint('Error inicializando Cloud Messaging: $e');
     }
   }
 
@@ -107,9 +107,9 @@ class CloudMessagingService extends GetxService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      print('Notificaciones locales inicializadas');
+      debugPrint('Notificaciones locales inicializadas');
     } catch (e) {
-      print('Error inicializando notificaciones locales: $e');
+      debugPrint('Error inicializando notificaciones locales: $e');
     }
   }
 
@@ -119,14 +119,14 @@ class CloudMessagingService extends GetxService {
     if (payload != null) {
       try {
         // El payload contiene información para navegar
-        print('Notificación local tocada con payload: $payload');
+        debugPrint('Notificación local tocada con payload: $payload');
         // Aquí puedes parsear el payload y navegar según corresponda
         if (payload.contains('chatId:')) {
           final String chatId = payload.split('chatId:')[1].split(',')[0];
           _navigateToChat(chatId);
         }
       } catch (e) {
-        print('Error procesando tap de notificación local: $e');
+        debugPrint('Error procesando tap de notificación local: $e');
       }
     }
   }
@@ -135,13 +135,13 @@ class CloudMessagingService extends GetxService {
   void _setupMessageHandlers() {
     // Manejar mensajes cuando la app está en primer plano
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Mensaje recibido en primer plano: ${message.messageId}');
+      debugPrint('Mensaje recibido en primer plano: ${message.messageId}');
       _handleForegroundMessage(message);
     });
 
     // Manejar mensajes cuando la app está en segundo plano pero no terminada
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Mensaje abrió la app desde segundo plano: ${message.messageId}');
+      debugPrint('Mensaje abrió la app desde segundo plano: ${message.messageId}');
       _handleMessageTap(message);
     });
 
@@ -153,7 +153,7 @@ class CloudMessagingService extends GetxService {
   Future<void> _handleInitialMessage() async {
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      print(
+      debugPrint(
         'Mensaje abrió la app desde estado cerrado: ${initialMessage.messageId}',
       );
       _handleMessageTap(initialMessage);
@@ -226,7 +226,7 @@ class CloudMessagingService extends GetxService {
         break;
 
       default:
-        print('Tipo de notificación no manejado: $type');
+        debugPrint('Tipo de notificación no manejado: $type');
         _navigateToHome();
     }
   }
@@ -241,9 +241,9 @@ class CloudMessagingService extends GetxService {
         'lastTokenUpdate': FieldValue.serverTimestamp(),
         'platform': defaultTargetPlatform.name,
       });
-      print('Token FCM guardado en base de datos');
+      debugPrint('Token FCM guardado en base de datos');
     } catch (e) {
-      print('Error guardando token FCM: $e');
+      debugPrint('Error guardando token FCM: $e');
     }
   }
 
@@ -256,7 +256,7 @@ class CloudMessagingService extends GetxService {
       // Suscribir a temas específicos según preferencias del usuario
       await _subscribeToUserSpecificTopics();
     } catch (e) {
-      print('Error suscribiendo a temas por defecto: $e');
+      debugPrint('Error suscribiendo a temas por defecto: $e');
     }
   }
 
@@ -292,7 +292,7 @@ class CloudMessagingService extends GetxService {
         }
       }
     } catch (e) {
-      print('Error suscribiendo a temas específicos: $e');
+      debugPrint('Error suscribiendo a temas específicos: $e');
     }
   }
 
@@ -309,9 +309,9 @@ class CloudMessagingService extends GetxService {
       // Limpiar el nombre del tema antes de suscribirse
       final String cleanTopic = _cleanTopicName(topic);
       await _messaging.subscribeToTopic(cleanTopic);
-      print('Suscrito al tema: $cleanTopic');
+      debugPrint('Suscrito al tema: $cleanTopic');
     } catch (e) {
-      print('Error suscribiéndose al tema $topic: $e');
+      debugPrint('Error suscribiéndose al tema $topic: $e');
     }
   }
 
@@ -321,9 +321,9 @@ class CloudMessagingService extends GetxService {
       // Limpiar el nombre del tema antes de desuscribirse
       final String cleanTopic = _cleanTopicName(topic);
       await _messaging.unsubscribeFromTopic(cleanTopic);
-      print('Desuscrito del tema: $cleanTopic');
+      debugPrint('Desuscrito del tema: $cleanTopic');
     } catch (e) {
-      print('Error desuscribiéndose del tema $topic: $e');
+      debugPrint('Error desuscribiéndose del tema $topic: $e');
     }
   }
 
@@ -343,7 +343,7 @@ class CloudMessagingService extends GetxService {
           .get();
 
       if (!userDoc.exists) {
-        print('Usuario no encontrado: $userId');
+        debugPrint('Usuario no encontrado: $userId');
         return false;
       }
 
@@ -352,7 +352,7 @@ class CloudMessagingService extends GetxService {
       final String? userToken = userData?['fcmToken'];
 
       if (userToken == null) {
-        print('Token FCM no encontrado para usuario: $userId');
+        debugPrint('Token FCM no encontrado para usuario: $userId');
         return false;
       }
 
@@ -364,7 +364,7 @@ class CloudMessagingService extends GetxService {
         imageUrl: imageUrl,
       );
     } catch (e) {
-      print('Error enviando notificación a usuario $userId: $e');
+      debugPrint('Error enviando notificación a usuario $userId: $e');
       return false;
     }
   }
@@ -379,14 +379,14 @@ class CloudMessagingService extends GetxService {
   }) async {
     try {
       // En un entorno real, esto se haría desde el backend
-      print('Enviando notificación al tema: $topic');
-      print('Título: $title');
-      print('Cuerpo: $body');
-      print('Data: $data');
+      debugPrint('Enviando notificación al tema: $topic');
+      debugPrint('Título: $title');
+      debugPrint('Cuerpo: $body');
+      debugPrint('Data: $data');
 
       return true;
     } catch (e) {
-      print('Error enviando notificación al tema $topic: $e');
+      debugPrint('Error enviando notificación al tema $topic: $e');
       return false;
     }
   }
@@ -417,15 +417,15 @@ class CloudMessagingService extends GetxService {
   }) async {
     try {
       // En un entorno real, esto se haría desde el backend usando Firebase Admin SDK
-      print('Enviando notificación individual');
-      print('Token: $token');
-      print('Título: $title');
-      print('Cuerpo: $body');
-      print('Data: $data');
+      debugPrint('Enviando notificación individual');
+      debugPrint('Token: $token');
+      debugPrint('Título: $title');
+      debugPrint('Cuerpo: $body');
+      debugPrint('Data: $data');
 
       return true;
     } catch (e) {
-      print('Error enviando notificación individual: $e');
+      debugPrint('Error enviando notificación individual: $e');
       return false;
     }
   }
@@ -435,7 +435,7 @@ class CloudMessagingService extends GetxService {
     try {
       Get.toNamed('/chat', arguments: {'chatId': chatId});
     } catch (e) {
-      print('Error navegando al chat: $e');
+      debugPrint('Error navegando al chat: $e');
       Get.toNamed('/messages');
     }
   }
@@ -444,7 +444,7 @@ class CloudMessagingService extends GetxService {
     try {
       Get.toNamed('/swap-detail', arguments: {'swapItemId': swapItemId});
     } catch (e) {
-      print('Error navegando al detalle de swap: $e');
+      debugPrint('Error navegando al detalle de swap: $e');
       Get.toNamed('/home');
     }
   }
@@ -453,7 +453,7 @@ class CloudMessagingService extends GetxService {
     try {
       Get.toNamed('/home');
     } catch (e) {
-      print('Error navegando al home: $e');
+      debugPrint('Error navegando al home: $e');
     }
   }
 
@@ -461,9 +461,9 @@ class CloudMessagingService extends GetxService {
   Future<void> clearBadgeOnAppOpen() async {
     try {
       await AppBadgePlus.updateBadge(0);
-      print('Badge limpiado al abrir la app');
+      debugPrint('Badge limpiado al abrir la app');
     } catch (e) {
-      print('Error limpiando badge (no soportado en este dispositivo): $e');
+      debugPrint('Error limpiando badge (no soportado en este dispositivo): $e');
     }
   }
 
@@ -511,9 +511,9 @@ class CloudMessagingService extends GetxService {
         payload: payload,
       );
 
-      print('Notificación local mostrada: $title - $body');
+      debugPrint('Notificación local mostrada: $title - $body');
     } catch (e) {
-      print('Error mostrando notificación local: $e');
+      debugPrint('Error mostrando notificación local: $e');
     }
   }
 }
@@ -521,14 +521,14 @@ class CloudMessagingService extends GetxService {
 /// Manejador de mensajes en segundo plano (función de nivel superior)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Mensaje recibido en segundo plano: ${message.messageId}');
+  debugPrint('Mensaje recibido en segundo plano: ${message.messageId}');
 
   // Inicializar Firebase para el contexto de background
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final String? type = message.data['type'];
-  final String? title = message.notification?.title ?? 'Nuevo mensaje';
-  final String? body = message.notification?.body ?? 'Tienes un mensaje nuevo';
+  final String? title = message.notification?.title;
+  final String? body = message.notification?.body;
   final String? chatId = message.data['chatId'];
   final String? senderId = message.data['senderId'];
 
@@ -600,7 +600,7 @@ Future<void> _handleNewMessageInBackground({
       );
     }
   } catch (e) {
-    print('Error manejando mensaje en background: $e');
+    debugPrint('Error manejando mensaje en background: $e');
   }
 }
 
@@ -640,7 +640,7 @@ Future<void> _incrementUnreadCount(String userId, String chatId) async {
           'lastUpdate': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   } catch (e) {
-    print('Error incrementando contador no leídos: $e');
+    debugPrint('Error incrementando contador no leídos: $e');
   }
 }
 
@@ -671,11 +671,11 @@ Future<void> _updateBadgeCount() async {
         await AppBadgePlus.updateBadge(0);
       }
     } catch (e) {
-      print('Error actualizando badge (no soportado en este dispositivo): $e');
+      debugPrint('Error actualizando badge (no soportado en este dispositivo): $e');
     }
 
-    print('Badge count actualizado: $unreadCount mensajes no leídos');
+    debugPrint('Badge count actualizado: $unreadCount mensajes no leídos');
   } catch (e) {
-    print('Error actualizando badge count: $e');
+    debugPrint('Error actualizando badge count: $e');
   }
 }

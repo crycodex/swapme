@@ -47,7 +47,7 @@ class SwapItemModel {
   }
 
   factory SwapItemModel.fromMap(Map<String, dynamic> map) {
-    DateTime _parseDate(dynamic value) {
+    DateTime parseDate(dynamic value) {
       if (value is Timestamp) return value.toDate();
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) {
@@ -70,8 +70,8 @@ class SwapItemModel {
       condition: map['condition'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
       category: (map['category'] ?? 'Otros') as String,
-      createdAt: _parseDate(map['createdAt']),
-      updatedAt: _parseDate(map['updatedAt']),
+      createdAt: parseDate(map['createdAt']),
+      updatedAt: parseDate(map['updatedAt']),
       isActive: map['isActive'] ?? true,
     );
   }

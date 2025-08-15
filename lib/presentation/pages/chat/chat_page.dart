@@ -97,7 +97,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Este método podría expandirse para manejar notificaciones específicas
     // cuando se implementen handlers de notificación más avanzados
-    print('Configurando manejo de notificaciones para chat: ${widget.chatId}');
+    debugPrint('Configurando manejo de notificaciones para chat: ${widget.chatId}');
   }
 
   void _setupAutoMarkAsRead() {
