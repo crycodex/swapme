@@ -4,14 +4,28 @@ import '../../../../controllers/chat/chat_controller.dart';
 import '../../../../data/models/chat_model.dart';
 import '../../../pages/chat/chat_page.dart';
 
-class MessagesView extends StatelessWidget {
+class MessagesView extends StatefulWidget {
   const MessagesView({super.key});
+
+  @override
+  State<MessagesView> createState() => _MessagesViewState();
+}
+
+class _MessagesViewState extends State<MessagesView> {
+  final TextEditingController _searchController = TextEditingController();
+  final ChatController _chatController = Get.put(ChatController());
+  bool _isSearching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final ChatController chatController = Get.put(ChatController());
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -20,64 +34,98 @@ class MessagesView extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             backgroundColor: colorScheme.surface,
-            title: Row(
-              children: [
-                const Text('Mensajes'),
-                const SizedBox(width: 8),
-                Obx(() {
-                  final int unreadCount = chatController.getUnreadChatsCount();
-                  if (unreadCount == 0) return const SizedBox.shrink();
+            title: _isSearching
+                ? TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar chats...',
+                      border: InputBorder.none,
+                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.hintColor,
+                      ),
+                    ),
+                    style: theme.textTheme.bodyMedium,
+                    onChanged: (query) {
+                      _chatController.searchChats(query);
+                    },
+                  )
+                : Row(
+                    children: [
+                      const Text('Mensajes'),
+                      const SizedBox(width: 8),
+                      Obx(() {
+                        final int unreadCount = _chatController
+                            .getUnreadChatsCount();
+                        if (unreadCount == 0) return const SizedBox.shrink();
 
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 8,
-                          color: colorScheme.onPrimary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          unreadCount.toString(),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 8,
+                                color: colorScheme.onPrimary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                unreadCount.toString(),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
             actions: [
-              IconButton(
-                onPressed: () {
-                  // TODO: Implementar búsqueda de mensajes
-                },
-                icon: const Icon(Icons.search),
-              ),
+              if (_isSearching) ...[
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = false;
+                      _searchController.clear();
+                      _chatController.clearSearch();
+                    });
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ] else ...[
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = true;
+                    });
+                  },
+                  icon: const Icon(Icons.search),
+                ),
+              ],
             ],
           ),
           Obx(() {
-            if (chatController.isLoading.value) {
+            if (_chatController.isLoading.value) {
               return const SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
@@ -88,7 +136,7 @@ class MessagesView extends StatelessWidget {
               );
             }
 
-            if (chatController.error.value.isNotEmpty) {
+            if (_chatController.error.value.isNotEmpty) {
               return SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -108,7 +156,7 @@ class MessagesView extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        chatController.error.value,
+                        _chatController.error.value,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.hintColor,
@@ -116,7 +164,7 @@ class MessagesView extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       FilledButton.tonal(
-                        onPressed: () => chatController.loadUserChats(),
+                        onPressed: () => _chatController.loadUserChats(),
                         child: const Text('Reintentar'),
                       ),
                     ],
@@ -125,9 +173,12 @@ class MessagesView extends StatelessWidget {
               );
             }
 
-            final List<ChatModel> chats = chatController.chats;
+            final List<ChatModel> chats = _chatController.displayedChats;
 
             if (chats.isEmpty) {
+              final bool isSearching =
+                  _chatController.searchQuery.value.isNotEmpty;
+
               return SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -135,34 +186,52 @@ class MessagesView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.chat_bubble_outline_rounded,
+                        isSearching
+                            ? Icons.search_off
+                            : Icons.chat_bubble_outline_rounded,
                         size: 80,
                         color: theme.hintColor,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No tienes mensajes',
+                        isSearching
+                            ? 'No se encontraron resultados'
+                            : 'No tienes mensajes',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Cuando intercambies artículos o contactes\ncon otras tiendas, verás tus conversaciones aquí',
+                        isSearching
+                            ? 'Intenta con otros términos de búsqueda'
+                            : 'Cuando intercambies artículos o contactes\ncon otras tiendas, verás tus conversaciones aquí',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.hintColor,
                         ),
                       ),
                       const SizedBox(height: 24),
-                      FilledButton.tonal(
-                        onPressed: () {
-                          // Navegar al tab de swaps
-                          Get.back();
-                          // TODO: Cambiar al tab de swaps
-                        },
-                        child: const Text('Explorar intercambios'),
-                      ),
+                      if (isSearching)
+                        FilledButton.tonal(
+                          onPressed: () {
+                            setState(() {
+                              _isSearching = false;
+                              _searchController.clear();
+                              _chatController.clearSearch();
+                            });
+                          },
+                          child: const Text('Limpiar búsqueda'),
+                        )
+                      else
+                        FilledButton.tonal(
+                          onPressed: () {
+                            // Navegar al tab de swaps
+                            Get.back();
+                            // TODO: Cambiar al tab de swaps
+                          },
+                          child: const Text('Explorar intercambios'),
+                        ),
                     ],
                   ),
                 ),
@@ -175,6 +244,7 @@ class MessagesView extends StatelessWidget {
                 return _ChatListItem(
                   chat: chat,
                   onTap: () => _openChat(context, chat),
+                  searchQuery: _chatController.searchQuery.value,
                 );
               }, childCount: chats.length),
             );
@@ -193,8 +263,13 @@ class MessagesView extends StatelessWidget {
 class _ChatListItem extends StatelessWidget {
   final ChatModel chat;
   final VoidCallback onTap;
+  final String searchQuery;
 
-  const _ChatListItem({required this.chat, required this.onTap});
+  const _ChatListItem({
+    required this.chat,
+    required this.onTap,
+    this.searchQuery = '',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,14 +344,15 @@ class _ChatListItem extends StatelessWidget {
         title: Row(
           children: [
             Expanded(
-              child: Text(
+              child: _buildHighlightedText(
                 chat.swapItemName,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                  color: isExpired ? theme.hintColor : null,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                searchQuery,
+                theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                      color: isExpired ? theme.hintColor : null,
+                    ) ??
+                    const TextStyle(),
+                colorScheme.primary,
               ),
             ),
             if (isExpired)
@@ -301,16 +377,20 @@ class _ChatListItem extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             if (chat.lastMessage != null)
-              Text(
+              _buildHighlightedText(
                 chat.lastMessage!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isExpired
-                      ? theme.hintColor
-                      : theme.textTheme.bodyMedium?.color,
-                  fontWeight: isUnread ? FontWeight.w600 : FontWeight.normal,
-                ),
+                searchQuery,
+                theme.textTheme.bodyMedium?.copyWith(
+                      color: isExpired
+                          ? theme.hintColor
+                          : theme.textTheme.bodyMedium?.color,
+                      fontWeight: isUnread
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ) ??
+                    const TextStyle(),
+                colorScheme.primary,
                 maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             const SizedBox(height: 4),
             Row(
@@ -408,5 +488,63 @@ class _ChatListItem extends StatelessWidget {
     if (remaining.inHours < 24) return colorScheme.error;
     if (remaining.inDays < 3) return Colors.orange;
     return colorScheme.secondary;
+  }
+
+  Widget _buildHighlightedText(
+    String text,
+    String searchQuery,
+    TextStyle baseStyle,
+    Color highlightColor, {
+    int? maxLines,
+  }) {
+    if (searchQuery.isEmpty) {
+      return Text(
+        text,
+        style: baseStyle,
+        maxLines: maxLines,
+        overflow: maxLines != null ? TextOverflow.ellipsis : null,
+      );
+    }
+
+    final String lowerText = text.toLowerCase();
+    final String lowerQuery = searchQuery.toLowerCase();
+    final List<TextSpan> spans = [];
+
+    int start = 0;
+    int index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      // Agregar texto antes del match
+      if (index > start) {
+        spans.add(
+          TextSpan(text: text.substring(start, index), style: baseStyle),
+        );
+      }
+
+      // Agregar texto resaltado
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + searchQuery.length),
+          style: baseStyle.copyWith(
+            backgroundColor: highlightColor.withValues(alpha: 0.3),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+
+      start = index + searchQuery.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    // Agregar texto restante
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start), style: baseStyle));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+      maxLines: maxLines,
+      overflow: maxLines != null ? TextOverflow.ellipsis : TextOverflow.clip,
+    );
   }
 }

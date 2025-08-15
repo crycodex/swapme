@@ -12,8 +12,10 @@ class ChatController extends GetxController {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   final RxList<ChatModel> chats = <ChatModel>[].obs;
+  final RxList<ChatModel> filteredChats = <ChatModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
+  final RxString searchQuery = ''.obs;
 
   String? get currentUserId => _auth.currentUser?.uid;
 
@@ -24,6 +26,15 @@ class ChatController extends GetxController {
     if (currentUserId != null) {
       loadUserChats();
     }
+
+    // Inicializar filteredChats con todos los chats
+    ever(chats, (List<ChatModel> chatList) {
+      if (searchQuery.value.isEmpty) {
+        filteredChats.value = chatList;
+      } else {
+        searchChats(searchQuery.value);
+      }
+    });
   }
 
   Future<void> _initializePushNotifications() async {
@@ -541,6 +552,67 @@ class ChatController extends GetxController {
       await batch.commit();
     } catch (e) {
       error.value = 'Error eliminando chat: $e';
+    }
+  }
+
+  // Métodos de búsqueda
+  void searchChats(String query) {
+    searchQuery.value = query.toLowerCase().trim();
+
+    if (searchQuery.value.isEmpty) {
+      filteredChats.value = chats;
+      return;
+    }
+
+    filteredChats.value = chats.where((chat) {
+      // Buscar en el nombre del artículo
+      final bool matchesItemName = chat.swapItemName.toLowerCase().contains(
+        searchQuery.value,
+      );
+
+      // Buscar en el último mensaje
+      final bool matchesLastMessage =
+          chat.lastMessage != null &&
+          chat.lastMessage!.toLowerCase().contains(searchQuery.value);
+
+      return matchesItemName || matchesLastMessage;
+    }).toList();
+  }
+
+  void clearSearch() {
+    searchQuery.value = '';
+    filteredChats.value = chats;
+  }
+
+  List<ChatModel> get displayedChats {
+    return searchQuery.value.isEmpty ? chats : filteredChats;
+  }
+
+  Future<List<MessageModel>> searchMessagesInChat(
+    String chatId,
+    String query,
+  ) async {
+    if (query.trim().isEmpty) return [];
+
+    try {
+      final QuerySnapshot snapshot = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final List<MessageModel> allMessages = snapshot.docs
+          .map((doc) => MessageModel.fromFirestore(doc))
+          .toList();
+
+      return allMessages.where((message) {
+        return message.content.toLowerCase().contains(query.toLowerCase()) ||
+            message.senderName.toLowerCase().contains(query.toLowerCase());
+      }).toList();
+    } catch (e) {
+      print('Error buscando mensajes: $e');
+      return [];
     }
   }
 }
