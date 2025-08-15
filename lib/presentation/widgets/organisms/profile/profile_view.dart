@@ -10,6 +10,7 @@ import '../../../../controllers/swap/swap_controller.dart';
 import '../../../../controllers/store/store_controller.dart';
 import '../../../../data/models/store_model.dart';
 import '../../../../data/models/swap_item_model.dart';
+import '../../atoms/ad_banner_widget.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -134,6 +135,9 @@ class ProfileView extends GetView<AuthController> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 22),
+                    // Banner de anuncio en perfil
+                    const ProfileAdBannerWidget(),
                     const SizedBox(height: 120),
                   ],
                 ),

@@ -7,6 +7,7 @@ import '../../../../data/models/swap_item_model.dart';
 import 'bottom_nav.dart';
 import 'store_view.dart';
 import 'messages_view.dart';
+import '../../atoms/ad_banner_widget.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
@@ -70,12 +71,26 @@ class HomeLayout extends GetView<HomeController> {
                     ),
                   ),
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16 + media.padding.bottom,
-              child: BottomNavBar(
-                controller: controller,
-                colorScheme: colorScheme,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Banner de anuncio
+                    const BottomAdBannerWidget(),
+                    // Bottom Navigation Bar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: BottomNavBar(
+                        controller: controller,
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -390,13 +405,14 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
   final PageController _pageController = PageController();
   int _index = 0;
   Timer? _timer;
+  final int _totalPages = 4; // 3 páginas originales + 1 para anuncio
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
-      _index = (_index + 1) % 3;
+      _index = (_index + 1) % _totalPages;
       _pageController.animateToPage(
         _index,
         duration: const Duration(milliseconds: 500),
@@ -420,10 +436,28 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
       children: [
         PageView.builder(
           controller: _pageController,
-          itemCount: 3,
+          itemCount: _totalPages,
+          onPageChanged: (int index) {
+            setState(() {
+              _index = index;
+            });
+          },
           itemBuilder: (_, int i) {
+            // Si es la página 2 (índice 2), mostrar anuncio
+            if (i == 2) {
+              return Container(
+                margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(child: SliderAdBannerWidget()),
+              );
+            }
+            // Para las demás páginas, mostrar placeholder
             return Container(
-              margin: EdgeInsets.only(left: 1, right: 1, bottom: 2),
+              margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
@@ -438,7 +472,7 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
           bottom: 16,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (int i) {
+            children: List.generate(_totalPages, (int i) {
               final bool active = i == _index;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
