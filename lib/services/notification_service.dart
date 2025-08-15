@@ -182,24 +182,3 @@ class NotificationService extends GetxService {
     }
   }
 }
-
-// Manejador de mensajes en segundo plano (debe ser una función de nivel superior)
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Mensaje recibido en segundo plano: ${message.messageId}');
-
-  // Aquí puedes manejar la lógica específica para mensajes en segundo plano
-  // Por ejemplo, actualizar una base de datos local, mostrar una notificación local, etc.
-
-  final String? type = message.data['type'];
-  switch (type) {
-    case 'new_message':
-      // Incrementar contador de mensajes no leídos
-      break;
-    case 'new_chat':
-      // Actualizar lista de chats
-      break;
-    default:
-      break;
-  }
-}

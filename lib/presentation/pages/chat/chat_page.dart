@@ -13,18 +13,27 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ChatController _chatController = Get.put(ChatController());
 
   ChatModel? _currentChat;
+  bool _isAppInForeground = true;
 
   @override
   void initState() {
     super.initState();
+    // Agregar observer para el ciclo de vida de la app
+    WidgetsBinding.instance.addObserver(this);
+
+    // Notificar al controlador que este chat está visible
+    _chatController.setCurrentVisibleChat(widget.chatId);
+    _chatController.setAppForegroundState(_isAppInForeground);
+
     _loadChatInfo();
     _markChatAsRead();
+    _setupNotificationHandling();
 
     // Marcar como leído cada vez que se recibe un nuevo mensaje
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -34,9 +43,36 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    // Remover observer del ciclo de vida de la app
+    WidgetsBinding.instance.removeObserver(this);
+
+    // Notificar al controlador que ya no hay chat visible
+    _chatController.setCurrentVisibleChat(null);
+
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _isAppInForeground = true;
+        _chatController.setAppForegroundState(true);
+        // Marcar chat como leído cuando regrese a la app
+        _markChatAsRead();
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        _isAppInForeground = false;
+        _chatController.setAppForegroundState(false);
+        break;
+    }
   }
 
   Future<void> _loadChatInfo() async {
@@ -54,13 +90,24 @@ class _ChatPageState extends State<ChatPage> {
     await _chatController.markChatAsRead(widget.chatId);
   }
 
+  void _setupNotificationHandling() {
+    // Configurar el manejo de notificaciones específicas para este chat
+    // Cuando llegue una notificación de este chat y estemos en la página,
+    // marcarla automáticamente como leída
+
+    // Este método podría expandirse para manejar notificaciones específicas
+    // cuando se implementen handlers de notificación más avanzados
+    print('Configurando manejo de notificaciones para chat: ${widget.chatId}');
+  }
+
   void _setupAutoMarkAsRead() {
     // Marcar como leído cuando hay nuevos mensajes y la app está activa
     _chatController.getChatMessages(widget.chatId).listen((messages) {
-      if (mounted) {
+      if (mounted && _isAppInForeground) {
+        // Solo marcar como leído si la app está en primer plano
         // Pequeño delay para asegurar que la UI se ha actualizado
         Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
+          if (mounted && _isAppInForeground) {
             _markChatAsRead();
           }
         });

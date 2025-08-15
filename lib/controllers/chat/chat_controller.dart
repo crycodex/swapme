@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import '../../data/models/chat_model.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/swap_item_model.dart';
+import '../../services/cloud_messaging_service.dart';
 
 class ChatController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final CloudMessagingService _cloudMessagingService =
+      CloudMessagingService.instance;
 
   final RxList<ChatModel> chats = <ChatModel>[].obs;
   final RxList<ChatModel> filteredChats = <ChatModel>[].obs;
@@ -17,12 +18,16 @@ class ChatController extends GetxController {
   final RxString error = ''.obs;
   final RxString searchQuery = ''.obs;
 
+  // Para rastrear el chat actualmente visible
+  String? _currentVisibleChatId;
+  bool _isAppInForeground = true;
+
   String? get currentUserId => _auth.currentUser?.uid;
 
   @override
   void onInit() {
     super.onInit();
-    _initializePushNotifications();
+    // El CloudMessagingService maneja la inicialización de notificaciones
     if (currentUserId != null) {
       loadUserChats();
     }
@@ -37,46 +42,20 @@ class ChatController extends GetxController {
     });
   }
 
-  Future<void> _initializePushNotifications() async {
-    try {
-      // Solicitar permisos para notificaciones
-      NotificationSettings settings = await _messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('Usuario otorgó permisos para notificaciones');
-
-        // Obtener token FCM
-        String? token = await _messaging.getToken();
-        if (token != null && currentUserId != null) {
-          await _saveTokenToDatabase(token);
-        }
-
-        // Escuchar cambios de token
-        _messaging.onTokenRefresh.listen(_saveTokenToDatabase);
-      }
-    } catch (e) {
-      print('Error inicializando notificaciones push: $e');
-    }
+  // Métodos para controlar el estado de notificaciones
+  void setCurrentVisibleChat(String? chatId) {
+    _currentVisibleChatId = chatId;
   }
 
-  Future<void> _saveTokenToDatabase(String token) async {
-    if (currentUserId == null) return;
+  void setAppForegroundState(bool isInForeground) {
+    _isAppInForeground = isInForeground;
+  }
 
-    try {
-      await _firestore.collection('users').doc(currentUserId).update({
-        'fcmToken': token,
-      });
-    } catch (e) {
-      print('Error guardando token FCM: $e');
-    }
+  bool shouldSendPushNotification(String chatId) {
+    // No enviar notificación si:
+    // 1. La app está en primer plano Y
+    // 2. El usuario está viendo este chat específico
+    return !(_isAppInForeground && _currentVisibleChatId == chatId);
   }
 
   void loadUserChats() {
@@ -114,8 +93,6 @@ class ChatController extends GetxController {
   }
 
   Future<void> _updateExpiredChats(List<ChatModel> chats) async {
-    final DateTime now = DateTime.now();
-
     for (final ChatModel chat in chats) {
       if (chat.isExpired && chat.status == ChatStatus.active) {
         try {
@@ -185,7 +162,7 @@ class ChatController extends GetxController {
       );
 
       // Enviar notificación push al dueño del artículo
-      await _sendPushNotification(
+      await _cloudMessagingService.sendNotificationToUser(
         userId: swapItem.userId,
         title: 'Nuevo intercambio propuesto',
         body: 'Alguien está interesado en tu artículo "${swapItem.name}"',
@@ -279,17 +256,19 @@ class ChatController extends GetxController {
           'readBy': newReadBy,
         });
 
-        // Enviar notificación push
-        await _sendPushNotification(
-          userId: otherUserId,
-          title: userName,
-          body: content,
-          data: {
-            'type': 'new_message',
-            'chatId': chatId,
-            'senderId': currentUserId!,
-          },
-        );
+        // Enviar notificación push solo si es necesario
+        if (shouldSendPushNotification(chatId)) {
+          await _cloudMessagingService.sendNotificationToUser(
+            userId: otherUserId,
+            title: userName,
+            body: content,
+            data: {
+              'type': 'new_message',
+              'chatId': chatId,
+              'senderId': currentUserId!,
+            },
+          );
+        }
       }
 
       return true;
@@ -463,36 +442,6 @@ class ChatController extends GetxController {
     await _firestore.collection('chats').doc(chatId).update({
       'swapDecision': SwapDecision.agreement.name,
     });
-  }
-
-  Future<void> _sendPushNotification({
-    required String userId,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      // Obtener token FCM del usuario
-      final DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      final Map<String, dynamic>? userData =
-          userDoc.data() as Map<String, dynamic>?;
-      final String? fcmToken = userData?['fcmToken'];
-
-      if (fcmToken == null) return;
-
-      // Aquí normalmente usarías un servicio backend para enviar la notificación
-      // Por ahora, solo registramos la intención
-      print('Enviando notificación push a $userId: $title - $body');
-
-      // En un entorno real, harías una llamada HTTP a tu backend
-      // que use Firebase Admin SDK para enviar la notificación
-    } catch (e) {
-      print('Error enviando notificación push: $e');
-    }
   }
 
   int getUnreadChatsCount() {

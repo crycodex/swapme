@@ -44,6 +44,8 @@ dependencies:
   firebase_database: ^12.0.0
   cloud_firestore: ^6.0.0
   firebase_messaging: ^16.0.0
+  #http requests
+  http: ^1.2.2
   #auth
   google_sign_in: ^7.1.1
   sign_in_with_apple: ^7.0.1
