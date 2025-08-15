@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
 // Necesitamos importar las opciones de Firebase para el background handler
@@ -17,6 +18,8 @@ class CloudMessagingService extends GetxService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   String? _fcmToken;
 
@@ -37,6 +40,9 @@ class CloudMessagingService extends GetxService {
   /// Inicializa el servicio de Cloud Messaging
   Future<void> _initializeCloudMessaging() async {
     try {
+      // Inicializar notificaciones locales primero
+      await _initializeLocalNotifications();
+
       // Solicitar permisos
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
@@ -74,6 +80,54 @@ class CloudMessagingService extends GetxService {
       }
     } catch (e) {
       print('Error inicializando Cloud Messaging: $e');
+    }
+  }
+
+  /// Inicializa las notificaciones locales
+  Future<void> _initializeLocalNotifications() async {
+    try {
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      const DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings(
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          );
+
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsIOS,
+          );
+
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+
+      print('Notificaciones locales inicializadas');
+    } catch (e) {
+      print('Error inicializando notificaciones locales: $e');
+    }
+  }
+
+  /// Maneja cuando el usuario toca una notificación local
+  void _onNotificationTapped(NotificationResponse notificationResponse) {
+    final String? payload = notificationResponse.payload;
+    if (payload != null) {
+      try {
+        // El payload contiene información para navegar
+        print('Notificación local tocada con payload: $payload');
+        // Aquí puedes parsear el payload y navegar según corresponda
+        if (payload.contains('chatId:')) {
+          final String chatId = payload.split('chatId:')[1].split(',')[0];
+          _navigateToChat(chatId);
+        }
+      } catch (e) {
+        print('Error procesando tap de notificación local: $e');
+      }
     }
   }
 
@@ -551,6 +605,51 @@ class CloudMessagingService extends GetxService {
     await _updateBadgeCount();
   }
 
+  /// Muestra una notificación local
+  static Future<void> _showLocalNotification({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    try {
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+            'chat_messages',
+            'Mensajes de Chat',
+            channelDescription: 'Notificaciones de nuevos mensajes en chats',
+            importance: Importance.high,
+            priority: Priority.high,
+            showWhen: true,
+            enableVibration: true,
+            playSound: true,
+          );
+
+      const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+          DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      await _localNotifications.show(
+        DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title,
+        body,
+        platformChannelSpecifics,
+        payload: payload,
+      );
+
+      print('Notificación local mostrada: $title - $body');
+    } catch (e) {
+      print('Error mostrando notificación local: $e');
+    }
+  }
+
   /// Limpia datos de notificaciones antiguos
   Future<void> cleanupOldNotificationData() async {
     try {
@@ -650,6 +749,13 @@ Future<void> _handleNewMessageInBackground({
       // Hay mensajes no leídos, actualizar contador
       await _incrementUnreadCount(currentUserId, chatId);
       await _updateBadgeCount();
+
+      // Mostrar notificación local
+      await CloudMessagingService._showLocalNotification(
+        title: title ?? 'Nuevo mensaje',
+        body: body ?? 'Tienes un mensaje nuevo',
+        payload: 'chatId:$chatId,messageId:$messageId',
+      );
 
       // Registrar la notificación para analytics
       await firestore.collection('background_notifications').add({

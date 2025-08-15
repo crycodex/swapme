@@ -48,6 +48,8 @@ dependencies:
   http: ^1.2.2
   #badge count for notifications
   app_badge_plus: ^1.2.3
+  #local notifications
+  flutter_local_notifications: ^19.4.0
   #auth
   google_sign_in: ^7.1.1
   sign_in_with_apple: ^7.0.1
