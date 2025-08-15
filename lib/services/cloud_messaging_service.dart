@@ -278,13 +278,16 @@ class CloudMessagingService extends GetxService {
         // Suscribir basado en ubicación, intereses, etc.
         final String? city = userData?['city'];
         if (city != null) {
-          await subscribeToTopic('city_$city');
+          final String cleanCity = _cleanTopicName(city);
+          await subscribeToTopic('city_$cleanCity');
         }
 
         final List<String>? interests = userData?['interests']?.cast<String>();
         if (interests != null) {
           for (String interest in interests) {
-            await subscribeToTopic('interest_$interest');
+            // Limpiar el nombre del tema para que sea válido
+            final String cleanInterest = _cleanTopicName(interest);
+            await subscribeToTopic('interest_$cleanInterest');
           }
         }
       }
@@ -293,11 +296,20 @@ class CloudMessagingService extends GetxService {
     }
   }
 
+  /// Limpia el nombre del tema para que sea válido para FCM
+  String _cleanTopicName(String topic) {
+    // Los nombres de temas en FCM deben cumplir con: [a-zA-Z0-9-_.~%]+
+    // Reemplazar caracteres no válidos con guiones bajos
+    return topic.replaceAll(RegExp(r'[^a-zA-Z0-9\-_\.~%]'), '_').toLowerCase();
+  }
+
   /// Suscribe a un tema específico
   Future<void> subscribeToTopic(String topic) async {
     try {
-      await _messaging.subscribeToTopic(topic);
-      print('Suscrito al tema: $topic');
+      // Limpiar el nombre del tema antes de suscribirse
+      final String cleanTopic = _cleanTopicName(topic);
+      await _messaging.subscribeToTopic(cleanTopic);
+      print('Suscrito al tema: $cleanTopic');
     } catch (e) {
       print('Error suscribiéndose al tema $topic: $e');
     }
@@ -306,8 +318,10 @@ class CloudMessagingService extends GetxService {
   /// Desuscribe de un tema específico
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
-      await _messaging.unsubscribeFromTopic(topic);
-      print('Desuscrito del tema: $topic');
+      // Limpiar el nombre del tema antes de desuscribirse
+      final String cleanTopic = _cleanTopicName(topic);
+      await _messaging.unsubscribeFromTopic(cleanTopic);
+      print('Desuscrito del tema: $cleanTopic');
     } catch (e) {
       print('Error desuscribiéndose del tema $topic: $e');
     }
