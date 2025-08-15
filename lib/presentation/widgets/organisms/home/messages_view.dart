@@ -228,7 +228,6 @@ class _MessagesViewState extends State<MessagesView> {
                           onPressed: () {
                             // Navegar al tab de swaps
                             Get.back();
-                            // TODO: Cambiar al tab de swaps
                           },
                           child: const Text('Explorar intercambios'),
                         ),
