@@ -46,6 +46,8 @@ dependencies:
   firebase_messaging: ^16.0.0
   #http requests
   http: ^1.2.2
+  #badge count for notifications
+  app_badge_plus: ^1.2.3
   #auth
   google_sign_in: ^7.1.1
   sign_in_with_apple: ^7.0.1

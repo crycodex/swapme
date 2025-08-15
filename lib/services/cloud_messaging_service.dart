@@ -1,8 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:get/get.dart';
+
+// Necesitamos importar las opciones de Firebase para el background handler
+import '../firebase_options.dart';
 
 /// Servicio centralizado para manejo de Firebase Cloud Messaging
 /// Permite envío de notificaciones individuales, masivas y por temas
@@ -531,6 +536,21 @@ class CloudMessagingService extends GetxService {
     }
   }
 
+  /// Limpia el badge cuando la app se abre
+  Future<void> clearBadgeOnAppOpen() async {
+    try {
+      await AppBadgePlus.updateBadge(0);
+      print('Badge limpiado al abrir la app');
+    } catch (e) {
+      print('Error limpiando badge (no soportado en este dispositivo): $e');
+    }
+  }
+
+  /// Actualiza el badge basado en mensajes no leídos actuales
+  Future<void> updateBadgeFromDatabase() async {
+    await _updateBadgeCount();
+  }
+
   /// Limpia datos de notificaciones antiguos
   Future<void> cleanupOldNotificationData() async {
     try {
@@ -562,20 +582,149 @@ class CloudMessagingService extends GetxService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Mensaje recibido en segundo plano: ${message.messageId}');
 
-  // Aquí puedes manejar lógica específica para mensajes en segundo plano
+  // Inicializar Firebase para el contexto de background
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   final String? type = message.data['type'];
+  final String? title = message.notification?.title ?? 'Nuevo mensaje';
+  final String? body = message.notification?.body ?? 'Tienes un mensaje nuevo';
+  final String? chatId = message.data['chatId'];
+  final String? senderId = message.data['senderId'];
 
   switch (type) {
     case 'new_message':
-      // Incrementar contador de mensajes no leídos
+      if (chatId != null && senderId != null) {
+        await _handleNewMessageInBackground(
+          chatId: chatId,
+          senderId: senderId,
+          title: title,
+          body: body,
+          messageId: message.messageId ?? '',
+        );
+      }
       break;
     case 'new_chat':
-      // Actualizar lista de chats
+      // Incrementar contador de chats nuevos
+      await _updateBadgeCount();
+      break;
+    case 'swap_proposal':
+    case 'swap_response':
+      // Manejar propuestas y respuestas de intercambio
+      await _updateBadgeCount();
       break;
     case 'system_announcement':
-      // Manejar anuncios del sistema
+      // Los anuncios del sistema siempre se muestran
       break;
     default:
       break;
+  }
+}
+
+/// Maneja nuevos mensajes cuando la app está en background
+Future<void> _handleNewMessageInBackground({
+  required String chatId,
+  required String senderId,
+  required String? title,
+  required String? body,
+  required String messageId,
+}) async {
+  try {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final FirebaseAuth auth = FirebaseAuth.instance;
+
+    final String? currentUserId = auth.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    // Verificar si el mensaje ya fue leído
+    final QuerySnapshot unreadMessages = await firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isEqualTo: senderId)
+        .where('isRead', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (unreadMessages.docs.isNotEmpty) {
+      // Hay mensajes no leídos, actualizar contador
+      await _incrementUnreadCount(currentUserId, chatId);
+      await _updateBadgeCount();
+
+      // Registrar la notificación para analytics
+      await firestore.collection('background_notifications').add({
+        'userId': currentUserId,
+        'chatId': chatId,
+        'messageId': messageId,
+        'title': title ?? 'Nuevo mensaje',
+        'body': body ?? 'Tienes un mensaje nuevo',
+        'timestamp': FieldValue.serverTimestamp(),
+        'action': 'shown_in_background',
+      });
+    }
+  } catch (e) {
+    print('Error manejando mensaje en background: $e');
+  }
+}
+
+/// Incrementa el contador de mensajes no leídos
+Future<void> _incrementUnreadCount(String userId, String chatId) async {
+  try {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Actualizar contador de mensajes no leídos en el documento del usuario
+    await firestore.collection('users').doc(userId).update({
+      'unreadChatsCount': FieldValue.increment(1),
+      'lastUnreadUpdate': FieldValue.serverTimestamp(),
+    });
+
+    // Mantener registro por chat específico
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('unread_chats')
+        .doc(chatId)
+        .set({
+          'hasUnread': true,
+          'lastUpdate': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  } catch (e) {
+    print('Error incrementando contador no leídos: $e');
+  }
+}
+
+/// Actualiza el badge count de la app
+Future<void> _updateBadgeCount() async {
+  try {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final String? currentUserId = auth.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Obtener total de chats no leídos
+    final QuerySnapshot unreadChats = await firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('unread_chats')
+        .where('hasUnread', isEqualTo: true)
+        .get();
+
+    final int unreadCount = unreadChats.docs.length;
+
+    // Actualizar badge de la app en el ícono
+    try {
+      if (unreadCount > 0) {
+        await AppBadgePlus.updateBadge(unreadCount);
+      } else {
+        await AppBadgePlus.updateBadge(0);
+      }
+    } catch (e) {
+      print('Error actualizando badge (no soportado en este dispositivo): $e');
+    }
+
+    print('Badge count actualizado: $unreadCount mensajes no leídos');
+  } catch (e) {
+    print('Error actualizando badge count: $e');
   }
 }

@@ -351,11 +351,48 @@ class ChatController extends GetxController {
 
         await batch.commit();
 
+        // Limpiar contadores de mensajes no leídos
+        await _clearUnreadCounters(chatId);
+
         // Actualizar la lista local de chats
         _updateLocalChatReadStatus(chatId, newReadBy, hasUnreadMessages);
       }
     } catch (e) {
       print('Error marcando chat como leído: $e');
+    }
+  }
+
+  /// Limpia los contadores de mensajes no leídos cuando se marca como leído
+  Future<void> _clearUnreadCounters(String chatId) async {
+    if (currentUserId == null) return;
+
+    try {
+      final WriteBatch batch = _firestore.batch();
+
+      // Marcar este chat como leído en el documento de chats no leídos
+      batch.update(
+        _firestore
+            .collection('users')
+            .doc(currentUserId!)
+            .collection('unread_chats')
+            .doc(chatId),
+        {'hasUnread': false, 'lastUpdate': FieldValue.serverTimestamp()},
+      );
+
+      // Decrementar el contador general de chats no leídos
+      batch.update(_firestore.collection('users').doc(currentUserId!), {
+        'unreadChatsCount': FieldValue.increment(-1),
+        'lastUnreadUpdate': FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+
+      // Actualizar badge count después de limpiar contadores
+      await _cloudMessagingService.updateBadgeFromDatabase();
+
+      print('Contadores de mensajes no leídos limpiados para chat: $chatId');
+    } catch (e) {
+      print('Error limpiando contadores no leídos: $e');
     }
   }
 
