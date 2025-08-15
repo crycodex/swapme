@@ -181,7 +181,7 @@ class EditProfilePage extends GetView<AuthController> {
 // Shared atoms/molecules moved to their own files (SectionTitle, SettingsCard, FormTile)
 
 void _confirmDelete(BuildContext context) {
-  final AuthController controller = Get.find<AuthController>();
+  final AuthController controller = Get.put(AuthController());
   Get.dialog(
     AlertDialog(
       title: const Text('Eliminar cuenta'),

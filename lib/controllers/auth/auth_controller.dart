@@ -19,6 +19,7 @@ class AuthController extends GetxController {
   final RxString userName = 'Usuario'.obs;
   final RxString userEmail = 'usuario@example.com'.obs;
   final Rxn<String> profileImage = Rxn<String>();
+  final RxInt tokens = 0.obs; // user swap tokens/coins
 
   final RxBool isAppLockEnabled = false.obs;
   final RxBool isBiometricEnabled = false.obs;
@@ -90,6 +91,10 @@ class AuthController extends GetxController {
         userName.value = userData['name'] ?? 'Usuario';
         userEmail.value = userData['email'] ?? 'usuario@example.com';
         profileImage.value = userData['photoUrl'];
+        final dynamic tokenValue =
+            userData['tokens'] ?? userData['coins'] ?? userData['swaps'];
+        if (tokenValue is int) tokens.value = tokenValue;
+        if (tokenValue is num) tokens.value = tokenValue.toInt();
         if ((userData['language'] as String?) != null) {
           language.value = (userData['language'] as String);
         }

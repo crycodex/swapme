@@ -77,6 +77,18 @@ class SwapFormSection extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
+            // Category selection
+            Text(
+              'Categoría',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Obx(() => _buildCategorySelector(context)),
+            const SizedBox(height: 20),
+
             // Size selection
             Text(
               'Talla',
@@ -206,6 +218,47 @@ class SwapFormSection extends StatelessWidget {
           controller.updateSize(newValue);
         }
       },
+    );
+  }
+
+  Widget _buildCategorySelector(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    final List<String> categories = controller.categories
+        .where((String c) => c != 'Todos')
+        .toList();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: categories.map((String cat) {
+        final bool selected = controller.selectedCategory.value == cat;
+        return GestureDetector(
+          onTap: () => controller.updateCategory(cat),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? colorScheme.secondary : colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected
+                    ? colorScheme.secondary
+                    : colorScheme.onSurface.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Text(
+              cat,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: selected
+                    ? colorScheme.onSecondary
+                    : colorScheme.onSurface.withValues(alpha: 0.8),
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
