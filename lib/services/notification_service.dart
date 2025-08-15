@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 class NotificationService extends GetxService {
-  static NotificationService get instance => Get.find<NotificationService>();
+  static NotificationService get instance => Get.put(NotificationService());
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String? _fcmToken;

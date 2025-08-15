@@ -245,15 +245,7 @@ class ChatController extends GetxController {
           .collection('messages')
           .add(message.toFirestore());
 
-      // Actualizar último mensaje en el chat
-      await _firestore.collection('chats').doc(chatId).update({
-        'lastMessage': content,
-        'lastMessageAt': Timestamp.fromDate(DateTime.now()),
-        'hasUnreadMessages': true,
-        'readBy.$currentUserId': true,
-      });
-
-      // Obtener información del chat para notificaciones
+      // Obtener información del chat para actualizar correctamente los unread
       final DocumentSnapshot chatDoc = await _firestore
           .collection('chats')
           .doc(chatId)
@@ -262,6 +254,19 @@ class ChatController extends GetxController {
       if (chatDoc.exists) {
         final ChatModel chat = ChatModel.fromFirestore(chatDoc);
         final String otherUserId = chat.getOtherUserId(currentUserId!);
+
+        // Actualizar último mensaje en el chat
+        final Map<String, bool> newReadBy = Map<String, bool>.from(chat.readBy);
+        newReadBy[currentUserId!] = true;
+        newReadBy[otherUserId] =
+            false; // El otro usuario tiene mensajes sin leer
+
+        await _firestore.collection('chats').doc(chatId).update({
+          'lastMessage': content,
+          'lastMessageAt': Timestamp.fromDate(DateTime.now()),
+          'hasUnreadMessages': true,
+          'readBy': newReadBy,
+        });
 
         // Enviar notificación push
         await _sendPushNotification(
@@ -315,26 +320,84 @@ class ChatController extends GetxController {
     if (currentUserId == null) return;
 
     try {
-      await _firestore.collection('chats').doc(chatId).update({
-        'readBy.$currentUserId': true,
-      });
+      // Obtener el chat actual
+      final DocumentSnapshot chatDoc = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .get();
 
-      // Marcar mensajes como leídos
+      if (!chatDoc.exists) return;
+
+      final ChatModel chat = ChatModel.fromFirestore(chatDoc);
+      final String otherUserId = chat.getOtherUserId(currentUserId!);
+
+      // Verificar si hay mensajes no leídos del otro usuario
       final QuerySnapshot unreadMessages = await _firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .where('senderId', isNotEqualTo: currentUserId)
+          .where('senderId', isEqualTo: otherUserId)
           .where('isRead', isEqualTo: false)
           .get();
 
-      final WriteBatch batch = _firestore.batch();
-      for (final QueryDocumentSnapshot doc in unreadMessages.docs) {
-        batch.update(doc.reference, {'isRead': true});
+      if (unreadMessages.docs.isNotEmpty) {
+        // Marcar mensajes como leídos
+        final WriteBatch batch = _firestore.batch();
+        for (final QueryDocumentSnapshot doc in unreadMessages.docs) {
+          batch.update(doc.reference, {'isRead': true});
+        }
+
+        // Actualizar el estado del chat
+        final Map<String, bool> newReadBy = Map<String, bool>.from(chat.readBy);
+        newReadBy[currentUserId!] = true;
+
+        // Verificar si ambos usuarios han leído todos los mensajes
+        final bool hasUnreadMessages = await _hasUnreadMessages(chatId);
+
+        batch.update(_firestore.collection('chats').doc(chatId), {
+          'readBy': newReadBy,
+          'hasUnreadMessages': hasUnreadMessages,
+        });
+
+        await batch.commit();
+
+        // Actualizar la lista local de chats
+        _updateLocalChatReadStatus(chatId, newReadBy, hasUnreadMessages);
       }
-      await batch.commit();
     } catch (e) {
       print('Error marcando chat como leído: $e');
+    }
+  }
+
+  Future<bool> _hasUnreadMessages(String chatId) async {
+    try {
+      final QuerySnapshot unreadMessages = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('isRead', isEqualTo: false)
+          .limit(1)
+          .get();
+
+      return unreadMessages.docs.isNotEmpty;
+    } catch (e) {
+      print('Error verificando mensajes no leídos: $e');
+      return false;
+    }
+  }
+
+  void _updateLocalChatReadStatus(
+    String chatId,
+    Map<String, bool> readBy,
+    bool hasUnreadMessages,
+  ) {
+    final int chatIndex = chats.indexWhere((chat) => chat.id == chatId);
+    if (chatIndex != -1) {
+      final ChatModel updatedChat = chats[chatIndex].copyWith(
+        readBy: readBy,
+        hasUnreadMessages: hasUnreadMessages,
+      );
+      chats[chatIndex] = updatedChat;
     }
   }
 
@@ -427,9 +490,35 @@ class ChatController extends GetxController {
     return chats
         .where(
           (chat) =>
-              chat.hasUnreadMessages && (chat.readBy[currentUserId] != true),
+              chat.hasUnreadMessages &&
+              (chat.readBy[currentUserId] != true) &&
+              !chat.isExpired, // No contar chats expirados
         )
         .length;
+  }
+
+  int getUnreadMessagesCount(String chatId) {
+    if (currentUserId == null) return 0;
+
+    final ChatModel? chat = chats.firstWhereOrNull((c) => c.id == chatId);
+    if (chat == null ||
+        !chat.hasUnreadMessages ||
+        chat.readBy[currentUserId] == true) {
+      return 0;
+    }
+
+    // En una implementación real, podrías mantener un contador de mensajes no leídos
+    // Por ahora, retornamos 1 si hay mensajes no leídos
+    return 1;
+  }
+
+  bool hasUnreadMessages(String chatId) {
+    if (currentUserId == null) return false;
+
+    final ChatModel? chat = chats.firstWhereOrNull((c) => c.id == chatId);
+    if (chat == null) return false;
+
+    return chat.hasUnreadMessages && (chat.readBy[currentUserId] != true);
   }
 
   Future<void> deleteChat(String chatId) async {

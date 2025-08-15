@@ -16,7 +16,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final ChatController _chatController = Get.find<ChatController>();
+  final ChatController _chatController = Get.put(ChatController());
 
   ChatModel? _currentChat;
 
@@ -25,6 +25,11 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     _loadChatInfo();
     _markChatAsRead();
+
+    // Marcar como leído cada vez que se recibe un nuevo mensaje
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupAutoMarkAsRead();
+    });
   }
 
   @override
@@ -47,6 +52,20 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _markChatAsRead() async {
     await _chatController.markChatAsRead(widget.chatId);
+  }
+
+  void _setupAutoMarkAsRead() {
+    // Marcar como leído cuando hay nuevos mensajes y la app está activa
+    _chatController.getChatMessages(widget.chatId).listen((messages) {
+      if (mounted) {
+        // Pequeño delay para asegurar que la UI se ha actualizado
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _markChatAsRead();
+          }
+        });
+      }
+    });
   }
 
   @override

@@ -28,21 +28,40 @@ class MessagesView extends StatelessWidget {
                   final int unreadCount = chatController.getUnreadChatsCount();
                   if (unreadCount == 0) return const SizedBox.shrink();
 
-                  return Container(
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.error,
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      unreadCount.toString(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onError,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: colorScheme.onPrimary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          unreadCount.toString(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }),
@@ -190,13 +209,20 @@ class _ChatListItem extends StatelessWidget {
         chat.hasUnreadMessages && (chat.readBy[currentUserId] != true);
     final bool isExpired = chat.isExpired;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: isUnread
             ? colorScheme.primaryContainer.withValues(alpha: 0.3)
             : null,
         borderRadius: BorderRadius.circular(12),
+        border: isUnread
+            ? Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.3),
+                width: 1,
+              )
+            : null,
       ),
       child: ListTile(
         onTap: isExpired ? null : onTap,
@@ -313,16 +339,31 @@ class _ChatListItem extends StatelessWidget {
             ),
           ],
         ),
-        trailing: isUnread
-            ? Container(
-                width: 8,
-                height: 8,
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isUnread)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'Nuevo',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                  ),
                 ),
               )
-            : null,
+            else
+              const SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Icon(Icons.chevron_right, color: theme.hintColor, size: 16),
+          ],
+        ),
       ),
     );
   }
