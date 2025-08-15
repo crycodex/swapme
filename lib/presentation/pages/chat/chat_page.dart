@@ -392,7 +392,7 @@ class _ChatPageState extends State<ChatPage> {
     if (remaining.isNegative) return colorScheme.error;
     if (remaining.inHours < 24) return colorScheme.error;
     if (remaining.inDays < 3) return Colors.orange;
-    return colorScheme.primary;
+    return colorScheme.secondary;
   }
 }
 

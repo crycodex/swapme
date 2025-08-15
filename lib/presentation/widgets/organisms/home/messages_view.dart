@@ -181,7 +181,7 @@ class _ChatListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final ChatController chatController = Get.find<ChatController>();
+    final ChatController chatController = Get.put(ChatController());
     final String? currentUserId = chatController.currentUserId;
 
     if (currentUserId == null) return const SizedBox.shrink();
@@ -366,6 +366,6 @@ class _ChatListItem extends StatelessWidget {
     if (remaining.isNegative) return colorScheme.error;
     if (remaining.inHours < 24) return colorScheme.error;
     if (remaining.inDays < 3) return Colors.orange;
-    return colorScheme.primary;
+    return colorScheme.secondary;
   }
 }
