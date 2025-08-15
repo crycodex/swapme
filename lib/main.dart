@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'firebase_options.dart';
 import 'config/theme/theme_data.dart';
 import 'config/app_config.dart';
@@ -22,6 +23,9 @@ Future<void> main() async {
   debugPrint('Iniciando ${AppConfig.appName} v${AppConfig.appVersion}');
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Inicializar Google AdMob (temporalmente comentado)
+  // await MobileAds.instance.initialize();
 
   // Configurar manejador de mensajes en segundo plano
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
