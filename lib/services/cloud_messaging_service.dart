@@ -177,9 +177,6 @@ class CloudMessagingService extends GetxService {
         onTap: (_) => _handleMessageTap(message),
       );
     }
-
-    // Registrar la notificación recibida
-    _logNotificationReceived(message);
   }
 
   /// Determina si debe mostrar notificación en primer plano
@@ -232,9 +229,6 @@ class CloudMessagingService extends GetxService {
         print('Tipo de notificación no manejado: $type');
         _navigateToHome();
     }
-
-    // Registrar interacción con notificación
-    _logNotificationInteraction(message);
   }
 
   /// Guarda el token FCM en la base de datos
@@ -304,9 +298,6 @@ class CloudMessagingService extends GetxService {
     try {
       await _messaging.subscribeToTopic(topic);
       print('Suscrito al tema: $topic');
-
-      // Registrar suscripción en base de datos
-      await _logTopicSubscription(topic, true);
     } catch (e) {
       print('Error suscribiéndose al tema $topic: $e');
     }
@@ -317,9 +308,6 @@ class CloudMessagingService extends GetxService {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       print('Desuscrito del tema: $topic');
-
-      // Registrar desuscripción en base de datos
-      await _logTopicSubscription(topic, false);
     } catch (e) {
       print('Error desuscribiéndose del tema $topic: $e');
     }
@@ -376,15 +364,6 @@ class CloudMessagingService extends GetxService {
     String? imageUrl,
   }) async {
     try {
-      // Registrar envío en base de datos para analytics
-      await _logNotificationSent(
-        type: 'topic',
-        target: topic,
-        title: title,
-        body: body,
-        data: data,
-      );
-
       // En un entorno real, esto se haría desde el backend
       print('Enviando notificación al tema: $topic');
       print('Título: $title');
@@ -423,15 +402,6 @@ class CloudMessagingService extends GetxService {
     String? imageUrl,
   }) async {
     try {
-      // Registrar envío en base de datos
-      await _logNotificationSent(
-        type: 'individual',
-        target: token,
-        title: title,
-        body: body,
-        data: data,
-      );
-
       // En un entorno real, esto se haría desde el backend usando Firebase Admin SDK
       print('Enviando notificación individual');
       print('Token: $token');
@@ -443,84 +413,6 @@ class CloudMessagingService extends GetxService {
     } catch (e) {
       print('Error enviando notificación individual: $e');
       return false;
-    }
-  }
-
-  /// Registra suscripción/desuscripción a tema
-  Future<void> _logTopicSubscription(String topic, bool subscribed) async {
-    if (currentUserId == null) return;
-
-    try {
-      await _firestore.collection('user_topic_subscriptions').add({
-        'userId': currentUserId,
-        'topic': topic,
-        'subscribed': subscribed,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error registrando suscripción a tema: $e');
-    }
-  }
-
-  /// Registra notificación enviada
-  Future<void> _logNotificationSent({
-    required String type,
-    required String target,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      await _firestore.collection('notification_logs').add({
-        'type': type,
-        'target': target,
-        'title': title,
-        'body': body,
-        'data': data ?? {},
-        'sentBy': currentUserId,
-        'sentAt': FieldValue.serverTimestamp(),
-        'status': 'sent',
-      });
-    } catch (e) {
-      print('Error registrando notificación enviada: $e');
-    }
-  }
-
-  /// Registra notificación recibida
-  Future<void> _logNotificationReceived(RemoteMessage message) async {
-    if (currentUserId == null) return;
-
-    try {
-      await _firestore.collection('notification_interactions').add({
-        'userId': currentUserId,
-        'messageId': message.messageId,
-        'title': message.notification?.title,
-        'body': message.notification?.body,
-        'data': message.data,
-        'action': 'received',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error registrando notificación recibida: $e');
-    }
-  }
-
-  /// Registra interacción con notificación
-  Future<void> _logNotificationInteraction(RemoteMessage message) async {
-    if (currentUserId == null) return;
-
-    try {
-      await _firestore.collection('notification_interactions').add({
-        'userId': currentUserId,
-        'messageId': message.messageId,
-        'title': message.notification?.title,
-        'body': message.notification?.body,
-        'data': message.data,
-        'action': 'tapped',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error registrando interacción con notificación: $e');
     }
   }
 
@@ -548,45 +440,6 @@ class CloudMessagingService extends GetxService {
       Get.toNamed('/home');
     } catch (e) {
       print('Error navegando al home: $e');
-    }
-  }
-
-  /// Obtiene estadísticas de notificaciones
-  Future<Map<String, dynamic>> getNotificationStats() async {
-    if (currentUserId == null) return {};
-
-    try {
-      // Obtener notificaciones enviadas
-      final QuerySnapshot sentQuery = await _firestore
-          .collection('notification_logs')
-          .where('sentBy', isEqualTo: currentUserId)
-          .get();
-
-      // Obtener interacciones
-      final QuerySnapshot interactionsQuery = await _firestore
-          .collection('notification_interactions')
-          .where('userId', isEqualTo: currentUserId)
-          .get();
-
-      return {
-        'notificationsSent': sentQuery.docs.length,
-        'notificationsReceived': interactionsQuery.docs
-            .where(
-              (doc) =>
-                  (doc.data() as Map<String, dynamic>?)?['action'] ==
-                  'received',
-            )
-            .length,
-        'notificationsTapped': interactionsQuery.docs
-            .where(
-              (doc) =>
-                  (doc.data() as Map<String, dynamic>?)?['action'] == 'tapped',
-            )
-            .length,
-      };
-    } catch (e) {
-      print('Error obteniendo estadísticas de notificaciones: $e');
-      return {};
     }
   }
 
@@ -647,31 +500,6 @@ class CloudMessagingService extends GetxService {
       print('Notificación local mostrada: $title - $body');
     } catch (e) {
       print('Error mostrando notificación local: $e');
-    }
-  }
-
-  /// Limpia datos de notificaciones antiguos
-  Future<void> cleanupOldNotificationData() async {
-    try {
-      final DateTime cutoffDate = DateTime.now().subtract(
-        const Duration(days: 30),
-      );
-
-      // Eliminar logs antiguos
-      final QuerySnapshot oldLogs = await _firestore
-          .collection('notification_logs')
-          .where('sentAt', isLessThan: Timestamp.fromDate(cutoffDate))
-          .get();
-
-      final WriteBatch batch = _firestore.batch();
-      for (QueryDocumentSnapshot doc in oldLogs.docs) {
-        batch.delete(doc.reference);
-      }
-
-      await batch.commit();
-      print('Datos antiguos de notificaciones limpiados');
-    } catch (e) {
-      print('Error limpiando datos antiguos: $e');
     }
   }
 }
@@ -756,17 +584,6 @@ Future<void> _handleNewMessageInBackground({
         body: body ?? 'Tienes un mensaje nuevo',
         payload: 'chatId:$chatId,messageId:$messageId',
       );
-
-      // Registrar la notificación para analytics
-      await firestore.collection('background_notifications').add({
-        'userId': currentUserId,
-        'chatId': chatId,
-        'messageId': messageId,
-        'title': title ?? 'Nuevo mensaje',
-        'body': body ?? 'Tienes un mensaje nuevo',
-        'timestamp': FieldValue.serverTimestamp(),
-        'action': 'shown_in_background',
-      });
     }
   } catch (e) {
     print('Error manejando mensaje en background: $e');
