@@ -609,13 +609,27 @@ Future<void> _incrementUnreadCount(String userId, String chatId) async {
   try {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    // Actualizar contador de mensajes no leídos en el documento del usuario
-    await firestore.collection('users').doc(userId).update({
-      'unreadChatsCount': FieldValue.increment(1),
-      'lastUnreadUpdate': FieldValue.serverTimestamp(),
-    });
+    // Verificar si el documento del usuario existe
+    final DocumentSnapshot userDoc = await firestore
+        .collection('users')
+        .doc(userId)
+        .get();
 
-    // Mantener registro por chat específico
+    if (userDoc.exists) {
+      // El documento existe, incrementar contador
+      await firestore.collection('users').doc(userId).update({
+        'unreadChatsCount': FieldValue.increment(1),
+        'lastUnreadUpdate': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // El documento no existe, crearlo con valores iniciales
+      await firestore.collection('users').doc(userId).set({
+        'unreadChatsCount': 1,
+        'lastUnreadUpdate': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    // Mantener registro por chat específico (siempre crear/actualizar)
     await firestore
         .collection('users')
         .doc(userId)

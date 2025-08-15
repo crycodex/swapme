@@ -369,21 +369,40 @@ class ChatController extends GetxController {
     try {
       final WriteBatch batch = _firestore.batch();
 
-      // Marcar este chat como leído en el documento de chats no leídos
-      batch.update(
+      // Marcar este chat como leído (crear el documento si no existe)
+      batch.set(
         _firestore
             .collection('users')
             .doc(currentUserId!)
             .collection('unread_chats')
             .doc(chatId),
         {'hasUnread': false, 'lastUpdate': FieldValue.serverTimestamp()},
+        SetOptions(merge: true),
       );
 
-      // Decrementar el contador general de chats no leídos
-      batch.update(_firestore.collection('users').doc(currentUserId!), {
-        'unreadChatsCount': FieldValue.increment(-1),
-        'lastUnreadUpdate': FieldValue.serverTimestamp(),
-      });
+      // Verificar si el documento del usuario existe y crear/actualizar contador
+      final DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(currentUserId!)
+          .get();
+
+      if (userDoc.exists) {
+        // El documento existe, decrementar contador
+        batch.update(_firestore.collection('users').doc(currentUserId!), {
+          'unreadChatsCount': FieldValue.increment(-1),
+          'lastUnreadUpdate': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // El documento no existe, crearlo con valores iniciales
+        batch.set(
+          _firestore.collection('users').doc(currentUserId!),
+          {
+            'unreadChatsCount': 0,
+            'lastUnreadUpdate': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      }
 
       await batch.commit();
 
