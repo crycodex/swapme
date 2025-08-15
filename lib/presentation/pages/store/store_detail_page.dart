@@ -135,83 +135,87 @@ class StoreDetailPage extends GetView<StoreController> {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final StoreItemModel item = items[index];
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Image.network(
-                              item.imageUrl,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            left: 8,
-                            right: 8,
-                            bottom: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: color.surface.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '\$${item.price.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                      color: color.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
+                    return GestureDetector(
+                      onTap: () =>
+                          Get.toNamed(Routes.storeItemDetail, arguments: item),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Image.network(
+                                item.imageUrl,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ),
-                          if (mine)
                             Positioned(
-                              right: 6,
-                              top: 6,
-                              child: PopupMenuButton<String>(
-                                onSelected: (String v) async {
-                                  if (v == 'edit') {
-                                    controller.startEditingStoreItem(item);
-                                    Get.toNamed(
-                                      Routes.createStoreItem,
-                                      arguments: <String, dynamic>{
-                                        'store': store,
-                                        'item': item,
-                                      },
-                                    );
-                                  } else if (v == 'delete') {
-                                    await controller.deleteStoreItem(
-                                      store.id,
-                                      item,
-                                    );
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) =>
-                                    const <PopupMenuEntry<String>>[
-                                      PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: Text('Editar'),
+                              left: 8,
+                              right: 8,
+                              bottom: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: color.surface.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '\$${item.price.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        color: color.primary,
+                                        fontWeight: FontWeight.w700,
                                       ),
-                                      PopupMenuItem<String>(
-                                        value: 'delete',
-                                        child: Text('Eliminar'),
-                                      ),
-                                    ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                        ],
+                            if (mine)
+                              Positioned(
+                                right: 6,
+                                top: 6,
+                                child: PopupMenuButton<String>(
+                                  onSelected: (String v) async {
+                                    if (v == 'edit') {
+                                      controller.startEditingStoreItem(item);
+                                      Get.toNamed(
+                                        Routes.createStoreItem,
+                                        arguments: <String, dynamic>{
+                                          'store': store,
+                                          'item': item,
+                                        },
+                                      );
+                                    } else if (v == 'delete') {
+                                      await controller.deleteStoreItem(
+                                        store.id,
+                                        item,
+                                      );
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) =>
+                                      const <PopupMenuEntry<String>>[
+                                        PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Text('Editar'),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Text('Eliminar'),
+                                        ),
+                                      ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },

@@ -13,6 +13,7 @@ import '../presentation/pages/swap/create_swap_page.dart';
 import '../presentation/pages/swap/swap_detail_page.dart';
 // store
 import '../presentation/pages/store/store_detail_page.dart';
+import '../presentation/pages/store/store_item_detail_page.dart';
 import '../presentation/pages/store/store_item_editor_page.dart';
 import '../presentation/pages/store/create_store_item_page.dart';
 
@@ -25,6 +26,7 @@ class Routes {
   static const String createSwap = '/create-swap';
   static const String swapDetail = '/swap-detail';
   static const String storeDetail = '/store-detail';
+  static const String storeItemDetail = '/store-item-detail';
   static const String storeEditor = '/store-editor';
   static const String storeItemEditor = '/store-item-editor';
   static const String createStoreItem = '/create-store-item';
@@ -48,6 +50,11 @@ class Routes {
     GetPage(
       name: Routes.storeDetail,
       page: () => const StoreDetailPage(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.storeItemDetail,
+      page: () => const StoreItemDetailPage(),
       transition: Transition.rightToLeft,
     ),
     GetPage(

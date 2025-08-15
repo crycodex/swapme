@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../data/models/chat_model.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/swap_item_model.dart';
+import '../../data/models/store_item_model.dart';
 import '../../services/cloud_messaging_service.dart';
 
 class ChatController extends GetxController {
@@ -177,6 +178,96 @@ class ChatController extends GetxController {
       return chatRef.id;
     } catch (e) {
       error.value = 'Error creando chat: $e';
+      return null;
+    }
+  }
+
+  Future<String?> createChatForStoreItem({
+    required StoreItemModel storeItem,
+    required String interestedUserId,
+  }) async {
+    if (currentUserId == null) return null;
+
+    try {
+      // Primero, necesitamos obtener el dueño de la tienda
+      final DocumentSnapshot storeDoc = await _firestore
+          .collection('stores')
+          .doc(storeItem.storeId)
+          .get();
+
+      if (!storeDoc.exists) {
+        error.value = 'La tienda no existe';
+        return null;
+      }
+
+      final Map<String, dynamic> storeData =
+          storeDoc.data() as Map<String, dynamic>;
+      final String storeOwnerId = storeData['ownerId'] as String;
+
+      // Verificar si ya existe un chat para este item de tienda
+      final QuerySnapshot existingChat = await _firestore
+          .collection('chats')
+          .where('storeItemId', isEqualTo: storeItem.id)
+          .where('interestedUserId', isEqualTo: interestedUserId)
+          .where('storeOwnerId', isEqualTo: storeOwnerId)
+          .limit(1)
+          .get();
+
+      if (existingChat.docs.isNotEmpty) {
+        final ChatModel chat = ChatModel.fromFirestore(existingChat.docs.first);
+        if (!chat.isExpired) {
+          return chat.id; // Retornar chat existente si no ha expirado
+        }
+      }
+
+      // Crear nuevo chat para item de tienda
+      final DateTime now = DateTime.now();
+      final DateTime expiresAt = now.add(const Duration(days: 7));
+
+      final Map<String, dynamic> chatData = {
+        'storeItemId': storeItem.id,
+        'storeOwnerId': storeOwnerId,
+        'interestedUserId': interestedUserId,
+        'storeItemName': storeItem.name,
+        'storeItemImageUrl': storeItem.imageUrl,
+        'storeItemPrice': storeItem.price,
+        'participants': [storeOwnerId, interestedUserId],
+        'createdAt': Timestamp.fromDate(now),
+        'lastMessageAt': Timestamp.fromDate(now),
+        'expiresAt': Timestamp.fromDate(expiresAt),
+        'status': ChatStatus.active.name,
+        'readBy': {storeOwnerId: true, interestedUserId: false},
+        'hasUnreadMessages': false,
+        'lastMessage': '',
+        'chatType': 'store_item', // Diferenciar del chat de swap
+      };
+
+      final DocumentReference chatRef = await _firestore
+          .collection('chats')
+          .add(chatData);
+
+      // Enviar mensaje inicial del sistema
+      await sendSystemMessage(
+        chatId: chatRef.id,
+        content:
+            'Chat iniciado para el intercambio del producto "${storeItem.name}" (Precio: \$${storeItem.price.toStringAsFixed(0)}). Este chat expira en 7 días.',
+      );
+
+      // Enviar notificación push al dueño de la tienda
+      await _cloudMessagingService.sendNotificationToUser(
+        userId: storeOwnerId,
+        title: 'Nuevo interés en tu producto',
+        body: 'Alguien está interesado en tu producto "${storeItem.name}"',
+        data: {
+          'type': 'new_store_chat',
+          'chatId': chatRef.id,
+          'storeItemId': storeItem.id,
+        },
+      );
+
+      return chatRef.id;
+    } catch (e) {
+      error.value = 'Error creando chat para item de tienda: $e';
       return null;
     }
   }
@@ -410,7 +501,9 @@ class ChatController extends GetxController {
       // Actualizar badge count después de limpiar contadores
       await _cloudMessagingService.updateBadgeFromDatabase();
 
-      debugPrint('Contadores de mensajes no leídos limpiados para chat: $chatId');
+      debugPrint(
+        'Contadores de mensajes no leídos limpiados para chat: $chatId',
+      );
     } catch (e) {
       debugPrint('Error limpiando contadores no leídos: $e');
     }
