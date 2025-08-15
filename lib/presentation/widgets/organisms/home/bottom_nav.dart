@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
 
@@ -166,7 +167,7 @@ class _CenterAction extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(Icons.sync_alt_rounded, color: colorScheme.onPrimary),
+        child: Icon(Symbols.cached, color: colorScheme.onPrimary, size: 32),
       ),
     );
   }
