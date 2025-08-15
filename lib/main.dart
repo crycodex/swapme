@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'config/theme/theme_data.dart';
 import 'config/app_config.dart';
@@ -11,6 +12,7 @@ import 'presentation/pages/home/home_page.dart';
 import 'presentation/pages/welcome/welcome_page.dart';
 import 'presentation/pages/auth/login_page.dart';
 import 'controllers/auth/auth_controller.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,14 @@ Future<void> main() async {
   debugPrint('Iniciando ${AppConfig.appName} v${AppConfig.appVersion}');
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Configurar manejador de mensajes en segundo plano
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // Inicializar servicios
   Get.put<AuthController>(AuthController(), permanent: true);
+  Get.put<NotificationService>(NotificationService(), permanent: true);
+
   runApp(const MainApp());
 }
 

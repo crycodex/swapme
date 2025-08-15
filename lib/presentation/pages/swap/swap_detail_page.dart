@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/models/swap_item_model.dart';
 import '../../../controllers/swap/swap_controller.dart';
+import '../../../controllers/chat/chat_controller.dart';
+import '../chat/chat_page.dart';
 
 class _SellerArguments {
   final String userId;
@@ -23,6 +25,7 @@ class SwapDetailPage extends StatelessWidget {
     final ColorScheme colorScheme = theme.colorScheme;
     final SwapItemModel item = Get.arguments as SwapItemModel;
     final SwapController swapController = Get.put(SwapController());
+    final ChatController chatController = Get.put(ChatController());
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -229,14 +232,138 @@ class SwapDetailPage extends StatelessWidget {
               label: 'Intercambiar este artículo',
               hint: 'Abre el flujo para proponer un intercambio',
               child: FilledButton(
-                onPressed: () {},
-                child: const Text('Intercambiar'),
+                onPressed:
+                    chatController.currentUserId != null &&
+                        chatController.currentUserId != item.userId
+                    ? () => _initiateSwap(context, item, chatController)
+                    : null,
+                child: Text(
+                  chatController.currentUserId == item.userId
+                      ? 'Tu artículo'
+                      : 'Intercambiar',
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _initiateSwap(
+    BuildContext context,
+    SwapItemModel item,
+    ChatController chatController,
+  ) async {
+    if (chatController.currentUserId == null) {
+      Get.snackbar(
+        'Error',
+        'Debes iniciar sesión para intercambiar',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Mostrar diálogo de confirmación
+    final bool? confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Iniciar intercambio'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Quieres iniciar un chat para intercambiar "${item.name}"?'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'El chat expirará en 7 días',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Iniciar chat'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Mostrar indicador de carga
+    Get.dialog(
+      const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Iniciando chat...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Crear o obtener chat existente
+      final String? chatId = await chatController.createChat(
+        swapItem: item,
+        interestedUserId: chatController.currentUserId!,
+      );
+
+      Get.back(); // Cerrar diálogo de carga
+
+      if (chatId != null) {
+        // Navegar al chat
+        Get.to(
+          () => ChatPage(chatId: chatId),
+          transition: Transition.cupertino,
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'No se pudo crear el chat. Inténtalo de nuevo.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.back(); // Cerrar diálogo de carga
+      Get.snackbar(
+        'Error',
+        'Ocurrió un error al crear el chat: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   String _formatDate(DateTime date) {
