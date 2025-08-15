@@ -133,36 +133,26 @@ class _ChatPageState extends State<ChatPage> {
               )
             : const Text('Chat'),
         actions: [
-          if (_currentChat != null && !_currentChat!.isExpired)
+          if (_currentChat != null)
             PopupMenuButton<String>(
               onSelected: (String value) {
                 switch (value) {
-                  case 'propose':
-                    _showSwapProposalDialog();
-                    break;
-                  case 'agreement':
-                    _showAgreementDialog();
+                  case 'delete':
+                    _showDeleteChatDialog();
                     break;
                 }
               },
               itemBuilder: (BuildContext context) => [
                 const PopupMenuItem<String>(
-                  value: 'propose',
+                  value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.swap_horiz),
+                      Icon(Icons.delete_outline, color: Colors.red),
                       SizedBox(width: 8),
-                      Text('Proponer intercambio'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'agreement',
-                  child: Row(
-                    children: [
-                      Icon(Icons.handshake),
-                      SizedBox(width: 8),
-                      Text('Crear acuerdo'),
+                      Text(
+                        'Eliminar chat',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),
@@ -246,7 +236,46 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
           if (_currentChat?.isExpired != true)
-            _MessageInput(controller: _messageController, onSend: _sendMessage),
+            Column(
+              children: [
+                // Botones de acción rápida
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showSwapProposalDialog,
+                          icon: const Icon(Icons.swap_horiz, size: 18),
+                          label: const Text('Proponer'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showAgreementDialog,
+                          icon: const Icon(Icons.handshake, size: 18),
+                          label: const Text('Acuerdo'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _MessageInput(
+                  controller: _messageController,
+                  onSend: _sendMessage,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -282,6 +311,116 @@ class _ChatPageState extends State<ChatPage> {
         curve: Curves.easeOut,
       );
     }
+  }
+
+  void _showDeleteChatDialog() {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: colorScheme.error,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('Eliminar chat'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('¿Estás seguro de que quieres eliminar este chat?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Esta acción no se puede deshacer. Se eliminarán todos los mensajes.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back(); // Cerrar diálogo
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Eliminando chat...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                await _chatController.deleteChat(widget.chatId);
+                Get.back(); // Cerrar indicador de carga
+                Get.back(); // Volver a la lista de chats
+
+                Get.snackbar(
+                  'Chat eliminado',
+                  'El chat se ha eliminado correctamente',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: colorScheme.inverseSurface,
+                  colorText: colorScheme.onInverseSurface,
+                );
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'No se pudo eliminar el chat. Inténtalo de nuevo.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: colorScheme.errorContainer,
+                  colorText: colorScheme.onErrorContainer,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSwapProposalDialog() {
