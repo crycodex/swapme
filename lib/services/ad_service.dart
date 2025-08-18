@@ -8,6 +8,7 @@ class AdService extends GetxService {
       return Get.find<AdService>();
     } catch (e) {
       // Si el servicio no está registrado, retornamos una instancia temporal
+      // ignore: avoid_print
       print('[AdService] AdService no encontrado, creando instancia temporal');
       return AdService._();
     }
@@ -90,6 +91,7 @@ class AdService extends GetxService {
   }
 
   void debugPrint(String message) {
+    // ignore: avoid_print
     print('[AdService] $message');
   }
 }
