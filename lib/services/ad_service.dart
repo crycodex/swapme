@@ -28,11 +28,12 @@ class AdService extends GetxService {
 
   // IDs para producción - configurar cuando tengas las credenciales reales
   static const String _bannerAdUnitIdAndroidProd =
-      'YOUR_ANDROID_BANNER_AD_UNIT_ID';
-  static const String _bannerAdUnitIdIOSProd = 'YOUR_IOS_BANNER_AD_UNIT_ID';
+      'ca-app-pub-6468767225905546/1592577751';
+  static const String _bannerAdUnitIdIOSProd =
+      'ca-app-pub-6468767225905546/1592577751';
 
   // Flag para determinar si usar test ads o producción
-  static const bool _useTestAds = true;
+  static const bool _useTestAds = false;
 
   String get bannerAdUnitId {
     if (_useTestAds) {
@@ -48,6 +49,14 @@ class AdService extends GetxService {
   Future<void> onInit() async {
     super.onInit();
     debugPrint('AdService inicializado (sin re-inicializar AdMob)');
+
+    // Inicializar AdMob de forma segura
+    try {
+      await MobileAds.instance.initialize();
+      debugPrint('AdMob inicializado correctamente');
+    } catch (e) {
+      debugPrint('Error al inicializar AdMob: $e');
+    }
   }
 
   // Verificar si el SDK está listo

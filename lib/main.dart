@@ -32,9 +32,10 @@ Future<void> main() async {
   Get.put<AuthController>(AuthController(), permanent: true);
   Get.put<NotificationService>(NotificationService(), permanent: true);
   Get.put<CloudMessagingService>(CloudMessagingService(), permanent: true);
+  Get.put<AdService>(AdService(), permanent: true);
 
   // Inicializar AdMob de forma diferida (después de que la app esté lista)
-  _initializeAdMobLater();
+  // _initializeAdMobLater();
 
   runApp(const MainApp());
 }
