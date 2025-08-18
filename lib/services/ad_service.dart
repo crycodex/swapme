@@ -30,7 +30,7 @@ class AdService extends GetxService {
   static const String _bannerAdUnitIdAndroidProd =
       'ca-app-pub-6468767225905546/1592577751';
   static const String _bannerAdUnitIdIOSProd =
-      'ca-app-pub-6468767225905546/1592577751';
+      'ca-app-pub-6468767225905546/5963869932';
 
   // Flag para determinar si usar test ads o producción
   static const bool _useTestAds = false;
