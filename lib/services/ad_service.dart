@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 class AdService extends GetxService {
   static AdService get instance {
     try {
-      return Get.find<AdService>();
+      return Get.put(AdService(), permanent: true);
     } catch (e) {
       // Si el servicio no está registrado, retornamos una instancia temporal
       // ignore: avoid_print

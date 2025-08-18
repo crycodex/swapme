@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'firebase_options.dart';
 import 'config/theme/theme_data.dart';
 import 'config/app_config.dart';
@@ -34,26 +33,7 @@ Future<void> main() async {
   Get.put<CloudMessagingService>(CloudMessagingService(), permanent: true);
   Get.put<AdService>(AdService(), permanent: true);
 
-  // Inicializar AdMob de forma diferida (después de que la app esté lista)
-  // _initializeAdMobLater();
-
   runApp(const MainApp());
-}
-
-// Función para inicializar AdMob de forma diferida
-void _initializeAdMobLater() {
-  // Inicializar después de 3 segundos para asegurar que la app esté completamente cargada
-  Future.delayed(const Duration(seconds: 3), () async {
-    try {
-      await MobileAds.instance.initialize();
-      Get.put<AdService>(AdService(), permanent: true);
-      debugPrint('AdMob inicializado correctamente de forma diferida');
-    } catch (e) {
-      debugPrint('Error al inicializar AdMob: $e');
-      // Crear un AdService mock si falla la inicialización
-      Get.put<AdService>(AdService(), permanent: true);
-    }
-  });
 }
 
 class MainApp extends StatelessWidget {
