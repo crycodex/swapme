@@ -11,6 +11,7 @@ import '../../atoms/ad_banner_widget.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
+import '../../../../data/models/store_model.dart';
 
 class HomeLayout extends GetView<HomeController> {
   const HomeLayout({super.key});
@@ -47,10 +48,32 @@ class HomeLayout extends GetView<HomeController> {
                             start: 16,
                             bottom: 12,
                           ),
-                          title: Text(
-                            'SwapMe',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
+                          title: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              'SwapMe',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 3,
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           background: _HeaderHeroCarousel(
@@ -405,19 +428,27 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
   final PageController _pageController = PageController();
   int _index = 0;
   Timer? _timer;
-  final int _totalPages = 4; // 3 páginas originales + 1 para anuncio
+  int _totalPages = 0;
 
   @override
   void initState() {
     super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
-      _index = (_index + 1) % _totalPages;
-      _pageController.animateToPage(
-        _index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+      if (_totalPages > 0) {
+        _index = (_index + 1) % _totalPages;
+        if (_pageController.hasClients) {
+          _pageController.animateToPage(
+            _index,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
     });
   }
 
@@ -431,63 +462,142 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = widget.colorScheme;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: _totalPages,
-          onPageChanged: (int index) {
-            setState(() {
-              _index = index;
-            });
-          },
-          itemBuilder: (_, int i) {
-            // Si es la página 2 (índice 2), mostrar anuncio
-            if (i == 2) {
-              return Container(
-                margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Center(child: SliderAdBannerWidget()),
-              );
-            }
-            // Para las demás páginas, mostrar placeholder
+    final HomeController homeController = Get.find<HomeController>();
+
+    return StreamBuilder<List<StoreModel>>(
+      stream: homeController.featuredStores,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final List<StoreModel> stores = snapshot.data ?? [];
+        // Siempre mantener 3 slides
+        _totalPages = 3;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              itemCount: _totalPages,
+              onPageChanged: (int index) {
+                setState(() {
+                  _index = index;
+                });
+              },
+              itemBuilder: (_, int i) {
+                // Si es índice par, mostrar tienda o imagen local
+                if (i.isEven) {
+                  final int storeIndex = i ~/ 2;
+                  if (storeIndex < stores.length) {
+                    return _buildStoreBanner(stores[storeIndex], colorScheme);
+                  } else {
+                    // Si no hay tienda disponible, usar imagen local
+                    return _buildLocalBannerFallback(colorScheme, i + 1);
+                  }
+                }
+                // Si es índice impar, mostrar anuncio
+                return _buildAdBanner(colorScheme);
+              },
+            ),
+            // Indicadores
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_totalPages, (int i) {
+                  final bool active = i == _index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: active ? 22 : 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStoreBanner(StoreModel store, ColorScheme colorScheme) {
+    return InkWell(
+      onTap: () => Get.toNamed(Routes.storeDetail, arguments: store),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: store.bannerUrl.isNotEmpty
+              ? Image.network(
+                  store.bannerUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildLocalBannerFallback(colorScheme, 1);
+                  },
+                )
+              : _buildLocalBannerFallback(colorScheme, 1),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdBanner(ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Center(child: SliderAdBannerWidget()),
+    );
+  }
+
+  Widget _buildLocalBannerFallback(ColorScheme colorScheme, int bannerNumber) {
+    return Container(
+      margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          'assets/app/banner/$bannerNumber.jpg',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
             return Container(
-              margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.image_not_supported,
+                size: 48,
+                color: colorScheme.onSurfaceVariant,
               ),
             );
           },
         ),
-        // Indicadores
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_totalPages, (int i) {
-              final bool active = i == _index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: active ? 22 : 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

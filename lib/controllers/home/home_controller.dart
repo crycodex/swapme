@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/swap_item_model.dart';
+import '../../data/models/store_model.dart';
 import '../swap/swap_controller.dart';
 import '../store/store_controller.dart';
 
@@ -12,11 +13,15 @@ class HomeController extends GetxController {
 
   // Swap controller for getting user swaps
   final SwapController _swapController = Get.put(SwapController());
+  // Store controller for getting stores
+  final StoreController _storeController = Get.put(StoreController());
 
   // User swaps stream
   Stream<List<SwapItemModel>> get userSwaps => _swapController.getUserSwaps();
   // All swaps stream (catalog)
   Stream<List<SwapItemModel>> get allSwaps => _swapController.getAllSwaps();
+  // Featured stores for carousel
+  Stream<List<StoreModel>> get featuredStores => _storeController.getStores();
 
   // Search & filter state
   final RxString searchQuery = ''.obs;
