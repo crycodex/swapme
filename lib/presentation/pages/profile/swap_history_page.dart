@@ -243,7 +243,7 @@ class SwapHistoryPage extends GetView<SwapHistoryController> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         child: InkWell(
-          onTap: () => _showSwapHistoryDetail(context, swap),
+          onTap: () {},
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -390,15 +390,6 @@ class SwapHistoryPage extends GetView<SwapHistoryController> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showSwapHistoryDetail(BuildContext context, SwapHistoryModel swap) {
-    // TODO: Implementar vista detallada del historial si es necesario
-    Get.snackbar(
-      'Detalle',
-      'Vista detallada del intercambio (próximamente)',
-      snackPosition: SnackPosition.BOTTOM,
     );
   }
 
