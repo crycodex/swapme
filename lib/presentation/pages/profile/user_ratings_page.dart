@@ -301,7 +301,7 @@ class _UserRatingsPageState extends State<UserRatingsPage>
                             colorScheme,
                           ),
                         )
-                        .toList(),
+                        ,
                   ],
                 ),
               ),

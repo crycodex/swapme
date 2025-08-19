@@ -190,13 +190,13 @@ class StartConversationDialog extends StatelessWidget {
                 Icon(
                   Icons.schedule,
                   size: 18,
-                  color: theme.hintColor.withOpacity(0.7),
+                  color: theme.hintColor.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'El chat expirará automáticamente en 7 días.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.hintColor.withOpacity(0.7),
+                    color: theme.hintColor.withValues(alpha: 0.7),
                     fontStyle: FontStyle.italic,
                   ),
                   textAlign: TextAlign.center,
