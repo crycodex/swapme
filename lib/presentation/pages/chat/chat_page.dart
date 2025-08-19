@@ -41,6 +41,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Marcar como leído cada vez que se recibe un nuevo mensaje
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupAutoMarkAsRead();
+      _setupChatStatusListener();
     });
   }
 
@@ -83,9 +84,24 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       (chat) => chat.id == widget.chatId,
     );
     if (chat != null) {
+      final bool wasCompleted = _currentChat?.status == ChatStatus.completed;
+
       setState(() {
         _currentChat = chat;
       });
+
+      // Si el intercambio se acaba de completar y el usuario es el interesado,
+      // mostrar automáticamente el diálogo de calificación
+      if (!wasCompleted &&
+          chat.status == ChatStatus.completed &&
+          chat.interestedUserId == _chatController.currentUserId &&
+          !_isRatingDialogShown) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && !_isRatingDialogShown) {
+            _showRatingDialog();
+          }
+        });
+      }
     }
   }
 
@@ -116,6 +132,46 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             _markChatAsRead();
           }
         });
+      }
+    });
+  }
+
+  void _setupChatStatusListener() {
+    // Escuchar cambios en el estado del chat
+    _chatController.chats.listen((chats) {
+      if (mounted) {
+        final ChatModel? updatedChat = chats.firstWhereOrNull(
+          (chat) => chat.id == widget.chatId,
+        );
+
+        if (updatedChat != null) {
+          final bool wasCompleted =
+              _currentChat?.status == ChatStatus.completed;
+          final bool isNowCompleted =
+              updatedChat.status == ChatStatus.completed;
+          final String currentUserId = _chatController.currentUserId!;
+
+          // Si el intercambio se acaba de completar y es el usuario interesado
+          if (!wasCompleted &&
+              isNowCompleted &&
+              updatedChat.interestedUserId == currentUserId &&
+              !_isRatingDialogShown) {
+            setState(() {
+              _currentChat = updatedChat;
+            });
+
+            // Mostrar diálogo de calificación automáticamente para el usuario interesado
+            Future.delayed(const Duration(milliseconds: 1000), () {
+              if (mounted && !_isRatingDialogShown) {
+                _showRatingDialog();
+              }
+            });
+          } else {
+            setState(() {
+              _currentChat = updatedChat;
+            });
+          }
+        }
       }
     });
   }
@@ -309,16 +365,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: _showConfirmSwapDialog,
-                          icon: const Icon(Icons.check_circle, size: 18),
-                          label: const Text('Confirmar'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
+                      Expanded(child: _buildActionButton()),
                     ],
                   ),
                 ),
@@ -331,6 +378,104 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         ],
       ),
     );
+  }
+
+  Widget _buildActionButton() {
+    if (_currentChat == null) {
+      return const SizedBox.shrink();
+    }
+
+    final String currentUserId = _chatController.currentUserId!;
+    final bool isOwner = _currentChat!.swapItemOwnerId == currentUserId;
+    final bool isCompleted = _currentChat!.status == ChatStatus.completed;
+
+    if (isCompleted) {
+      // Si el intercambio ya está completado, mostrar botón de calificar
+      return FutureBuilder<bool>(
+        future: _checkIfUserHasRated(),
+        builder: (context, snapshot) {
+          final bool hasRated = snapshot.data ?? false;
+
+          if (hasRated) {
+            return OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Ya calificado'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            );
+          } else {
+            return FilledButton.icon(
+              onPressed: () => _showRatingDialog(),
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Calificar'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.white,
+              ),
+            );
+          }
+        },
+      );
+    } else if (isOwner) {
+      // Si es el dueño del artículo, mostrar botón de confirmar
+      return FilledButton.icon(
+        onPressed: _showConfirmSwapDialog,
+        icon: const Icon(Icons.check_circle, size: 18),
+        label: const Text('Confirmar'),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      );
+    } else {
+      // Si es el usuario interesado, mostrar mensaje informativo
+      return OutlinedButton.icon(
+        onPressed: null, // Deshabilitado
+        icon: const Icon(Icons.hourglass_empty, size: 18),
+        label: const Text('Esperando confirmación'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _checkIfUserHasRated() async {
+    if (_currentChat == null || _chatController.currentUserId == null) {
+      return false;
+    }
+
+    try {
+      SwapHistoryController historyController;
+      try {
+        historyController = Get.find<SwapHistoryController>();
+      } catch (e) {
+        historyController = Get.put(SwapHistoryController());
+      }
+
+      // Buscar el historial de este chat
+      await historyController.loadUserSwapHistory();
+      final swapHistory = historyController.swapHistory
+          .where((swap) => swap.chatId == widget.chatId)
+          .firstOrNull;
+
+      if (swapHistory != null) {
+        final String otherUserId = _currentChat!.getOtherUserId(
+          _chatController.currentUserId!,
+        );
+        return await historyController.hasUserRated(
+          swapHistory.id,
+          otherUserId,
+        );
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Error verificando si el usuario ya calificó: $e');
+      return false;
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -618,19 +763,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
                   Get.snackbar(
                     'Intercambio confirmado',
-                    'El intercambio se ha registrado exitosamente',
+                    'El intercambio se ha registrado exitosamente. Ahora puedes calificar al otro usuario.',
                     snackPosition: SnackPosition.BOTTOM,
                     backgroundColor: Colors.green,
                     colorText: Colors.white,
+                    duration: const Duration(seconds: 4),
                   );
 
-                  // Mostrar diálogo de calificación después de confirmar
-                  // Usar un timer más seguro que no interfiera con la navegación
-                  Future.delayed(const Duration(milliseconds: 1000), () {
-                    if (mounted && !_isRatingDialogShown) {
-                      _showRatingDialog();
-                    }
-                  });
+                  // Recargar la información del chat para actualizar el estado
+                  _loadChatInfo();
                 } else {
                   final String errorMessage =
                       _chatController.error.value.isNotEmpty
@@ -668,8 +809,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  void _showRatingDialog() {
+  void _showRatingDialog() async {
     if (_currentChat == null || _isRatingDialogShown) return;
+
+    // Verificar si el usuario ya ha calificado
+    final bool hasRated = await _checkIfUserHasRated();
+    if (hasRated) {
+      Get.snackbar(
+        'Ya calificado',
+        'Ya has calificado a este usuario para este intercambio',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
     _isRatingDialogShown = true;
 
