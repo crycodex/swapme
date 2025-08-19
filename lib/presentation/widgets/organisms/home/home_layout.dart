@@ -11,7 +11,16 @@ import '../../atoms/ad_banner_widget.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
-import '../../../../data/models/store_model.dart';
+
+class _SlideContent {
+  final int? localIndex;
+  final bool isAd;
+  const _SlideContent._({this.localIndex, required this.isAd});
+
+  factory _SlideContent.local(int index) =>
+      _SlideContent._(localIndex: index, isAd: false);
+  factory _SlideContent.ad() => const _SlideContent._(isAd: true);
+}
 
 class HomeLayout extends GetView<HomeController> {
   const HomeLayout({super.key});
@@ -428,26 +437,39 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
   final PageController _pageController = PageController();
   int _index = 0;
   Timer? _timer;
-  int _totalPages = 0;
+  List<_SlideContent> _slides = [];
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeSlides();
+  }
+
+  void _initializeSlides() {
+    // Crear slides estáticos sin depender de tiendas por ahora
+    _slides = [
+      _SlideContent.local(1),
+      _SlideContent.ad(),
+      _SlideContent.local(2),
+      _SlideContent.ad(),
+      _SlideContent.local(3),
+      _SlideContent.ad(),
+    ];
+    _isInitialized = true;
     _startTimer();
   }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
-      if (_totalPages > 0) {
-        _index = (_index + 1) % _totalPages;
-        if (_pageController.hasClients) {
-          _pageController.animateToPage(
-            _index,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
+      if (!mounted || !_isInitialized) return;
+      if (_pageController.hasClients) {
+        final int nextIndex = (_index + 1) % _slides.length;
+        _pageController.animateToPage(
+          nextIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
       }
     });
   }
@@ -462,115 +484,97 @@ class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = widget.colorScheme;
-    final HomeController homeController = Get.find<HomeController>();
 
-    return StreamBuilder<List<StoreModel>>(
-      stream: homeController.featuredStores,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final List<StoreModel> stores = snapshot.data ?? [];
-        // Siempre mantener 3 slides
-        _totalPages = 3;
-
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            PageView.builder(
-              controller: _pageController,
-              itemCount: _totalPages,
-              onPageChanged: (int index) {
-                setState(() {
-                  _index = index;
-                });
-              },
-              itemBuilder: (_, int i) {
-                // Si es índice par, mostrar tienda o imagen local
-                if (i.isEven) {
-                  final int storeIndex = i ~/ 2;
-                  if (storeIndex < stores.length) {
-                    return _buildStoreBanner(stores[storeIndex], colorScheme);
-                  } else {
-                    // Si no hay tienda disponible, usar imagen local
-                    return _buildLocalBannerFallback(colorScheme, i + 1);
-                  }
-                }
-                // Si es índice impar, mostrar anuncio
-                return _buildAdBanner(colorScheme);
-              },
-            ),
-            // Indicadores
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_totalPages, (int i) {
-                  final bool active = i == _index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    width: active ? 22 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildStoreBanner(StoreModel store, ColorScheme colorScheme) {
-    return InkWell(
-      onTap: () => Get.toNamed(Routes.storeDetail, arguments: store),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
+    if (!_isInitialized) {
+      return Container(
         margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainer,
+          color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: store.bannerUrl.isNotEmpty
-              ? Image.network(
-                  store.bannerUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _buildLocalBannerFallback(colorScheme, 1);
-                  },
-                )
-              : _buildLocalBannerFallback(colorScheme, 1),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: _slides.length,
+          onPageChanged: (int index) {
+            debugPrint('[Carousel] Página cambiada a: $index');
+            setState(() {
+              _index = index;
+            });
+          },
+          itemBuilder: (_, int i) {
+            final _SlideContent slide = _slides[i];
+            debugPrint(
+              '[Carousel] Construyendo slide $i: ${slide.isAd ? "Anuncio" : "Local ${slide.localIndex}"}',
+            );
+
+            if (slide.isAd) {
+              return _buildAdBanner(colorScheme);
+            }
+            final int imgIndex = slide.localIndex ?? 1;
+            return _buildLocalBannerFallback(colorScheme, imgIndex);
+          },
         ),
-      ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_slides.length, (int i) {
+              final bool active = i == _index;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: active ? 22 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildAdBanner(ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Center(child: SliderAdBannerWidget()),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.ads_click, size: 48, color: colorScheme.primary),
+                const SizedBox(height: 8),
+                Text(
+                  'Anuncio',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
