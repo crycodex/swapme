@@ -138,7 +138,7 @@ class ProfileView extends GetView<AuthController> {
                     const SizedBox(height: 22),
                     // Banner de anuncio en perfil
                     const ProfileAdBannerWidget(),
-                    const SizedBox(height: 120),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),
@@ -155,6 +155,7 @@ class ProfileView extends GetView<AuthController> {
                 },
               ),
             ),
+            SliverToBoxAdapter(child: SizedBox(height: 150)),
           ],
         ),
       );
