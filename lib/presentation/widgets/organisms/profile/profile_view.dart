@@ -95,15 +95,15 @@ class ProfileView extends GetView<AuthController> {
                         foregroundColor: Colors.white,
                         shape: const StadiumBorder(),
                       ),
-                      child: const Text('Edit profile'),
+                      child: const Text('Editar perfil'),
                     ),
                     const SizedBox(height: 22),
-                    const SectionTitle(title: 'Preferences'),
+                    const SectionTitle(title: 'Preferencias'),
                     SettingsCard(
                       children: [
                         SettingsTile(
                           leadingIcon: Icons.storefront_rounded,
-                          title: 'My store',
+                          title: 'Mi tienda',
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () async {
                             final StoreController store = Get.put(
@@ -121,14 +121,14 @@ class ProfileView extends GetView<AuthController> {
                         const Divider(height: 1),
                         SettingsSwitchTile(
                           leadingIcon: Icons.dark_mode_outlined,
-                          title: 'Dark mode',
+                          title: 'Modo oscuro',
                           value: isDark,
                           onChanged: (_) => controller.toggleTheme(),
                         ),
                         const Divider(height: 1),
                         SettingsTile(
                           leadingIcon: Icons.logout_rounded,
-                          title: 'Logout',
+                          title: 'Cerrar sesión',
                           titleColor: colorScheme.error,
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () => _confirmLogout(context),
@@ -209,7 +209,7 @@ class _MySwapsPage extends GetView<SwapController> {
           if (items.isEmpty) {
             return Center(
               child: Text(
-                'Aún no tienes artículos',
+                'Aún no tienes artículos intercambiados',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.hintColor,
                 ),

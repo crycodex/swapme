@@ -43,14 +43,14 @@ class BottomNavBar extends StatelessWidget {
                 _NavItem(
                   index: 0,
                   icon: Icons.home_rounded,
-                  label: 'Home',
+                  label: 'Inicio',
                   controller: controller,
                   colorScheme: colorScheme,
                 ),
                 _NavItem(
                   index: 1,
                   icon: Icons.storefront_rounded,
-                  label: 'Store',
+                  label: 'Tienda',
                   controller: controller,
                   colorScheme: colorScheme,
                 ),
@@ -62,14 +62,14 @@ class BottomNavBar extends StatelessWidget {
                 _NavItem(
                   index: 3,
                   icon: Icons.chat_bubble_rounded,
-                  label: 'Messages',
+                  label: 'Mensajes',
                   controller: controller,
                   colorScheme: colorScheme,
                 ),
                 _NavItem(
                   index: 4,
                   icon: Icons.person_rounded,
-                  label: 'Profile',
+                  label: 'Perfil',
                   controller: controller,
                   colorScheme: colorScheme,
                 ),
