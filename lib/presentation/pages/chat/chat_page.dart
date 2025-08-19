@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/chat/chat_controller.dart';
+import '../../../controllers/swap/swap_history_controller.dart';
 import '../../../data/models/chat_model.dart';
 import '../../../data/models/message_model.dart';
+import '../../../data/models/swap_history_model.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -20,6 +22,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   ChatModel? _currentChat;
   bool _isAppInForeground = true;
+  bool _isRatingDialogShown = false;
 
   @override
   void initState() {
@@ -97,7 +100,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Este método podría expandirse para manejar notificaciones específicas
     // cuando se implementen handlers de notificación más avanzados
-    debugPrint('Configurando manejo de notificaciones para chat: ${widget.chatId}');
+    debugPrint(
+      'Configurando manejo de notificaciones para chat: ${widget.chatId}',
+    );
   }
 
   void _setupAutoMarkAsRead() {
@@ -305,11 +310,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _showAgreementDialog,
-                          icon: const Icon(Icons.handshake, size: 18),
-                          label: const Text('Acuerdo'),
-                          style: OutlinedButton.styleFrom(
+                        child: FilledButton.icon(
+                          onPressed: _showConfirmSwapDialog,
+                          icon: const Icon(Icons.check_circle, size: 18),
+                          label: const Text('Confirmar'),
+                          style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                         ),
@@ -516,23 +521,54 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  void _showAgreementDialog() {
-    final TextEditingController agreementController = TextEditingController();
+  void _showConfirmSwapDialog() {
+    final TextEditingController notesController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Crear acuerdo'),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green),
+            const SizedBox(width: 8),
+            const Text('Confirmar intercambio'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Define los términos del acuerdo:'),
+            const Text(
+              '¿Estás seguro de que quieres confirmar este intercambio?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Al confirmar, el artículo se marcará como no disponible y se moverá al historial.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
+            const Text('Notas adicionales (opcional):'),
+            const SizedBox(height: 8),
             TextField(
-              controller: agreementController,
-              maxLines: 4,
+              controller: notesController,
+              maxLines: 3,
               decoration: const InputDecoration(
-                hintText:
-                    'Ej: Intercambiamos en el centro comercial el sábado a las 3pm...',
+                hintText: 'Ej: Intercambio realizado en el centro comercial...',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -545,17 +581,235 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           FilledButton(
             onPressed: () async {
-              final String agreement = agreementController.text.trim();
-              if (agreement.isNotEmpty) {
-                await _chatController.createAgreement(
+              Get.back(); // Cerrar diálogo
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Confirmando intercambio...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                final bool success = await _chatController.confirmSwap(
                   chatId: widget.chatId,
-                  agreementDetails: agreement,
+                  notes: notesController.text.trim().isNotEmpty
+                      ? notesController.text.trim()
+                      : null,
                 );
-                Get.back();
-                _scrollToBottom();
+
+                Get.back(); // Cerrar indicador de carga
+
+                if (success) {
+                  _scrollToBottom();
+
+                  Get.snackbar(
+                    'Intercambio confirmado',
+                    'El intercambio se ha registrado exitosamente',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                  );
+
+                  // Mostrar diálogo de calificación después de confirmar
+                  // Usar un timer más seguro que no interfiera con la navegación
+                  Future.delayed(const Duration(milliseconds: 1000), () {
+                    if (mounted && !_isRatingDialogShown) {
+                      _showRatingDialog();
+                    }
+                  });
+                } else {
+                  final String errorMessage =
+                      _chatController.error.value.isNotEmpty
+                      ? _chatController.error.value
+                      : 'No se pudo confirmar el intercambio. Inténtalo de nuevo.';
+
+                  Get.snackbar(
+                    'Error',
+                    errorMessage,
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 4),
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado. Inténtalo de nuevo.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
               }
             },
-            child: const Text('Crear acuerdo'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar intercambio'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRatingDialog() {
+    if (_currentChat == null || _isRatingDialogShown) return;
+
+    _isRatingDialogShown = true;
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId!,
+    );
+    final String otherUserName =
+        _currentChat!.swapItemOwnerId == _chatController.currentUserId!
+        ? 'el usuario interesado'
+        : 'el propietario';
+
+    int selectedRating = 5;
+    final TextEditingController commentController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.star, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Calificar intercambio'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Cómo fue tu experiencia con $otherUserName?'),
+            const SizedBox(height: 16),
+            const Text(
+              'Calificación:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            StatefulBuilder(
+              builder: (context, setState) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      onPressed: () {
+                        setState(() {
+                          selectedRating = index + 1;
+                        });
+                      },
+                      icon: Icon(
+                        index < selectedRating ? Icons.star : Icons.star_border,
+                        color: Colors.amber,
+                        size: 32,
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Comentario (opcional):',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: commentController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Comparte tu experiencia...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _isRatingDialogShown = false;
+              Get.back();
+            },
+            child: const Text('Omitir'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              _isRatingDialogShown = false;
+              Get.back();
+
+              // Obtener el historial más reciente para este chat sin navegar
+              SwapHistoryController historyController;
+              try {
+                historyController = Get.find<SwapHistoryController>();
+              } catch (e) {
+                historyController = Get.put(SwapHistoryController());
+              }
+
+              // Buscar primero en el historial ya cargado
+              SwapHistoryModel? swapHistory = historyController.swapHistory
+                  .where((swap) => swap.chatId == widget.chatId)
+                  .firstOrNull;
+
+              // Si no se encuentra, cargar el historial
+              if (swapHistory == null) {
+                await historyController.loadUserSwapHistory();
+                swapHistory = historyController.swapHistory
+                    .where((swap) => swap.chatId == widget.chatId)
+                    .firstOrNull;
+              }
+
+              if (swapHistory != null) {
+                final bool success = await historyController.rateUser(
+                  swapHistoryId: swapHistory.id,
+                  ratedUserId: otherUserId,
+                  rating: selectedRating,
+                  comment: commentController.text.trim().isNotEmpty
+                      ? commentController.text.trim()
+                      : null,
+                );
+
+                if (success) {
+                  Get.snackbar(
+                    'Calificación enviada',
+                    'Gracias por tu retroalimentación',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                } else {
+                  Get.snackbar(
+                    'Error',
+                    'No se pudo enviar la calificación',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              } else {
+                Get.snackbar(
+                  'Error',
+                  'No se encontró el historial del intercambio',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text('Enviar calificación'),
           ),
         ],
       ),

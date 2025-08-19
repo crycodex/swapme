@@ -7,6 +7,7 @@ import '../../data/models/message_model.dart';
 import '../../data/models/swap_item_model.dart';
 import '../../data/models/store_item_model.dart';
 import '../../services/cloud_messaging_service.dart';
+import 'package:swapme/controllers/swap/swap_history_controller.dart';
 
 class ChatController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -541,6 +542,17 @@ class ChatController extends GetxController {
     }
   }
 
+  void _updateLocalChatStatus(String chatId, ChatStatus newStatus) {
+    final int chatIndex = chats.indexWhere((chat) => chat.id == chatId);
+    if (chatIndex != -1) {
+      final ChatModel updatedChat = chats[chatIndex].copyWith(
+        status: newStatus,
+      );
+      chats[chatIndex] = updatedChat;
+      debugPrint('Chat $chatId actualizado localmente a estado: $newStatus');
+    }
+  }
+
   Future<void> proposeSwap({
     required String chatId,
     required String proposalMessage,
@@ -592,6 +604,60 @@ class ChatController extends GetxController {
     await _firestore.collection('chats').doc(chatId).update({
       'swapDecision': SwapDecision.agreement.name,
     });
+  }
+
+  Future<bool> confirmSwap({required String chatId, String? notes}) async {
+    if (currentUserId == null) return false;
+
+    try {
+      // Obtener información del chat
+      final DocumentSnapshot chatDoc = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .get();
+
+      if (!chatDoc.exists) {
+        error.value = 'Chat no encontrado';
+        return false;
+      }
+
+      final ChatModel chat = ChatModel.fromFirestore(chatDoc);
+
+      // Usar el SwapHistoryController para confirmar el intercambio
+      // Buscar instancia existente primero, crear solo si es necesario
+      SwapHistoryController historyController;
+      try {
+        historyController = Get.put(SwapHistoryController());
+      } catch (e) {
+        historyController = Get.put(SwapHistoryController());
+      }
+
+      final bool success = await historyController.confirmSwap(
+        chatId: chatId,
+        chat: chat,
+        notes: notes,
+      );
+
+      if (success) {
+        // Enviar mensaje del sistema
+        await sendSystemMessage(
+          chatId: chatId,
+          content:
+              'Intercambio confirmado exitosamente. ¡Gracias por usar SwapMe!',
+        );
+
+        // Actualizar solo el estado local del chat específico sin recargar todos
+        _updateLocalChatStatus(chatId, ChatStatus.completed);
+      } else {
+        error.value = historyController.error.value;
+      }
+
+      return success;
+    } catch (e) {
+      error.value = 'Error confirmando intercambio: $e';
+      debugPrint('Error confirmando intercambio: $e');
+      return false;
+    }
   }
 
   int getUnreadChatsCount() {
