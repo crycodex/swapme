@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import '../profile/profile_view.dart';
 import '../../molecules/swaps_section.dart';
+import '../../molecules/header_carousel.dart';
 import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
 import 'bottom_nav.dart';
@@ -11,16 +11,6 @@ import '../../atoms/ad_banner_widget.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
-
-class _SlideContent {
-  final int? localIndex;
-  final bool isAd;
-  const _SlideContent._({this.localIndex, required this.isAd});
-
-  factory _SlideContent.local(int index) =>
-      _SlideContent._(localIndex: index, isAd: false);
-  factory _SlideContent.ad() => const _SlideContent._(isAd: true);
-}
 
 class HomeLayout extends GetView<HomeController> {
   const HomeLayout({super.key});
@@ -85,11 +75,7 @@ class HomeLayout extends GetView<HomeController> {
                               ),
                             ),
                           ),
-                          background: _HeaderHeroCarousel(
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            media: media,
-                          ),
+                          background: HeaderCarousel(colorScheme: colorScheme),
                         ),
                       ),
                     ],
@@ -416,192 +402,5 @@ class _ExploreGridState extends State<_ExploreGrid> {
         },
       );
     });
-  }
-}
-
-class _HeaderHeroCarousel extends StatefulWidget {
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-  final MediaQueryData media;
-  const _HeaderHeroCarousel({
-    required this.theme,
-    required this.colorScheme,
-    required this.media,
-  });
-
-  @override
-  State<_HeaderHeroCarousel> createState() => _HeaderHeroCarouselState();
-}
-
-class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
-  final PageController _pageController = PageController();
-  int _index = 0;
-  Timer? _timer;
-  List<_SlideContent> _slides = [];
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeSlides();
-  }
-
-  void _initializeSlides() {
-    // Crear slides estáticos sin depender de tiendas por ahora
-    _slides = [
-      _SlideContent.local(1),
-      _SlideContent.ad(),
-      _SlideContent.local(2),
-      _SlideContent.ad(),
-      _SlideContent.local(3),
-      _SlideContent.ad(),
-    ];
-    _isInitialized = true;
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || !_isInitialized) return;
-      if (_pageController.hasClients) {
-        final int nextIndex = (_index + 1) % _slides.length;
-        _pageController.animateToPage(
-          nextIndex,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = widget.colorScheme;
-
-    if (!_isInitialized) {
-      return Container(
-        margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: _slides.length,
-          onPageChanged: (int index) {
-            debugPrint('[Carousel] Página cambiada a: $index');
-            setState(() {
-              _index = index;
-            });
-          },
-          itemBuilder: (_, int i) {
-            final _SlideContent slide = _slides[i];
-            debugPrint(
-              '[Carousel] Construyendo slide $i: ${slide.isAd ? "Anuncio" : "Local ${slide.localIndex}"}',
-            );
-
-            if (slide.isAd) {
-              return _buildAdBanner(colorScheme);
-            }
-            final int imgIndex = slide.localIndex ?? 1;
-            return _buildLocalBannerFallback(colorScheme, imgIndex);
-          },
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_slides.length, (int i) {
-              final bool active = i == _index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: active ? 22 : 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdBanner(ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          color: colorScheme.primary.withValues(alpha: 0.1),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.ads_click, size: 48, color: colorScheme.primary),
-                const SizedBox(height: 8),
-                Text(
-                  'Anuncio',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLocalBannerFallback(ColorScheme colorScheme, int bannerNumber) {
-    return Container(
-      margin: const EdgeInsets.only(left: 1, right: 1, bottom: 2),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.asset(
-          'assets/app/banner/$bannerNumber.jpg',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.image_not_supported,
-                size: 48,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            );
-          },
-        ),
-      ),
-    );
   }
 }

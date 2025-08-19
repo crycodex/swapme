@@ -118,9 +118,9 @@ flutter:
     - assets/app/login/google.png
     - assets/app/login/apple.png
     - assets/app/banner/
-    - assets/app/banner/1.jpg
-    - assets/app/banner/2.jpg
-    - assets/app/banner/3.jpg
+    - assets/app/banner/1.png
+    - assets/app/banner/2.png
+    - assets/app/banner/3.png
   
     
   #   - images/a_dot_burr.jpeg
