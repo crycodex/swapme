@@ -450,7 +450,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     try {
       SwapHistoryController historyController;
       try {
-        historyController = Get.find<SwapHistoryController>();
+        historyController = Get.put(SwapHistoryController());
       } catch (e) {
         historyController = Get.put(SwapHistoryController());
       }
@@ -909,7 +909,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               // Obtener el historial más reciente para este chat sin navegar
               SwapHistoryController historyController;
               try {
-                historyController = Get.find<SwapHistoryController>();
+                historyController = Get.put(SwapHistoryController());
               } catch (e) {
                 historyController = Get.put(SwapHistoryController());
               }
