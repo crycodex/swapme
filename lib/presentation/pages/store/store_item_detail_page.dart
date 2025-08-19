@@ -5,6 +5,7 @@ import '../../../data/models/store_model.dart';
 import '../../../controllers/store/store_controller.dart';
 import '../../../controllers/chat/chat_controller.dart';
 import '../chat/chat_page.dart';
+import '../../widgets/molecules/start_conversation_dialog.dart';
 
 class _StoreArguments {
   final String storeId;
@@ -78,9 +79,9 @@ class StoreItemDetailPage extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withOpacity(0.5),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withOpacity(0.5),
                         ],
                       ),
                     ),
@@ -252,14 +253,24 @@ class StoreItemDetailPage extends StatelessWidget {
       return;
     }
 
-    // Mostrar diálogo con mensajes preconfigurados
-    final String? selectedMessage = await _showPreConfiguredMessagesDialog(
-      context,
-      item,
+    final String? selectedMessage = await Get.bottomSheet<String>(
+      StartConversationDialog(
+        storeItem: item,
+        showCustomMessageDialog: (context, item) =>
+            _showCustomMessageDialog(context, item),
+      ),
+      isScrollControlled:
+          true, // Permite que el bottom sheet ocupe la altura necesaria
+      shape: RoundedRectangleBorder(
+        // Redondea las esquinas superiores del bottom sheet
+        borderRadius: BorderRadius.circular(24),
+      ),
+      clipBehavior: Clip
+          .antiAlias, // Asegura que el contenido se recorte según el borde redondeado
     );
+
     if (selectedMessage == null) return;
 
-    // Mostrar indicador de carga
     Get.dialog(
       const Center(
         child: Card(
@@ -280,22 +291,19 @@ class StoreItemDetailPage extends StatelessWidget {
     );
 
     try {
-      // Crear o obtener chat existente para item de tienda
       final String? chatId = await chatController.createChatForStoreItem(
         storeItem: item,
         interestedUserId: chatController.currentUserId!,
       );
 
-      Get.back(); // Cerrar diálogo de carga
+      Get.back();
 
       if (chatId != null) {
-        // Enviar mensaje preconfigurado
         await chatController.sendMessage(
           chatId: chatId,
           content: selectedMessage,
         );
 
-        // Navegar al chat
         Get.to(
           () => ChatPage(chatId: chatId),
           transition: Transition.cupertino,
@@ -308,247 +316,13 @@ class StoreItemDetailPage extends StatelessWidget {
         );
       }
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga
+      Get.back();
       Get.snackbar(
         'Error',
         'Ocurrió un error al crear el chat: $e',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  }
-
-  Future<String?> _showPreConfiguredMessagesDialog(
-    BuildContext context,
-    StoreItemModel item,
-  ) async {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
-    final List<Map<String, dynamic>> preConfiguredMessages = [
-      {
-        'icon': Icons.waving_hand,
-        'title': 'Saludo amigable',
-        'message':
-            '¡Hola! Me interesa mucho tu ${item.name}. ¿Podríamos hablar sobre un posible intercambio?',
-      },
-      {
-        'icon': Icons.swap_horiz,
-        'title': 'Propuesta directa',
-        'message':
-            'Hola, tengo algunos artículos que podrían interesarte para intercambiar por tu ${item.name}. ¿Te gustaría ver qué tengo?',
-      },
-      {
-        'icon': Icons.info_outline,
-        'title': 'Consulta sobre condición',
-        'message':
-            'Me interesa tu ${item.name}. ¿Podrías contarme más sobre su estado y condición actual?',
-      },
-      {
-        'icon': Icons.schedule,
-        'title': 'Consulta sobre disponibilidad',
-        'message':
-            '¡Hola! ¿Tu ${item.name} sigue disponible para intercambio? Me gustaría hacer una propuesta.',
-      },
-      {
-        'icon': Icons.favorite,
-        'title': 'Interés genuino',
-        'message':
-            'Tu ${item.name} es exactamente lo que estaba buscando. ¿Estarías interesado/a en intercambiarlo?',
-      },
-      {'icon': Icons.edit, 'title': 'Mensaje personalizado', 'message': ''},
-    ];
-
-    return await Get.dialog<String>(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Iniciar conversación',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Elige cómo quieres comenzar',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer.withValues(
-                                alpha: 0.8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Get.back(),
-                      icon: Icon(
-                        Icons.close,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Lista de mensajes
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: preConfiguredMessages.length,
-                  itemBuilder: (context, index) {
-                    final messageData = preConfiguredMessages[index];
-                    final bool isCustom = messageData['message'].isEmpty;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () async {
-                            if (isCustom) {
-                              final String? customMessage =
-                                  await _showCustomMessageDialog(context, item);
-                              if (customMessage != null &&
-                                  customMessage.trim().isNotEmpty) {
-                                Get.back(result: customMessage);
-                              }
-                            } else {
-                              Get.back(result: messageData['message']);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: colorScheme.outline.withValues(
-                                  alpha: 0.2,
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: isCustom
-                                        ? colorScheme.secondaryContainer
-                                        : colorScheme.primaryContainer
-                                              .withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    messageData['icon'],
-                                    color: isCustom
-                                        ? colorScheme.onSecondaryContainer
-                                        : colorScheme.secondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        messageData['title'],
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      if (!isCustom) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          messageData['message'],
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme.hintColor,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ] else ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Escribe tu propio mensaje',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme.hintColor,
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: theme.hintColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Footer info
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule, size: 16, color: theme.hintColor),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'El chat expirará automáticamente en 7 días',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Future<String?> _showCustomMessageDialog(
@@ -616,7 +390,7 @@ class StoreItemDetailPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.secondary.withValues(alpha: 0.1),
+          color: color.secondary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -665,7 +439,7 @@ class _StoreCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: color.secondary.withValues(alpha: 0.15),
+                backgroundColor: color.secondary.withOpacity(0.15),
                 backgroundImage: logoUrl != null && logoUrl.isNotEmpty
                     ? NetworkImage(logoUrl)
                     : null,
@@ -691,8 +465,6 @@ class _StoreCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(),
-              Icon(Icons.chevron_right_rounded, color: theme.hintColor),
             ],
           ),
         );
@@ -758,7 +530,7 @@ class _StoreItemsPage extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: color.surface.withValues(alpha: 0.8),
+                            color: color.surface.withOpacity(0.8),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(

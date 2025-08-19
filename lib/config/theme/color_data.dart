@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// Requires Flutter 3.22.0 or later.
 const ColorScheme lightColorScheme = ColorScheme(
   brightness: Brightness.light,
-  primary: Color(0xFFA9FE58),
+  primary: Color.fromARGB(255, 127, 200, 59),
   onPrimary: Color(0xFF000000),
   primaryContainer: Color(0xFFD0E4FF),
   onPrimaryContainer: Color(0xFF000000),
