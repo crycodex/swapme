@@ -28,91 +28,107 @@ class HomeLayout extends GetView<HomeController> {
 
       return Scaffold(
         backgroundColor: colorScheme.surface,
-        body: Stack(
-          children: [
-            isFullScreenView
-                ? _buildFullScreenView(currentIndex)
-                : NestedScrollView(
-                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                      SliverAppBar(
-                        backgroundColor: colorScheme.surface,
-                        expandedHeight: media.size.height * 0.26,
-                        floating: false,
-                        pinned: true,
-                        elevation: 0,
-                        flexibleSpace: FlexibleSpaceBar(
-                          centerTitle: false,
-                          expandedTitleScale: 1.4,
-                          titlePadding: const EdgeInsetsDirectional.only(
-                            start: 16,
-                            bottom: 12,
-                          ),
-                          title: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              'SwapMe',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    offset: const Offset(0, 1),
-                                    blurRadius: 3,
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          background: HeaderCarousel(colorScheme: colorScheme),
-                        ),
-                      ),
-                    ],
-                    body: PageView(
-                      controller: controller.pageController,
-                      onPageChanged: controller.handlePageChanged,
+        body: isFullScreenView
+            ? Stack(
+                children: [
+                  _buildFullScreenView(currentIndex),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _HomePlaceholder(controller: controller),
-                        const StoreView(),
+                        // Banner de anuncio
+                        const BottomAdBannerWidget(),
+                        // Bottom Navigation Bar
+                        BottomNavBar(
+                          controller: controller,
+                          colorScheme: colorScheme,
+                        ),
                       ],
                     ),
                   ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Banner de anuncio
-                    const BottomAdBannerWidget(),
-                    // Bottom Navigation Bar
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: BottomNavBar(
+                ],
+              )
+            : Column(
+                children: [
+                  // Contenido principal expandido
+                  Expanded(
+                    child: NestedScrollView(
+                      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                        SliverAppBar(
+                          backgroundColor: colorScheme.surface,
+                          expandedHeight: media.size.height * 0.26,
+                          floating: false,
+                          pinned: true,
+                          elevation: 0,
+                          flexibleSpace: FlexibleSpaceBar(
+                            centerTitle: false,
+                            expandedTitleScale: 1.4,
+                            titlePadding: const EdgeInsetsDirectional.only(
+                              start: 16,
+                              bottom: 12,
+                            ),
+                            title: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                'SwapMe',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            background: HeaderCarousel(
+                              colorScheme: colorScheme,
+                            ),
+                          ),
+                        ),
+                      ],
+                      body: PageView(
+                        controller: controller.pageController,
+                        onPageChanged: controller.handlePageChanged,
+                        children: [
+                          _HomePlaceholder(controller: controller),
+                          const StoreView(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Banner de anuncio y Bottom Navigation fijos
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const BottomAdBannerWidget(),
+                      BottomNavBar(
                         controller: controller,
                         colorScheme: colorScheme,
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       );
     });
   }
@@ -216,6 +232,8 @@ class _HomePlaceholder extends StatelessWidget {
               },
             ),
           ),
+          // Padding inferior para evitar superposición con bottom nav
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
     );
