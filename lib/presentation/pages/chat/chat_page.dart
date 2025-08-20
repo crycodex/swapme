@@ -1164,13 +1164,19 @@ class _MessageBubble extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: FilledButton.icon(
                         onPressed: () => onSwapResponse!(false),
                         icon: const Icon(Icons.close, size: 16),
                         label: const Text('Rechazar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.error,
-                          side: BorderSide(color: colorScheme.error),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
+                          ),
+                          backgroundColor: colorScheme.error,
+                          textStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.surface,
+                          ),
                         ),
                       ),
                     ),
