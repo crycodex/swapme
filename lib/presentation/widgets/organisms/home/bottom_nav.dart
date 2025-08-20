@@ -1,7 +1,7 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:get/get.dart';
+import 'package:glossy/glossy.dart';
 import '../../../../controllers/home/home_controller.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -16,80 +16,78 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return ClipRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 125,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  colorScheme.surface.withValues(alpha: 0.8),
-                  colorScheme.surface.withValues(alpha: 0.95),
-                ],
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.2),
-                  width: 0.5,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
+      return GlossyContainer(
+        height: 125,
+        width: double.infinity,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 0.5,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                colorScheme.surface.withValues(alpha: 0.8),
+                colorScheme.surface.withValues(alpha: 0.95),
               ],
             ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _NavItem(
-                      index: 0,
-                      icon: Icons.home_rounded,
-                      label: 'Inicio',
-                      controller: controller,
-                      colorScheme: colorScheme,
-                    ),
-                    _NavItem(
-                      index: 1,
-                      icon: Icons.storefront_rounded,
-                      label: 'Tienda',
-                      controller: controller,
-                      colorScheme: colorScheme,
-                    ),
-                    _CenterAction(
-                      onPressed: () => Get.toNamed('/create-swap'),
-                      isActive: controller.currentIndex.value == 2,
-                      colorScheme: colorScheme,
-                    ),
-                    _NavItem(
-                      index: 3,
-                      icon: Icons.chat_bubble_rounded,
-                      label: 'Mensajes',
-                      controller: controller,
-                      colorScheme: colorScheme,
-                    ),
-                    _NavItem(
-                      index: 4,
-                      icon: Icons.person_rounded,
-                      label: 'Perfil',
-                      controller: controller,
-                      colorScheme: colorScheme,
-                    ),
-                  ],
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _NavItem(
+                    index: 0,
+                    icon: Icons.home_rounded,
+                    label: 'Inicio',
+                    controller: controller,
+                    colorScheme: colorScheme,
+                  ),
+                  _NavItem(
+                    index: 1,
+                    icon: Icons.storefront_rounded,
+                    label: 'Tienda',
+                    controller: controller,
+                    colorScheme: colorScheme,
+                  ),
+                  _CenterAction(
+                    onPressed: () => Get.toNamed('/create-swap'),
+                    isActive: controller.currentIndex.value == 2,
+                    colorScheme: colorScheme,
+                  ),
+                  _NavItem(
+                    index: 3,
+                    icon: Icons.chat_bubble_rounded,
+                    label: 'Mensajes',
+                    controller: controller,
+                    colorScheme: colorScheme,
+                  ),
+                  _NavItem(
+                    index: 4,
+                    icon: Icons.person_rounded,
+                    label: 'Perfil',
+                    controller: controller,
+                    colorScheme: colorScheme,
+                  ),
+                ],
               ),
             ),
           ),
