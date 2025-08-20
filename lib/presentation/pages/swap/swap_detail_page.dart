@@ -7,17 +7,6 @@ import '../../../routes/routes.dart';
 import '../chat/chat_page.dart';
 import '../../widgets/molecules/start_conversation_dialog.dart';
 
-class _SellerArguments {
-  final String userId;
-  final String userName;
-  final String? photoUrl;
-  const _SellerArguments({
-    required this.userId,
-    required this.userName,
-    this.photoUrl,
-  });
-}
-
 class SwapDetailPage extends StatelessWidget {
   const SwapDetailPage({super.key});
 
@@ -86,7 +75,7 @@ class SwapDetailPage extends StatelessWidget {
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             color: colorScheme.onSurfaceVariant,
-                            size: 48,
+                            size: 40,
                             semanticLabel: 'Imagen no disponible',
                           ),
                         ),
@@ -181,15 +170,13 @@ class SwapDetailPage extends StatelessWidget {
                     swapController: swapController,
                     onOpenSeller:
                         (String userId, String userName, String? photo) {
-                          Get.to(
-                            () => _SellerSwapsPage(
-                              args: _SellerArguments(
-                                userId: userId,
-                                userName: userName,
-                                photoUrl: photo,
-                              ),
-                            ),
-                            transition: Transition.cupertino,
+                          Get.toNamed(
+                            Routes.sellerProfile,
+                            arguments: {
+                              'userId': userId,
+                              'userName': userName,
+                              'photoUrl': photo,
+                            },
                           );
                         },
                   ),
@@ -539,109 +526,6 @@ class _SellerCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _SellerSwapsPage extends StatelessWidget {
-  final _SellerArguments args;
-  const _SellerSwapsPage({required this.args});
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme color = theme.colorScheme;
-    final SwapController controller = Get.put(SwapController());
-    return Scaffold(
-      appBar: AppBar(title: Text(args.userName)),
-      body: StreamBuilder<List<SwapItemModel>>(
-        stream: controller.getSwapsByUser(args.userId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final List<SwapItemModel> items = snapshot.data ?? <SwapItemModel>[];
-          if (items.isEmpty) {
-            return Center(
-              child: Text(
-                'Este usuario aún no tiene swaps',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.hintColor,
-                ),
-              ),
-            );
-          }
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.76,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final SwapItemModel item = items[index];
-              return GestureDetector(
-                onTap: () => Get.toNamed(Routes.swapDetail, arguments: item),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.network(item.imageUrl, fit: BoxFit.cover),
-                      ),
-                      Positioned(
-                        left: 8,
-                        right: 8,
-                        bottom: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: color.surface.withValues(alpha: 0.8),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.attach_money,
-                                    size: 14,
-                                    color: color.primary,
-                                  ),
-                                  Text(
-                                    item.estimatedPrice.toStringAsFixed(0),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: color.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

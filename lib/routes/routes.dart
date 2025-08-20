@@ -10,6 +10,7 @@ import '../presentation/pages/home/home_page.dart';
 import '../presentation/pages/profile/edit_profile_page.dart';
 import '../presentation/pages/profile/swap_history_page.dart';
 import '../presentation/pages/profile/user_ratings_page.dart';
+import '../presentation/pages/profile/seller_profile_page.dart';
 //swap
 import '../presentation/pages/swap/create_swap_page.dart';
 import '../presentation/pages/swap/swap_detail_page.dart';
@@ -27,6 +28,7 @@ class Routes {
   static const String editProfile = '/edit-profile';
   static const String swapHistory = '/swap-history';
   static const String userRatings = '/user-ratings';
+  static const String sellerProfile = '/seller-profile';
   static const String createSwap = '/create-swap';
   static const String swapDetail = '/swap-detail';
   static const String storeDetail = '/store-detail';
@@ -54,6 +56,11 @@ class Routes {
           userName: args['userName'] as String,
         );
       },
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.sellerProfile,
+      page: () => const SellerProfilePage(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
