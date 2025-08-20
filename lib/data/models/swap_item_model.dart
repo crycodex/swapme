@@ -13,6 +13,7 @@ class SwapItemModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
+  final bool isAvailable;
 
   const SwapItemModel({
     required this.id,
@@ -27,6 +28,7 @@ class SwapItemModel {
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
+    this.isAvailable = true,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +45,7 @@ class SwapItemModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isActive': isActive,
+      'isAvailable': isAvailable,
     };
   }
 
@@ -73,6 +76,7 @@ class SwapItemModel {
       createdAt: parseDate(map['createdAt']),
       updatedAt: parseDate(map['updatedAt']),
       isActive: map['isActive'] ?? true,
+      isAvailable: map['isAvailable'] ?? true,
     );
   }
 
@@ -89,6 +93,7 @@ class SwapItemModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    bool? isAvailable,
   }) {
     return SwapItemModel(
       id: id ?? this.id,
@@ -103,6 +108,7 @@ class SwapItemModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      isAvailable: isAvailable ?? this.isAvailable,
     );
   }
 }

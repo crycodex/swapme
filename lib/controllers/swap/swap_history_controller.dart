@@ -264,7 +264,9 @@ class SwapHistoryController extends GetxController {
       await _firestore.runTransaction((transaction) async {
         // FASE 1: TODAS LAS LECTURAS PRIMERO
         final DocumentReference swapItemRef = _firestore
-            .collection('swap_items')
+            .collection('users')
+            .doc(chat.swapItemOwnerId)
+            .collection('swaps')
             .doc(chat.swapItemId);
 
         final DocumentReference ownerStatsRef = _firestore
