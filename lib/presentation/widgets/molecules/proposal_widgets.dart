@@ -23,7 +23,7 @@ class ProposalTypeTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primaryContainer
@@ -80,12 +80,10 @@ class MoneySelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.attach_money, size: 64, color: colorScheme.primary),
-          const SizedBox(height: 16),
           Text(
             'Proponer dinero',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -117,7 +115,7 @@ class MoneySelector extends StatelessWidget {
                 Slider(
                   value: selectedAmount,
                   min: 5,
-                  max: 500,
+                  max: 300,
                   divisions: 99,
                   label: '\$${selectedAmount.toStringAsFixed(0)}',
                   onChanged: onAmountChanged,
@@ -135,7 +133,7 @@ class MoneySelector extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '\$500',
+                      '\$300',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -221,7 +219,6 @@ class ProductsList extends StatelessWidget {
                   onPressed: () {
                     // Cerrar el selector y navegar a crear producto
                     Navigator.of(context).pop();
-                    // TODO: Navegar a crear producto
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('Agregar producto'),

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../data/models/swap_item_model.dart';
 import '../../../controllers/swap/swap_controller.dart';
 import '../../../controllers/chat/chat_controller.dart';
+import '../../../routes/routes.dart';
 import '../chat/chat_page.dart';
 import '../../widgets/molecules/start_conversation_dialog.dart';
 
@@ -24,7 +25,28 @@ class SwapDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final SwapItemModel item = Get.arguments as SwapItemModel;
+
+    // Verificar que los argumentos no sean null
+    final dynamic arguments = Get.arguments;
+    if (arguments == null || arguments is! SwapItemModel) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text('Error: No se pudo cargar la información del producto'),
+              SizedBox(height: 8),
+              Text('Por favor, regresa e intenta de nuevo.'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final SwapItemModel item = arguments;
     final SwapController swapController = Get.put(SwapController());
     final ChatController chatController = Get.put(ChatController());
 
@@ -561,7 +583,7 @@ class _SellerSwapsPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final SwapItemModel item = items[index];
               return GestureDetector(
-                onTap: () => Get.to(() => SwapDetailPage(), arguments: item),
+                onTap: () => Get.toNamed(Routes.swapDetail, arguments: item),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Stack(

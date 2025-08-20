@@ -50,7 +50,7 @@ class _ProductSelectorState extends State<ProductSelector> {
           Container(
             margin: const EdgeInsets.only(top: 8),
             width: 40,
-            height: 8,
+            height: 4,
             decoration: BoxDecoration(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
