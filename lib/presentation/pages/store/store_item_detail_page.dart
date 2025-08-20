@@ -227,11 +227,35 @@ class StoreItemDetailPage extends StatelessWidget {
               button: true,
               label: 'Intercambiar este producto',
               hint: 'Abre el flujo para proponer un intercambio',
-              child: FilledButton(
-                onPressed: () =>
-                    _initiateStoreItemSwap(context, item, chatController),
-                child: const Text('Intercambiar'),
-              ),
+              child: Obx(() {
+                if (chatController.currentUserId == null) {
+                  return FilledButton(
+                    onPressed: null,
+                    child: const Text('Intercambiar'),
+                  );
+                }
+
+                // Verificar si ya existe un chat activo
+                final existingChat = chatController.chats.firstWhereOrNull((
+                  chat,
+                ) {
+                  final Map<String, dynamic> chatData = chat.toFirestore();
+                  return chatData['storeItemId'] == item.id &&
+                      chatData['interestedUserId'] ==
+                          chatController.currentUserId! &&
+                      !chat.isExpired;
+                });
+
+                final bool hasActiveChat = existingChat != null;
+
+                return FilledButton(
+                  onPressed: () =>
+                      _initiateStoreItemSwap(context, item, chatController),
+                  child: Text(
+                    hasActiveChat ? 'Continuar al chat' : 'Intercambiar',
+                  ),
+                );
+              }),
             ),
           ),
         ),
@@ -249,6 +273,25 @@ class StoreItemDetailPage extends StatelessWidget {
         'Error',
         'Debes iniciar sesión para intercambiar',
         snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Verificar si ya existe un chat activo para este producto de tienda
+    final String currentUserId = chatController.currentUserId!;
+    final existingChat = chatController.chats.firstWhereOrNull((chat) {
+      // Para store items, verificamos storeItemId y storeOwnerId
+      final Map<String, dynamic> chatData = chat.toFirestore();
+      return chatData['storeItemId'] == item.id &&
+          chatData['interestedUserId'] == currentUserId &&
+          !chat.isExpired;
+    });
+
+    if (existingChat != null) {
+      // Ya existe un chat, ir directamente al chat
+      Get.to(
+        () => ChatPage(chatId: existingChat.id),
+        transition: Transition.cupertino,
       );
       return;
     }

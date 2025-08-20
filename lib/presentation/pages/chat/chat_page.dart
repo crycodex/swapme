@@ -5,6 +5,8 @@ import '../../../controllers/swap/swap_history_controller.dart';
 import '../../../data/models/chat_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../../data/models/swap_history_model.dart';
+import '../../../data/models/swap_item_model.dart';
+import '../../widgets/molecules/product_selector.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -16,7 +18,6 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
-  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ChatController _chatController = Get.put(ChatController());
 
@@ -53,7 +54,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Notificar al controlador que ya no hay chat visible
     _chatController.setCurrentVisibleChat(null);
 
-    _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -352,26 +352,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _showSwapProposalDialog,
-                          icon: const Icon(Icons.swap_horiz, size: 18),
-                          label: const Text('Proponer'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: _buildActionButton()),
-                    ],
-                  ),
+                  child: _buildActionButton(),
                 ),
-                _MessageInput(
-                  controller: _messageController,
-                  onSend: _sendMessage,
+                _ProductSelectorInput(
+                  onProductSelected: _sendProductProposal,
+                  onMoneySelected: _sendMoneyProposal,
                 ),
               ],
             ),
@@ -478,23 +463,61 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _sendMessage() async {
-    final String content = _messageController.text.trim();
-    if (content.isEmpty) return;
-
-    _messageController.clear();
-
+  Future<void> _sendProductProposal(SwapItemModel product) async {
     final bool success = await _chatController.sendMessage(
       chatId: widget.chatId,
-      content: content,
+      content: 'Te propongo intercambiar mi "${product.name}" por tu artículo.',
+      type: MessageType.productProposal,
+      metadata: {
+        'productId': product.id,
+        'productName': product.name,
+        'productImageUrl': product.imageUrl,
+        'productPrice': product.estimatedPrice,
+        'productSize': product.size,
+        'productCondition': product.condition,
+        'productDescription': product.description,
+      },
     );
 
     if (success) {
       _scrollToBottom();
+      Get.snackbar(
+        'Propuesta enviada',
+        'Tu propuesta de intercambio ha sido enviada',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+      );
     } else {
       Get.snackbar(
         'Error',
-        'No se pudo enviar el mensaje',
+        'No se pudo enviar la propuesta',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _sendMoneyProposal(double amount) async {
+    final bool success = await _chatController.sendMessage(
+      chatId: widget.chatId,
+      content: 'Te ofrezco \$${amount.toStringAsFixed(0)} por tu artículo.',
+      type: MessageType.moneyProposal,
+      metadata: {'amount': amount, 'currency': 'USD'},
+    );
+
+    if (success) {
+      _scrollToBottom();
+      Get.snackbar(
+        'Propuesta enviada',
+        'Tu oferta de dinero ha sido enviada',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        'No se pudo enviar la propuesta',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -614,52 +637,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               foregroundColor: colorScheme.onError,
             ),
             child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSwapProposalDialog() {
-    final TextEditingController proposalController = TextEditingController();
-
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Proponer intercambio'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Describe tu propuesta de intercambio:'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: proposalController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText:
-                    'Ej: Te ofrezco mi chaqueta de cuero por tu suéter...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final String proposal = proposalController.text.trim();
-              if (proposal.isNotEmpty) {
-                await _chatController.proposeSwap(
-                  chatId: widget.chatId,
-                  proposalMessage: proposal,
-                );
-                Get.back();
-                _scrollToBottom();
-              }
-            },
-            child: const Text('Enviar propuesta'),
           ),
         ],
       ),
@@ -1297,6 +1274,276 @@ class _MessageBubble extends StatelessWidget {
           ),
         );
 
+      case MessageType.productProposal:
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isCurrentUser
+                ? colorScheme.primaryContainer
+                : colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isCurrentUser
+                  ? colorScheme.primary
+                  : colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.swap_horiz,
+                    color: isCurrentUser
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Propuesta de producto',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isCurrentUser
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Product info
+              if (message.metadata != null) ...[
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        message.metadata!['productImageUrl'] ?? '',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 50,
+                          height: 50,
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            message.metadata!['productName'] ?? '',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: isCurrentUser
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSecondaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                '\$${(message.metadata!['productPrice'] ?? 0.0).toStringAsFixed(0)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                message.metadata!['productSize'] ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                message.metadata!['productCondition'] ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isCurrentUser
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+              if (!isCurrentUser && onSwapResponse != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => onSwapResponse!(false),
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Rechazar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          side: BorderSide(color: colorScheme.error),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => onSwapResponse!(true),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Aceptar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+
+      case MessageType.moneyProposal:
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isCurrentUser
+                ? colorScheme.primaryContainer
+                : colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isCurrentUser
+                  ? colorScheme.primary
+                  : colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.attach_money,
+                    color: isCurrentUser
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Propuesta de dinero',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isCurrentUser
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Money amount display
+              if (message.metadata != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color:
+                        (isCurrentUser
+                                ? colorScheme.primary
+                                : colorScheme.secondary)
+                            .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.attach_money,
+                        color: isCurrentUser
+                            ? colorScheme.primary
+                            : colorScheme.secondary,
+                        size: 32,
+                      ),
+                      Text(
+                        '${(message.metadata!['amount'] ?? 0.0).toStringAsFixed(0)}',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: isCurrentUser
+                              ? colorScheme.primary
+                              : colorScheme.secondary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isCurrentUser
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+              if (!isCurrentUser && onSwapResponse != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => onSwapResponse!(false),
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Rechazar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          side: BorderSide(color: colorScheme.error),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => onSwapResponse!(true),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Aceptar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+
       default:
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1334,11 +1581,14 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _MessageInput extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
+class _ProductSelectorInput extends StatelessWidget {
+  final Function(SwapItemModel) onProductSelected;
+  final Function(double) onMoneySelected;
 
-  const _MessageInput({required this.controller, required this.onSend});
+  const _ProductSelectorInput({
+    required this.onProductSelected,
+    required this.onMoneySelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1355,41 +1605,68 @@ class _MessageInput extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: 'Escribe un mensaje...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+        child: GestureDetector(
+          onTap: () => _showProductSelector(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.swap_horiz, color: colorScheme.primary, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Hacer una propuesta...',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-                onSubmitted: (_) => onSend(),
-              ),
+                Icon(
+                  Icons.keyboard_arrow_up,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: onSend,
-              style: FilledButton.styleFrom(
-                shape: const CircleBorder(),
-                padding: const EdgeInsets.all(12),
-              ),
-              child: const Icon(Icons.send),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showProductSelector(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return ProductSelector(
+              onProductSelected: (SwapItemModel product) {
+                Navigator.of(context).pop();
+                onProductSelected(product);
+              },
+              onMoneySelected: (double amount) {
+                Navigator.of(context).pop();
+                onMoneySelected(amount);
+              },
+              onClosePressed: () => Navigator.of(context).pop(),
+            );
+          },
+        );
+      },
     );
   }
 }

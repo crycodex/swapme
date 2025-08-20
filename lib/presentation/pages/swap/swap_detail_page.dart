@@ -232,18 +232,39 @@ class SwapDetailPage extends StatelessWidget {
               button: true,
               label: 'Intercambiar este artículo',
               hint: 'Abre el flujo para proponer un intercambio',
-              child: FilledButton(
-                onPressed:
-                    chatController.currentUserId != null &&
-                        chatController.currentUserId != item.userId
-                    ? () => _initiateSwap(context, item, chatController)
-                    : null,
-                child: Text(
-                  chatController.currentUserId == item.userId
-                      ? 'Tu artículo'
-                      : 'Intercambiar',
-                ),
-              ),
+              child: Obx(() {
+                if (chatController.currentUserId == item.userId) {
+                  return FilledButton(
+                    onPressed: null,
+                    child: const Text('Tu artículo'),
+                  );
+                }
+
+                if (chatController.currentUserId == null) {
+                  return FilledButton(
+                    onPressed: null,
+                    child: const Text('Intercambiar'),
+                  );
+                }
+
+                // Verificar si ya existe un chat activo
+                final existingChat = chatController.chats.firstWhereOrNull(
+                  (chat) =>
+                      chat.swapItemId == item.id &&
+                      chat.interestedUserId == chatController.currentUserId! &&
+                      chat.swapItemOwnerId == item.userId &&
+                      !chat.isExpired,
+                );
+
+                final bool hasActiveChat = existingChat != null;
+
+                return FilledButton(
+                  onPressed: () => _initiateSwap(context, item, chatController),
+                  child: Text(
+                    hasActiveChat ? 'Continuar al chat' : 'Intercambiar',
+                  ),
+                );
+              }),
             ),
           ),
         ),
@@ -261,6 +282,25 @@ class SwapDetailPage extends StatelessWidget {
         'Error',
         'Debes iniciar sesión para intercambiar',
         snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Verificar si ya existe un chat activo para este artículo
+    final String currentUserId = chatController.currentUserId!;
+    final existingChat = chatController.chats.firstWhereOrNull(
+      (chat) =>
+          chat.swapItemId == item.id &&
+          chat.interestedUserId == currentUserId &&
+          chat.swapItemOwnerId == item.userId &&
+          !chat.isExpired,
+    );
+
+    if (existingChat != null) {
+      // Ya existe un chat, ir directamente al chat
+      Get.to(
+        () => ChatPage(chatId: existingChat.id),
+        transition: Transition.cupertino,
       );
       return;
     }
