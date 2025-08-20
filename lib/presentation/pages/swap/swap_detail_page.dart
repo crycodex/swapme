@@ -504,28 +504,66 @@ class _SellerCard extends StatelessWidget {
                     : null,
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    userName,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Ver perfil y artículos',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.hintColor,
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        // Stars rating
+                        _buildStarRating(
+                          4.5,
+                          14,
+                        ), // TODO: Obtener rating real del usuario
+                        const SizedBox(width: 4),
+                        Text(
+                          '4.5', // TODO: Mostrar rating real
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '• Ver perfil',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Icon(Icons.chevron_right_rounded, color: theme.hintColor),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStarRating(double rating, double size) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating.floor()
+              ? Icons.star
+              : (index < rating.ceil() && rating % 1 != 0)
+              ? Icons.star_half
+              : Icons.star_border,
+          size: size,
+          color: Colors.amber[600],
+        );
+      }),
     );
   }
 }
