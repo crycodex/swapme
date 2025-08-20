@@ -20,7 +20,7 @@ class BottomNavBar extends StatelessWidget {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            height: 120,
+            height: 125,
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(

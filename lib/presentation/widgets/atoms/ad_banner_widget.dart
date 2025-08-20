@@ -154,20 +154,252 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   }
 }
 
-// Widget especializado para banner en bottom navigation
-class BottomAdBannerWidget extends StatelessWidget {
+// Control global para limitar ads simultáneos
+class _BottomAdGlobalController {
+  static final _BottomAdGlobalController _instance =
+      _BottomAdGlobalController._internal();
+  factory _BottomAdGlobalController() => _instance;
+  _BottomAdGlobalController._internal();
+
+  int _activeAds = 0;
+  static const int _maxActiveAds = 1; // Solo 1 ad activo a la vez
+
+  bool canCreateAd() => _activeAds < _maxActiveAds;
+
+  void registerAd() {
+    _activeAds++;
+    debugPrint('[BottomAdGlobal] Ads activos: $_activeAds');
+  }
+
+  void unregisterAd() {
+    if (_activeAds > 0) {
+      _activeAds--;
+      debugPrint('[BottomAdGlobal] Ads activos: $_activeAds');
+    }
+  }
+}
+
+// Manager para ads en bottom navigation - sin singleton para evitar duplicados
+class BottomAdManager {
+  BannerAd? _bottomAd;
+  bool _isAdLoaded = false;
+  bool _isAdLoading = false;
+  bool _isAdFailedToLoad = false;
+  final AdService _adService = AdService.instance;
+  final List<VoidCallback> _loadingCallbacks = [];
+  final _BottomAdGlobalController _globalController =
+      _BottomAdGlobalController();
+
+  bool get isAdLoaded => _isAdLoaded;
+  bool get isAdLoading => _isAdLoading;
+  bool get isAdFailed => _isAdFailedToLoad;
+  BannerAd? get bottomAd => _bottomAd;
+
+  Future<void> loadBottomAd() async {
+    if (_isAdLoaded || _isAdLoading) return;
+
+    // Verificar si podemos crear un nuevo ad
+    if (!_globalController.canCreateAd()) {
+      debugPrint(
+        '[BottomAdManager] No se puede crear más ads (límite alcanzado)',
+      );
+      _isAdFailedToLoad = true;
+      _notifyCallbacks();
+      return;
+    }
+
+    _isAdLoading = true;
+    _isAdFailedToLoad = false;
+
+    try {
+      final bool isReady = await _adService.isSDKReady();
+      if (!isReady) {
+        debugPrint('[BottomAdManager] SDK de AdMob no está listo');
+        _isAdLoading = false;
+        _isAdFailedToLoad = true;
+        _notifyCallbacks();
+        return;
+      }
+
+      _bottomAd = _adService.createBannerAd(
+        adSize: AdSize.banner,
+        onAdLoaded: () {
+          debugPrint('[BottomAdManager] Bottom ad cargado exitosamente');
+          _globalController.registerAd();
+          _isAdLoaded = true;
+          _isAdLoading = false;
+          _isAdFailedToLoad = false;
+          _notifyCallbacks();
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          debugPrint('[BottomAdManager] Error cargando bottom ad: $error');
+          _isAdLoaded = false;
+          _isAdLoading = false;
+          _isAdFailedToLoad = true;
+          _bottomAd?.dispose();
+          _bottomAd = null;
+          _notifyCallbacks();
+        },
+      );
+
+      await _bottomAd?.load();
+    } catch (e) {
+      debugPrint('[BottomAdManager] Error al crear bottom ad: $e');
+      _isAdLoaded = false;
+      _isAdLoading = false;
+      _isAdFailedToLoad = true;
+      _notifyCallbacks();
+    }
+  }
+
+  void addLoadingCallback(VoidCallback callback) {
+    _loadingCallbacks.add(callback);
+  }
+
+  void removeLoadingCallback(VoidCallback callback) {
+    _loadingCallbacks.remove(callback);
+  }
+
+  void _notifyCallbacks() {
+    for (final callback in _loadingCallbacks) {
+      callback();
+    }
+  }
+
+  void refresh() {
+    debugPrint('[BottomAdManager] Refrescando ad...');
+    dispose();
+    loadBottomAd();
+  }
+
+  void dispose() {
+    if (_isAdLoaded) {
+      _globalController.unregisterAd();
+    }
+    _bottomAd?.dispose();
+    _bottomAd = null;
+    _isAdLoaded = false;
+    _isAdLoading = false;
+    _isAdFailedToLoad = false;
+    _loadingCallbacks.clear();
+  }
+
+  // Método para verificar si el ad sigue siendo válido
+  bool isAdValid() {
+    return _bottomAd != null && _isAdLoaded && !_isAdFailedToLoad;
+  }
+}
+
+// Widget especializado para banner en bottom navigation con cache
+class BottomAdBannerWidget extends StatefulWidget {
   const BottomAdBannerWidget({super.key});
+
+  @override
+  State<BottomAdBannerWidget> createState() => _BottomAdBannerWidgetState();
+}
+
+class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
+  BottomAdManager? _adManager;
+  late VoidCallback _updateCallback;
+
+  @override
+  void initState() {
+    super.initState();
+    _adManager = BottomAdManager();
+
+    _updateCallback = () {
+      if (mounted) {
+        setState(() {});
+      }
+    };
+
+    _adManager?.addLoadingCallback(_updateCallback);
+
+    // Cargar ad con delay
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _adManager != null) {
+        _adManager!.loadBottomAd();
+      }
+    });
+
+    // Verificar periódicamente si el ad sigue siendo válido
+    Future.delayed(const Duration(minutes: 5), _checkAdValidity);
+  }
+
+  void _checkAdValidity() {
+    if (!mounted || _adManager == null) return;
+
+    if (!_adManager!.isAdValid() && !_adManager!.isAdLoading) {
+      debugPrint('[BottomAdBannerWidget] Ad no válido, recargando...');
+      _adManager!.refresh();
+    }
+
+    // Programar siguiente verificación
+    Future.delayed(const Duration(minutes: 5), _checkAdValidity);
+  }
+
+  @override
+  void dispose() {
+    _adManager?.removeLoadingCallback(_updateCallback);
+    _adManager?.dispose();
+    _adManager = null;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-    return AdBannerWidget(
-      adSize: AdSize.banner,
+    // Si no hay manager o el ad falló al cargar, no mostrar nada
+    if (_adManager == null || _adManager!.isAdFailed) {
+      return const SizedBox.shrink();
+    }
+
+    // Si el ad no está cargado, mostrar placeholder
+    if (!_adManager!.isAdLoaded || _adManager!.bottomAd == null) {
+      return Container(
+        width: AdSize.banner.width.toDouble(),
+        height: AdSize.banner.height.toDouble(),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                colorScheme.primary.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Mostrar el ad
+    return Container(
+      width: AdSize.banner.width.toDouble(),
+      height: AdSize.banner.height.toDouble(),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      borderRadius: BorderRadius.circular(12),
-      backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-      elevation: 4,
+      decoration: BoxDecoration(
+        color: colorScheme.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: AdWidget(ad: _adManager!.bottomAd!),
+      ),
     );
   }
 }

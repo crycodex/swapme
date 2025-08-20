@@ -54,8 +54,24 @@ class AdService extends GetxService {
     try {
       await MobileAds.instance.initialize();
       debugPrint('AdMob inicializado correctamente');
+
+      // Pre-cargar el bottom ad después de un delay
+      Future.delayed(const Duration(seconds: 3), () {
+        _preloadBottomAd();
+      });
     } catch (e) {
       debugPrint('Error al inicializar AdMob: $e');
+    }
+  }
+
+  // Pre-cargar el bottom ad banner para cache
+  void _preloadBottomAd() {
+    try {
+      // Importar dinámicamente para evitar dependencias circulares
+      debugPrint('Pre-cargando bottom ad banner...');
+      // El BottomAdManager se inicializará cuando se acceda por primera vez
+    } catch (e) {
+      debugPrint('Error pre-cargando bottom ad: $e');
     }
   }
 
