@@ -567,7 +567,7 @@ class _StoreItemCard extends StatelessWidget {
                           ),
                           onSelected: (String v) async {
                             if (v == 'edit') {
-                              Get.find<StoreController>().startEditingStoreItem(
+                              Get.put(StoreController()).startEditingStoreItem(
                                 item,
                               );
                               Get.toNamed(
@@ -578,7 +578,7 @@ class _StoreItemCard extends StatelessWidget {
                                 },
                               );
                             } else if (v == 'delete') {
-                              await Get.find<StoreController>().deleteStoreItem(
+                              await Get.put(StoreController()).deleteStoreItem(
                                 store.id,
                                 item,
                               );
