@@ -297,18 +297,24 @@ class SwapHistoryPage extends GetView<SwapHistoryController> {
                                 color: colorScheme.primary,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                isOwner ? 'Intercambiado con' : 'Obtenido de',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.hintColor,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                otherUserName,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isOwner
+                                        ? 'Intercambiado con '
+                                        : 'Obtenido de',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    otherUserName,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
