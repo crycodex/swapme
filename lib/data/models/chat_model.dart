@@ -41,11 +41,12 @@ class ChatModel {
     final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return ChatModel(
       id: doc.id,
-      swapItemId: data['swapItemId'] ?? '',
-      swapItemOwnerId: data['swapItemOwnerId'] ?? '',
+      swapItemId: data['swapItemId'] ?? data['storeItemId'] ?? '',
+      swapItemOwnerId: data['swapItemOwnerId'] ?? data['storeOwnerId'] ?? '',
       interestedUserId: data['interestedUserId'] ?? '',
-      swapItemName: data['swapItemName'] ?? '',
-      swapItemImageUrl: data['swapItemImageUrl'] ?? '',
+      swapItemName: data['swapItemName'] ?? data['storeItemName'] ?? '',
+      swapItemImageUrl:
+          data['swapItemImageUrl'] ?? data['storeItemImageUrl'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       expiresAt:
           (data['expiresAt'] as Timestamp?)?.toDate() ??
@@ -66,12 +67,8 @@ class ChatModel {
   }
 
   Map<String, dynamic> toFirestore() {
-    return {
-      'swapItemId': swapItemId,
-      'swapItemOwnerId': swapItemOwnerId,
+    final Map<String, dynamic> data = {
       'interestedUserId': interestedUserId,
-      'swapItemName': swapItemName,
-      'swapItemImageUrl': swapItemImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'expiresAt': Timestamp.fromDate(expiresAt),
       'status': status.name,
@@ -83,6 +80,16 @@ class ChatModel {
       'readBy': readBy,
       'hasUnreadMessages': hasUnreadMessages,
     };
+
+    // Agregar campos según el tipo de chat
+    if (swapItemId.isNotEmpty) {
+      data['swapItemId'] = swapItemId;
+      data['swapItemOwnerId'] = swapItemOwnerId;
+      data['swapItemName'] = swapItemName;
+      data['swapItemImageUrl'] = swapItemImageUrl;
+    }
+
+    return data;
   }
 
   ChatModel copyWith({
@@ -126,4 +133,13 @@ class ChatModel {
         ? interestedUserId
         : swapItemOwnerId;
   }
+
+  // Getter unificado para el ID del item (swap o store)
+  String get itemId => swapItemId;
+
+  // Getter unificado para el nombre del item
+  String get itemName => swapItemName;
+
+  // Getter unificado para la imagen del item
+  String get itemImageUrl => swapItemImageUrl;
 }

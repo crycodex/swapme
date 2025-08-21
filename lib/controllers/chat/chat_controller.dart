@@ -208,9 +208,9 @@ class ChatController extends GetxController {
       // Verificar si ya existe un chat para este item de tienda
       final QuerySnapshot existingChat = await _firestore
           .collection('chats')
-          .where('storeItemId', isEqualTo: storeItem.id)
+          .where('swapItemId', isEqualTo: storeItem.id)
           .where('interestedUserId', isEqualTo: interestedUserId)
-          .where('storeOwnerId', isEqualTo: storeOwnerId)
+          .where('swapItemOwnerId', isEqualTo: storeOwnerId)
           .limit(1)
           .get();
 
@@ -226,12 +226,11 @@ class ChatController extends GetxController {
       final DateTime expiresAt = now.add(const Duration(days: 7));
 
       final Map<String, dynamic> chatData = {
-        'storeItemId': storeItem.id,
-        'storeOwnerId': storeOwnerId,
+        'swapItemId': storeItem.id, // Usar el campo estándar
+        'swapItemOwnerId': storeOwnerId, // Usar el campo estándar
         'interestedUserId': interestedUserId,
-        'storeItemName': storeItem.name,
-        'storeItemImageUrl': storeItem.imageUrl,
-        'storeItemPrice': storeItem.price,
+        'swapItemName': storeItem.name, // Usar el campo estándar
+        'swapItemImageUrl': storeItem.imageUrl, // Usar el campo estándar
         'participants': [storeOwnerId, interestedUserId],
         'createdAt': Timestamp.fromDate(now),
         'lastMessageAt': Timestamp.fromDate(now),
@@ -268,6 +267,7 @@ class ChatController extends GetxController {
 
       return chatRef.id;
     } catch (e) {
+      debugPrint('Error creando chat para item de tienda: $e');
       error.value = 'Error creando chat para item de tienda: $e';
       return null;
     }

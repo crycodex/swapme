@@ -357,9 +357,9 @@ class StoreItemDetailPage extends StatelessWidget {
     // Verificar si ya existe un chat activo para este producto de tienda
     final String currentUserId = chatController.currentUserId!;
     final existingChat = chatController.chats.firstWhereOrNull((chat) {
-      // Para store items, verificamos storeItemId y storeOwnerId
+      // Para store items, verificamos swapItemId (que ahora contiene storeItemId)
       final Map<String, dynamic> chatData = chat.toFirestore();
-      return chatData['storeItemId'] == item.id &&
+      return chatData['swapItemId'] == item.id &&
           chatData['interestedUserId'] == currentUserId &&
           !chat.isExpired;
     });
@@ -418,29 +418,50 @@ class StoreItemDetailPage extends StatelessWidget {
       Get.back(); // Cerrar indicador de carga
 
       if (chatId != null) {
-        // Enviar mensaje inicial
-        await chatController.sendMessage(
-          chatId: chatId,
-          content: selectedMessage,
-        );
+        try {
+          // Enviar mensaje inicial
+          await chatController.sendMessage(
+            chatId: chatId,
+            content: selectedMessage,
+          );
 
-        // Navegar al chat
-        Get.to(
-          () => ChatPage(chatId: chatId),
-          transition: Transition.cupertino,
-        );
+          // Navegar al chat
+          Get.to(
+            () => ChatPage(chatId: chatId),
+            transition: Transition.cupertino,
+          );
 
-        Get.snackbar(
-          'Chat iniciado',
-          'Tu mensaje ha sido enviado exitosamente',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+          Get.snackbar(
+            'Chat iniciado',
+            'Tu mensaje ha sido enviado exitosamente',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        } catch (messageError) {
+          debugPrint('Error enviando mensaje: $messageError');
+          // Aún navegar al chat aunque falle el mensaje
+          Get.to(
+            () => ChatPage(chatId: chatId),
+            transition: Transition.cupertino,
+          );
+
+          Get.snackbar(
+            'Chat iniciado',
+            'El chat se creó pero hubo un problema al enviar el mensaje',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        }
       } else {
+        final String errorMessage = chatController.error.value.isNotEmpty
+            ? chatController.error.value
+            : 'No se pudo crear el chat. Inténtalo de nuevo.';
+
         Get.snackbar(
           'Error',
-          'No se pudo crear el chat. Inténtalo de nuevo.',
+          errorMessage,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -448,9 +469,10 @@ class StoreItemDetailPage extends StatelessWidget {
       }
     } catch (e) {
       Get.back(); // Cerrar indicador de carga
+      debugPrint('Error inesperado al crear chat: $e');
       Get.snackbar(
         'Error',
-        'Ocurrió un error al crear el chat: $e',
+        'Ocurrió un error inesperado al crear el chat',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
