@@ -796,6 +796,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         'Ya calificado',
         'Ya has calificado a este usuario para este intercambio',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
       );
       return;
     }
@@ -815,57 +817,107 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     Get.dialog(
       AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.star, color: Colors.amber),
-            SizedBox(width: 8),
-            Text('Calificar intercambio'),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'Calificar intercambio',
+                style: TextStyle(
+                  color: Colors.amber.shade700,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('¿Cómo fue tu experiencia con $otherUserName?'),
-            const SizedBox(height: 16),
-            const Text(
-              'Calificación:',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            Text(
+              '¿Cómo fue tu experiencia con $otherUserName?',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 8),
-            StatefulBuilder(
-              builder: (context, setState) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      onPressed: () {
-                        setState(() {
-                          selectedRating = index + 1;
-                        });
-                      },
-                      icon: Icon(
-                        index < selectedRating ? Icons.star : Icons.star_border,
-                        color: Colors.amber,
-                        size: 32,
-                      ),
-                    );
-                  }),
-                );
-              },
+            const SizedBox(height: 20),
+
+            // Calificación con estrellas
+            Center(
+              child: Column(
+                children: [
+                  const Text(
+                    'Calificación:',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  StatefulBuilder(
+                    builder: (context, setState) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedRating = index + 1;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                index < selectedRating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.amber,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        }),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${selectedRating} estrella${selectedRating != 1 ? 's' : ''}',
+                    style: TextStyle(
+                      color: Colors.amber.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 20),
+
+            // Campo de comentario
             const Text(
               'Comentario (opcional):',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: commentController,
               maxLines: 3,
-              decoration: const InputDecoration(
+              maxLength: 200,
+              decoration: InputDecoration(
                 hintText: 'Comparte tu experiencia...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.amber, width: 2),
+                ),
               ),
             ),
           ],
@@ -876,71 +928,125 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               _isRatingDialogShown = false;
               Get.back();
             },
-            child: const Text('Omitir'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Omitir', style: TextStyle(fontSize: 16)),
           ),
           FilledButton(
             onPressed: () async {
               _isRatingDialogShown = false;
               Get.back();
 
-              // Obtener el historial más reciente para este chat sin navegar
-              SwapHistoryController historyController;
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Enviando calificación...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
               try {
-                historyController = Get.put(SwapHistoryController());
-              } catch (e) {
-                historyController = Get.put(SwapHistoryController());
-              }
+                // Obtener el historial más reciente para este chat
+                SwapHistoryController historyController;
+                try {
+                  historyController = Get.put(SwapHistoryController());
+                } catch (e) {
+                  historyController = Get.put(SwapHistoryController());
+                }
 
-              // Buscar primero en el historial ya cargado
-              SwapHistoryModel? swapHistory = historyController.swapHistory
-                  .where((swap) => swap.chatId == widget.chatId)
-                  .firstOrNull;
-
-              // Si no se encuentra, cargar el historial
-              if (swapHistory == null) {
-                await historyController.loadUserSwapHistory();
-                swapHistory = historyController.swapHistory
+                // Buscar primero en el historial ya cargado
+                SwapHistoryModel? swapHistory = historyController.swapHistory
                     .where((swap) => swap.chatId == widget.chatId)
                     .firstOrNull;
-              }
 
-              if (swapHistory != null) {
-                final bool success = await historyController.rateUser(
-                  swapHistoryId: swapHistory.id,
-                  ratedUserId: otherUserId,
-                  rating: selectedRating,
-                  comment: commentController.text.trim().isNotEmpty
-                      ? commentController.text.trim()
-                      : null,
-                );
+                // Si no se encuentra, cargar el historial
+                if (swapHistory == null) {
+                  await historyController.loadUserSwapHistory();
+                  swapHistory = historyController.swapHistory
+                      .where((swap) => swap.chatId == widget.chatId)
+                      .firstOrNull;
+                }
 
-                if (success) {
-                  Get.snackbar(
-                    'Calificación enviada',
-                    'Gracias por tu retroalimentación',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 2),
+                if (swapHistory != null) {
+                  final bool success = await historyController.rateUser(
+                    swapHistoryId: swapHistory.id,
+                    ratedUserId: otherUserId,
+                    rating: selectedRating,
+                    comment: commentController.text.trim().isNotEmpty
+                        ? commentController.text.trim()
+                        : null,
                   );
+
+                  Get.back(); // Cerrar indicador de carga
+
+                  if (success) {
+                    Get.snackbar(
+                      'Calificación enviada',
+                      'Gracias por tu retroalimentación',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 3),
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                    );
+                  } else {
+                    Get.snackbar(
+                      'Error',
+                      'No se pudo enviar la calificación',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
                 } else {
+                  Get.back(); // Cerrar indicador de carga
                   Get.snackbar(
                     'Error',
-                    'No se pudo enviar la calificación',
+                    'No se encontró el historial del intercambio',
                     snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
                   );
                 }
-              } else {
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
                 Get.snackbar(
                   'Error',
-                  'No se encontró el historial del intercambio',
+                  'Ocurrió un error inesperado: $e',
                   snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
                 );
               }
             },
-            child: const Text('Enviar calificación'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Enviar calificación',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }

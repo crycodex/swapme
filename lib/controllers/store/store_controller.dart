@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/models/store_model.dart';
 import '../../data/models/store_item_model.dart';
+import '../../data/models/rating_model.dart';
 
 class StoreController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -517,6 +518,20 @@ class StoreController extends GetxController {
     selectedItemCategory.value = 'Otros';
     selectedItemImage.value = null;
     editingStoreItem.value = null;
+  }
+
+  // Obtener calificaciones de una tienda
+  Stream<List<RatingModel>> getStoreRatings(String storeId) {
+    return _firestore
+        .collection('ratings')
+        .where('storeId', isEqualTo: storeId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((QuerySnapshot snapshot) {
+          return snapshot.docs.map((doc) {
+            return RatingModel.fromFirestore(doc);
+          }).toList();
+        });
   }
 
   @override

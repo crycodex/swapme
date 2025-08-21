@@ -1,5 +1,7 @@
 //get
 import 'package:get/get.dart';
+//models
+import '../data/models/store_model.dart';
 //welcome page
 import '../presentation/pages/welcome/welcome_page.dart';
 //login page
@@ -19,6 +21,7 @@ import '../presentation/pages/store/store_detail_page.dart';
 import '../presentation/pages/store/store_item_detail_page.dart';
 import '../presentation/pages/store/store_item_editor_page.dart';
 import '../presentation/pages/store/create_store_item_page.dart';
+import '../presentation/pages/store/store_ratings_page.dart';
 
 class Routes {
   //welcome page
@@ -36,6 +39,7 @@ class Routes {
   static const String storeEditor = '/store-editor';
   static const String storeItemEditor = '/store-item-editor';
   static const String createStoreItem = '/create-store-item';
+  static const String storeRatings = '/store-ratings';
 
   static final List<GetPage> routes = [
     GetPage(name: Routes.welcome, page: () => const WelcomePage()),
@@ -99,6 +103,14 @@ class Routes {
       page: () => const CreateStoreItemPage(),
       transition: Transition.circularReveal,
       transitionDuration: const Duration(milliseconds: 800),
+    ),
+    GetPage(
+      name: Routes.storeRatings,
+      page: () {
+        final StoreModel store = Get.arguments as StoreModel;
+        return StoreRatingsPage(store: store);
+      },
+      transition: Transition.rightToLeft,
     ),
   ];
 }

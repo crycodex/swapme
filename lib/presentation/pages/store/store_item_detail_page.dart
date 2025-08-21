@@ -33,12 +33,13 @@ class StoreItemDetailPage extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
+          // AppBar expandible con imagen del producto
           SliverAppBar(
             pinned: true,
-            expandedHeight: 320,
+            expandedHeight: 400,
             backgroundColor: colorScheme.surface,
             elevation: 0,
-            iconTheme: IconThemeData(color: Colors.white, size: 24),
+            iconTheme: const IconThemeData(color: Colors.white, size: 24),
             title: Text(
               'Detalles del producto',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -51,7 +52,7 @@ class StoreItemDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Imagen del artículo
+                  // Imagen del artículo con Hero animation
                   Hero(
                     tag: 'store-item-${item.id}',
                     child: Semantics(
@@ -65,23 +66,23 @@ class StoreItemDetailPage extends StatelessWidget {
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             color: colorScheme.onSurfaceVariant,
-                            size: 48,
+                            size: 64,
                             semanticLabel: 'Imagen no disponible',
                           ),
                         ),
                       ),
                     ),
                   ),
-                  // Gradiente superior/inferior para legibilidad
+                  // Gradiente para legibilidad
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.6),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.4),
                         ],
                       ),
                     ),
@@ -91,53 +92,57 @@ class StoreItemDetailPage extends StatelessWidget {
             ),
           ),
 
+          // Información del producto
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
+                  // Título del producto
                   Text(
                     item.name,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Chips de categoría y estado
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildChip(
-                        context,
-                        label: item.category,
-                        icon: Icons.category_rounded,
-                      ),
-                      _buildChip(
-                        context,
-                        label: item.condition,
-                        icon: Icons.check_circle_rounded,
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 16),
 
-                  // Precio
-                  Semantics(
-                    label: 'Precio ${item.price.toStringAsFixed(0)} dólares',
+                  // Precio destacado
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.attach_money,
                           color: colorScheme.primary,
-                          size: 22,
+                          size: 32,
                         ),
                         Text(
                           item.price.toStringAsFixed(0),
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: theme.textTheme.displaySmall?.copyWith(
                             color: colorScheme.primary,
                             fontWeight: FontWeight.w800,
                           ),
@@ -145,10 +150,48 @@ class StoreItemDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Tienda
+                  // Chips de categoría y estado
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildChip(
+                        context,
+                        label: item.category,
+                        icon: Icons.category_rounded,
+                        color: colorScheme.secondary,
+                      ),
+                      _buildChip(
+                        context,
+                        label: item.condition,
+                        icon: Icons.check_circle_rounded,
+                        color: colorScheme.tertiary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Descripción
+                  Text(
+                    'Descripción',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
+                  Text(
+                    item.description,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Información de la tienda
                   _StoreCard(
                     storeId: item.storeId,
                     storeController: storeController,
@@ -166,63 +209,69 @@ class StoreItemDetailPage extends StatelessWidget {
                           );
                         },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Descripción
-                  Text(
-                    'Descripción',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  // Meta información
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(item.createdAt),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.store_rounded,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'ID: ${item.id.substring(0, item.id.length > 6 ? 6 : item.id.length)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(item.description, style: theme.textTheme.bodyMedium),
-
-                  const SizedBox(height: 20),
-                  // Meta información
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 16,
-                        color: theme.hintColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _formatDate(item.createdAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.store_rounded,
-                        size: 16,
-                        color: theme.hintColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'ID: ${item.id.substring(0, item.id.length > 6 ? 6 : item.id.length)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
           child: SizedBox(
             width: double.infinity,
-            height: 52,
+            height: 56,
             child: Semantics(
               button: true,
               label: 'Intercambiar este producto',
@@ -231,7 +280,12 @@ class StoreItemDetailPage extends StatelessWidget {
                 if (chatController.currentUserId == null) {
                   return FilledButton(
                     onPressed: null,
-                    child: const Text('Intercambiar'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('Inicia sesión para intercambiar'),
                   );
                 }
 
@@ -251,8 +305,29 @@ class StoreItemDetailPage extends StatelessWidget {
                 return FilledButton(
                   onPressed: () =>
                       _initiateStoreItemSwap(context, item, chatController),
-                  child: Text(
-                    hasActiveChat ? 'Continuar al chat' : 'Intercambiar',
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    backgroundColor: hasActiveChat
+                        ? colorScheme.secondary
+                        : colorScheme.primary,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        hasActiveChat ? Icons.chat_bubble : Icons.swap_horiz,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        hasActiveChat ? 'Continuar al chat' : 'Intercambiar',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }),
@@ -273,6 +348,8 @@ class StoreItemDetailPage extends StatelessWidget {
         'Error',
         'Debes iniciar sesión para intercambiar',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       return;
     }
@@ -296,24 +373,23 @@ class StoreItemDetailPage extends StatelessWidget {
       return;
     }
 
+    // Mostrar diálogo para iniciar conversación
     final String? selectedMessage = await Get.bottomSheet<String>(
       StartConversationDialog(
         storeItem: item,
         showCustomMessageDialog: (context, item) =>
             _showCustomMessageDialog(context, item),
       ),
-      isScrollControlled:
-          true, // Permite que el bottom sheet ocupe la altura necesaria
-      shape: RoundedRectangleBorder(
-        // Redondea las esquinas superiores del bottom sheet
-        borderRadius: BorderRadius.circular(24),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      clipBehavior: Clip
-          .antiAlias, // Asegura que el contenido se recorte según el borde redondeado
+      clipBehavior: Clip.antiAlias,
     );
 
     if (selectedMessage == null) return;
 
+    // Mostrar indicador de carga
     Get.dialog(
       const Center(
         child: Card(
@@ -339,31 +415,45 @@ class StoreItemDetailPage extends StatelessWidget {
         interestedUserId: chatController.currentUserId!,
       );
 
-      Get.back();
+      Get.back(); // Cerrar indicador de carga
 
       if (chatId != null) {
+        // Enviar mensaje inicial
         await chatController.sendMessage(
           chatId: chatId,
           content: selectedMessage,
         );
 
+        // Navegar al chat
         Get.to(
           () => ChatPage(chatId: chatId),
           transition: Transition.cupertino,
+        );
+
+        Get.snackbar(
+          'Chat iniciado',
+          'Tu mensaje ha sido enviado exitosamente',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
         );
       } else {
         Get.snackbar(
           'Error',
           'No se pudo crear el chat. Inténtalo de nuevo.',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
       }
     } catch (e) {
-      Get.back();
+      Get.back(); // Cerrar indicador de carga
       Get.snackbar(
         'Error',
         'Ocurrió un error al crear el chat: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
@@ -376,12 +466,19 @@ class StoreItemDetailPage extends StatelessWidget {
 
     return await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Mensaje personalizado'),
+        title: Row(
+          children: [
+            Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('Mensaje personalizado'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Escribe tu mensaje para iniciar el intercambio de "${item.name}":',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -389,9 +486,18 @@ class StoreItemDetailPage extends StatelessWidget {
               maxLines: 4,
               maxLength: 200,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Ej: Hola, me interesa mucho tu producto...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
               ),
             ),
           ],
@@ -425,26 +531,27 @@ class StoreItemDetailPage extends StatelessWidget {
     BuildContext context, {
     required String label,
     required IconData icon,
+    required Color color,
   }) {
     final ThemeData theme = Theme.of(context);
-    final ColorScheme color = theme.colorScheme;
     return Semantics(
       label: label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.secondary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color.secondary),
+            Icon(icon, size: 16, color: color),
             const SizedBox(width: 6),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: color.secondary,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color,
                 fontWeight: FontWeight.w600,
               ),
             ),
