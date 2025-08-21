@@ -115,9 +115,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isActive = controller.currentIndex.value == index;
-    final Color activeColor = colorScheme.primary;
+    final Color activeColor = colorScheme.secondary;
     final Color inactiveColor = colorScheme.onSurface.withValues(alpha: 0.75);
-    final Color activeBackgroundColor = colorScheme.primaryContainer;
+    final Color activeBackgroundColor = Colors.transparent;
 
     return Expanded(
       child: Material(
