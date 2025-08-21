@@ -244,7 +244,7 @@ class _UserRatingsPageState extends State<UserRatingsPage>
     ColorScheme colorScheme,
   ) {
     if (_isLoading) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Column(

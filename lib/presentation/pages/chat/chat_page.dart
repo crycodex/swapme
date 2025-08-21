@@ -886,7 +886,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${selectedRating} estrella${selectedRating != 1 ? 's' : ''}',
+                    '$selectedRating estrella${selectedRating != 1 ? 's' : ''}',
                     style: TextStyle(
                       color: Colors.amber.shade700,
                       fontWeight: FontWeight.w600,
