@@ -343,7 +343,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               },
             ),
           ),
-          if (_currentChat?.isExpired != true)
+          if (_currentChat?.isExpired != true &&
+              _currentChat?.status != ChatStatus.completed)
             Column(
               children: [
                 // Botones de acción rápida
