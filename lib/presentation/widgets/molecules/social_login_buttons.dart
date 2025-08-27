@@ -39,27 +39,15 @@ class SocialLoginButtons extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Icono de Google (placeholder)
-                    Container(
+                    // Icono de Google
+                    Image.asset(
+                      'assets/app/login/google.png',
                       width: 24,
                       height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'G',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Text(
                       'Google',
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -98,20 +86,15 @@ class SocialLoginButtons extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Icono de Apple (placeholder)
-                    Container(
+                    // Icono de Apple
+                    Image.asset(
+                      'assets/app/login/apple.png',
                       width: 24,
                       height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text('🍎', style: TextStyle(fontSize: 16)),
-                      ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Text(
                       'Apple',
                       style: theme.textTheme.bodyMedium?.copyWith(

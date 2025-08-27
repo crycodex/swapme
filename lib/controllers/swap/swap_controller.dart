@@ -297,15 +297,22 @@ class SwapController extends GetxController {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((QuerySnapshot snapshot) {
-          return snapshot.docs.map((QueryDocumentSnapshot doc) {
-            final Map<String, dynamic> data =
-                doc.data() as Map<String, dynamic>;
-            return SwapItemModel.fromMap(data);
-          }).toList();
+          return snapshot.docs
+              .map((QueryDocumentSnapshot doc) {
+                final Map<String, dynamic> data =
+                    doc.data() as Map<String, dynamic>;
+                return SwapItemModel.fromMap(data);
+              })
+              .where((SwapItemModel item) {
+                // Si isAvailable no existe (documentos antiguos) o es true, mostrar el item
+                // Solo ocultar si isAvailable existe y es false
+                return item.isAvailable;
+              })
+              .toList();
         });
   }
 
-  // Catalog: get all active swaps from all users
+  // Catalog: get all active and available swaps from all users
   Stream<List<SwapItemModel>> getAllSwaps() {
     return _firestore
         .collectionGroup('swaps')
@@ -313,11 +320,18 @@ class SwapController extends GetxController {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((QuerySnapshot snapshot) {
-          return snapshot.docs.map((QueryDocumentSnapshot doc) {
-            final Map<String, dynamic> data =
-                doc.data() as Map<String, dynamic>;
-            return SwapItemModel.fromMap(data);
-          }).toList();
+          return snapshot.docs
+              .map((QueryDocumentSnapshot doc) {
+                final Map<String, dynamic> data =
+                    doc.data() as Map<String, dynamic>;
+                return SwapItemModel.fromMap(data);
+              })
+              .where((SwapItemModel item) {
+                // Si isAvailable no existe (documentos antiguos) o es true, mostrar el item
+                // Solo ocultar si isAvailable existe y es false
+                return item.isAvailable;
+              })
+              .toList();
         });
   }
 
@@ -331,11 +345,18 @@ class SwapController extends GetxController {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((QuerySnapshot snapshot) {
-          return snapshot.docs.map((QueryDocumentSnapshot doc) {
-            final Map<String, dynamic> data =
-                doc.data() as Map<String, dynamic>;
-            return SwapItemModel.fromMap(data);
-          }).toList();
+          return snapshot.docs
+              .map((QueryDocumentSnapshot doc) {
+                final Map<String, dynamic> data =
+                    doc.data() as Map<String, dynamic>;
+                return SwapItemModel.fromMap(data);
+              })
+              .where((SwapItemModel item) {
+                // Si isAvailable no existe (documentos antiguos) o es true, mostrar el item
+                // Solo ocultar si isAvailable existe y es false
+                return item.isAvailable;
+              })
+              .toList();
         });
   }
 

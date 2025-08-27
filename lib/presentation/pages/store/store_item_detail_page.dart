@@ -5,6 +5,7 @@ import '../../../data/models/store_model.dart';
 import '../../../controllers/store/store_controller.dart';
 import '../../../controllers/chat/chat_controller.dart';
 import '../chat/chat_page.dart';
+import '../../widgets/molecules/start_conversation_dialog.dart';
 
 class _StoreArguments {
   final String storeId;
@@ -32,12 +33,13 @@ class StoreItemDetailPage extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
+          // AppBar expandible con imagen del producto
           SliverAppBar(
             pinned: true,
-            expandedHeight: 320,
+            expandedHeight: 400,
             backgroundColor: colorScheme.surface,
             elevation: 0,
-            iconTheme: IconThemeData(color: Colors.white, size: 24),
+            iconTheme: const IconThemeData(color: Colors.white, size: 24),
             title: Text(
               'Detalles del producto',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -50,7 +52,7 @@ class StoreItemDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Imagen del artículo
+                  // Imagen del artículo con Hero animation
                   Hero(
                     tag: 'store-item-${item.id}',
                     child: Semantics(
@@ -64,23 +66,23 @@ class StoreItemDetailPage extends StatelessWidget {
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             color: colorScheme.onSurfaceVariant,
-                            size: 48,
+                            size: 64,
                             semanticLabel: 'Imagen no disponible',
                           ),
                         ),
                       ),
                     ),
                   ),
-                  // Gradiente superior/inferior para legibilidad
+                  // Gradiente para legibilidad
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.6),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.4),
                         ],
                       ),
                     ),
@@ -90,53 +92,57 @@ class StoreItemDetailPage extends StatelessWidget {
             ),
           ),
 
+          // Información del producto
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
+                  // Título del producto
                   Text(
                     item.name,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Chips de categoría y estado
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildChip(
-                        context,
-                        label: item.category,
-                        icon: Icons.category_rounded,
-                      ),
-                      _buildChip(
-                        context,
-                        label: item.condition,
-                        icon: Icons.check_circle_rounded,
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 16),
 
-                  // Precio
-                  Semantics(
-                    label: 'Precio ${item.price.toStringAsFixed(0)} dólares',
+                  // Precio destacado
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.attach_money,
                           color: colorScheme.primary,
-                          size: 22,
+                          size: 32,
                         ),
                         Text(
                           item.price.toStringAsFixed(0),
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: theme.textTheme.displaySmall?.copyWith(
                             color: colorScheme.primary,
                             fontWeight: FontWeight.w800,
                           ),
@@ -144,10 +150,48 @@ class StoreItemDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Tienda
+                  // Chips de categoría y estado
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildChip(
+                        context,
+                        label: item.category,
+                        icon: Icons.category_rounded,
+                        color: colorScheme.secondary,
+                      ),
+                      _buildChip(
+                        context,
+                        label: item.condition,
+                        icon: Icons.check_circle_rounded,
+                        color: colorScheme.tertiary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Descripción
+                  Text(
+                    'Descripción',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
+                  Text(
+                    item.description,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Información de la tienda
                   _StoreCard(
                     storeId: item.storeId,
                     storeController: storeController,
@@ -165,72 +209,128 @@ class StoreItemDetailPage extends StatelessWidget {
                           );
                         },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Descripción
-                  Text(
-                    'Descripción',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  // Meta información
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(item.createdAt),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.store_rounded,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'ID: ${item.id.substring(0, item.id.length > 6 ? 6 : item.id.length)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(item.description, style: theme.textTheme.bodyMedium),
-
-                  const SizedBox(height: 20),
-                  // Meta información
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 16,
-                        color: theme.hintColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _formatDate(item.createdAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.store_rounded,
-                        size: 16,
-                        color: theme.hintColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'ID: ${item.id.substring(0, item.id.length > 6 ? 6 : item.id.length)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
           child: SizedBox(
             width: double.infinity,
-            height: 52,
+            height: 56,
             child: Semantics(
               button: true,
               label: 'Intercambiar este producto',
               hint: 'Abre el flujo para proponer un intercambio',
-              child: FilledButton(
-                onPressed: () =>
-                    _initiateStoreItemSwap(context, item, chatController),
-                child: const Text('Intercambiar'),
-              ),
+              child: Obx(() {
+                if (chatController.currentUserId == null) {
+                  return FilledButton(
+                    onPressed: null,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('Inicia sesión para intercambiar'),
+                  );
+                }
+
+                // Verificar si ya existe un chat activo
+                final existingChat = chatController.chats.firstWhereOrNull((
+                  chat,
+                ) {
+                  final Map<String, dynamic> chatData = chat.toFirestore();
+                  return chatData['storeItemId'] == item.id &&
+                      chatData['interestedUserId'] ==
+                          chatController.currentUserId! &&
+                      !chat.isExpired;
+                });
+
+                final bool hasActiveChat = existingChat != null;
+
+                return FilledButton(
+                  onPressed: () =>
+                      _initiateStoreItemSwap(context, item, chatController),
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    backgroundColor: hasActiveChat
+                        ? colorScheme.secondary
+                        : colorScheme.primary,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        hasActiveChat ? Icons.chat_bubble : Icons.swap_horiz,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        hasActiveChat ? 'Continuar al chat' : 'Intercambiar',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ),
           ),
         ),
@@ -248,15 +348,45 @@ class StoreItemDetailPage extends StatelessWidget {
         'Error',
         'Debes iniciar sesión para intercambiar',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       return;
     }
 
-    // Mostrar diálogo con mensajes preconfigurados
-    final String? selectedMessage = await _showPreConfiguredMessagesDialog(
-      context,
-      item,
+    // Verificar si ya existe un chat activo para este producto de tienda
+    final String currentUserId = chatController.currentUserId!;
+    final existingChat = chatController.chats.firstWhereOrNull((chat) {
+      // Para store items, verificamos swapItemId (que ahora contiene storeItemId)
+      final Map<String, dynamic> chatData = chat.toFirestore();
+      return chatData['swapItemId'] == item.id &&
+          chatData['interestedUserId'] == currentUserId &&
+          !chat.isExpired;
+    });
+
+    if (existingChat != null) {
+      // Ya existe un chat, ir directamente al chat
+      Get.to(
+        () => ChatPage(chatId: existingChat.id),
+        transition: Transition.cupertino,
+      );
+      return;
+    }
+
+    // Mostrar diálogo para iniciar conversación
+    final String? selectedMessage = await Get.bottomSheet<String>(
+      StartConversationDialog(
+        storeItem: item,
+        showCustomMessageDialog: (context, item) =>
+            _showCustomMessageDialog(context, item),
+      ),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      clipBehavior: Clip.antiAlias,
     );
+
     if (selectedMessage == null) return;
 
     // Mostrar indicador de carga
@@ -280,275 +410,74 @@ class StoreItemDetailPage extends StatelessWidget {
     );
 
     try {
-      // Crear o obtener chat existente para item de tienda
       final String? chatId = await chatController.createChatForStoreItem(
         storeItem: item,
         interestedUserId: chatController.currentUserId!,
       );
 
-      Get.back(); // Cerrar diálogo de carga
+      Get.back(); // Cerrar indicador de carga
 
       if (chatId != null) {
-        // Enviar mensaje preconfigurado
-        await chatController.sendMessage(
-          chatId: chatId,
-          content: selectedMessage,
-        );
+        try {
+          // Enviar mensaje inicial
+          await chatController.sendMessage(
+            chatId: chatId,
+            content: selectedMessage,
+          );
 
-        // Navegar al chat
-        Get.to(
-          () => ChatPage(chatId: chatId),
-          transition: Transition.cupertino,
-        );
+          // Navegar al chat
+          Get.to(
+            () => ChatPage(chatId: chatId),
+            transition: Transition.cupertino,
+          );
+
+          Get.snackbar(
+            'Chat iniciado',
+            'Tu mensaje ha sido enviado exitosamente',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        } catch (messageError) {
+          debugPrint('Error enviando mensaje: $messageError');
+          // Aún navegar al chat aunque falle el mensaje
+          Get.to(
+            () => ChatPage(chatId: chatId),
+            transition: Transition.cupertino,
+          );
+
+          Get.snackbar(
+            'Chat iniciado',
+            'El chat se creó pero hubo un problema al enviar el mensaje',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        }
       } else {
+        final String errorMessage = chatController.error.value.isNotEmpty
+            ? chatController.error.value
+            : 'No se pudo crear el chat. Inténtalo de nuevo.';
+
         Get.snackbar(
           'Error',
-          'No se pudo crear el chat. Inténtalo de nuevo.',
+          errorMessage,
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
       }
     } catch (e) {
-      Get.back(); // Cerrar diálogo de carga
+      Get.back(); // Cerrar indicador de carga
+      debugPrint('Error inesperado al crear chat: $e');
       Get.snackbar(
         'Error',
-        'Ocurrió un error al crear el chat: $e',
+        'Ocurrió un error inesperado al crear el chat',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
-  }
-
-  Future<String?> _showPreConfiguredMessagesDialog(
-    BuildContext context,
-    StoreItemModel item,
-  ) async {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
-    final List<Map<String, dynamic>> preConfiguredMessages = [
-      {
-        'icon': Icons.waving_hand,
-        'title': 'Saludo amigable',
-        'message':
-            '¡Hola! Me interesa mucho tu ${item.name}. ¿Podríamos hablar sobre un posible intercambio?',
-      },
-      {
-        'icon': Icons.swap_horiz,
-        'title': 'Propuesta directa',
-        'message':
-            'Hola, tengo algunos artículos que podrían interesarte para intercambiar por tu ${item.name}. ¿Te gustaría ver qué tengo?',
-      },
-      {
-        'icon': Icons.info_outline,
-        'title': 'Consulta sobre condición',
-        'message':
-            'Me interesa tu ${item.name}. ¿Podrías contarme más sobre su estado y condición actual?',
-      },
-      {
-        'icon': Icons.schedule,
-        'title': 'Consulta sobre disponibilidad',
-        'message':
-            '¡Hola! ¿Tu ${item.name} sigue disponible para intercambio? Me gustaría hacer una propuesta.',
-      },
-      {
-        'icon': Icons.favorite,
-        'title': 'Interés genuino',
-        'message':
-            'Tu ${item.name} es exactamente lo que estaba buscando. ¿Estarías interesado/a en intercambiarlo?',
-      },
-      {'icon': Icons.edit, 'title': 'Mensaje personalizado', 'message': ''},
-    ];
-
-    return await Get.dialog<String>(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Iniciar conversación',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Elige cómo quieres comenzar',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer.withValues(
-                                alpha: 0.8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Get.back(),
-                      icon: Icon(
-                        Icons.close,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Lista de mensajes
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: preConfiguredMessages.length,
-                  itemBuilder: (context, index) {
-                    final messageData = preConfiguredMessages[index];
-                    final bool isCustom = messageData['message'].isEmpty;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () async {
-                            if (isCustom) {
-                              final String? customMessage =
-                                  await _showCustomMessageDialog(context, item);
-                              if (customMessage != null &&
-                                  customMessage.trim().isNotEmpty) {
-                                Get.back(result: customMessage);
-                              }
-                            } else {
-                              Get.back(result: messageData['message']);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: colorScheme.outline.withValues(
-                                  alpha: 0.2,
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: isCustom
-                                        ? colorScheme.secondaryContainer
-                                        : colorScheme.primaryContainer
-                                              .withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    messageData['icon'],
-                                    color: isCustom
-                                        ? colorScheme.onSecondaryContainer
-                                        : colorScheme.secondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        messageData['title'],
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      if (!isCustom) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          messageData['message'],
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme.hintColor,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ] else ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Escribe tu propio mensaje',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme.hintColor,
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: theme.hintColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Footer info
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule, size: 16, color: theme.hintColor),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'El chat expirará automáticamente en 7 días',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Future<String?> _showCustomMessageDialog(
@@ -559,12 +488,19 @@ class StoreItemDetailPage extends StatelessWidget {
 
     return await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Mensaje personalizado'),
+        title: Row(
+          children: [
+            Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('Mensaje personalizado'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Escribe tu mensaje para iniciar el intercambio de "${item.name}":',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -572,9 +508,18 @@ class StoreItemDetailPage extends StatelessWidget {
               maxLines: 4,
               maxLength: 200,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Ej: Hola, me interesa mucho tu producto...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
               ),
             ),
           ],
@@ -608,26 +553,27 @@ class StoreItemDetailPage extends StatelessWidget {
     BuildContext context, {
     required String label,
     required IconData icon,
+    required Color color,
   }) {
     final ThemeData theme = Theme.of(context);
-    final ColorScheme color = theme.colorScheme;
     return Semantics(
       label: label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.secondary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color.secondary),
+            Icon(icon, size: 16, color: color),
             const SizedBox(width: 6),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: color.secondary,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -691,8 +637,6 @@ class _StoreCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(),
-              Icon(Icons.chevron_right_rounded, color: theme.hintColor),
             ],
           ),
         );

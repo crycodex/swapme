@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import '../profile/profile_view.dart';
 import '../../molecules/swaps_section.dart';
+import '../../molecules/header_carousel.dart';
 import '../../../../routes/routes.dart';
 import '../../../../data/models/swap_item_model.dart';
 import 'bottom_nav.dart';
 import 'store_view.dart';
 import 'messages_view.dart';
+import '../../atoms/ad_banner_widget.dart';
 //controllers
 import 'package:get/get.dart';
 import '../../../../controllers/home/home_controller.dart';
@@ -27,59 +28,107 @@ class HomeLayout extends GetView<HomeController> {
 
       return Scaffold(
         backgroundColor: colorScheme.surface,
-        body: Stack(
-          children: [
-            isFullScreenView
-                ? _buildFullScreenView(currentIndex)
-                : NestedScrollView(
-                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                      SliverAppBar(
-                        backgroundColor: colorScheme.surface,
-                        expandedHeight: media.size.height * 0.26,
-                        floating: false,
-                        pinned: true,
-                        elevation: 0,
-                        flexibleSpace: FlexibleSpaceBar(
-                          centerTitle: false,
-                          expandedTitleScale: 1.4,
-                          titlePadding: const EdgeInsetsDirectional.only(
-                            start: 16,
-                            bottom: 12,
-                          ),
-                          title: Text(
-                            'SwapMe',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          background: _HeaderHeroCarousel(
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            media: media,
-                          ),
-                        ),
-                      ),
-                    ],
-                    body: PageView(
-                      controller: controller.pageController,
-                      onPageChanged: controller.handlePageChanged,
+        body: isFullScreenView
+            ? Stack(
+                children: [
+                  _buildFullScreenView(currentIndex),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _HomePlaceholder(controller: controller),
-                        const StoreView(),
+                        // Banner de anuncio
+                        const BottomAdBannerWidget(),
+                        // Bottom Navigation Bar
+                        BottomNavBar(
+                          controller: controller,
+                          colorScheme: colorScheme,
+                        ),
                       ],
                     ),
                   ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16 + media.padding.bottom,
-              child: BottomNavBar(
-                controller: controller,
-                colorScheme: colorScheme,
+                ],
+              )
+            : Column(
+                children: [
+                  // Contenido principal expandido
+                  Expanded(
+                    child: NestedScrollView(
+                      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                        SliverAppBar(
+                          backgroundColor: colorScheme.surface,
+                          expandedHeight: media.size.height * 0.26,
+                          floating: false,
+                          pinned: true,
+                          elevation: 0,
+                          flexibleSpace: FlexibleSpaceBar(
+                            centerTitle: false,
+                            expandedTitleScale: 1.4,
+                            titlePadding: const EdgeInsetsDirectional.only(
+                              start: 16,
+                              bottom: 12,
+                            ),
+                            title: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                'SwapMe',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colorScheme.primary,
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            background: HeaderCarousel(
+                              colorScheme: colorScheme,
+                            ),
+                          ),
+                        ),
+                      ],
+                      body: PageView(
+                        controller: controller.pageController,
+                        onPageChanged: controller.handlePageChanged,
+                        children: [
+                          _HomePlaceholder(controller: controller),
+                          const StoreView(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Banner de anuncio y Bottom Navigation fijos
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const BottomAdBannerWidget(),
+                      BottomNavBar(
+                        controller: controller,
+                        colorScheme: colorScheme,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       );
     });
   }
@@ -183,6 +232,8 @@ class _HomePlaceholder extends StatelessWidget {
               },
             ),
           ),
+          // Padding inferior para evitar superposición con bottom nav
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
     );
@@ -369,91 +420,5 @@ class _ExploreGridState extends State<_ExploreGrid> {
         },
       );
     });
-  }
-}
-
-class _HeaderHeroCarousel extends StatefulWidget {
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-  final MediaQueryData media;
-  const _HeaderHeroCarousel({
-    required this.theme,
-    required this.colorScheme,
-    required this.media,
-  });
-
-  @override
-  State<_HeaderHeroCarousel> createState() => _HeaderHeroCarouselState();
-}
-
-class _HeaderHeroCarouselState extends State<_HeaderHeroCarousel> {
-  final PageController _pageController = PageController();
-  int _index = 0;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
-      _index = (_index + 1) % 3;
-      _pageController.animateToPage(
-        _index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = widget.colorScheme;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: 3,
-          itemBuilder: (_, int i) {
-            return Container(
-              margin: EdgeInsets.only(left: 1, right: 1, bottom: 2),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
-              ),
-            );
-          },
-        ),
-        // Indicadores
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (int i) {
-              final bool active = i == _index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: active ? 22 : 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: active ? 0.9 : 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
   }
 }

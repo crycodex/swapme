@@ -8,8 +8,11 @@ import '../../../../controllers/home/home_controller.dart';
 import '../../molecules/swaps_section.dart';
 import '../../../../controllers/swap/swap_controller.dart';
 import '../../../../controllers/store/store_controller.dart';
+import '../../../../controllers/swap/swap_history_controller.dart';
 import '../../../../data/models/store_model.dart';
 import '../../../../data/models/swap_item_model.dart';
+import '../../atoms/ad_banner_widget.dart';
+import '../../atoms/rating_stars.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -82,6 +85,63 @@ class ProfileView extends GetView<AuthController> {
                         color: theme.hintColor,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    // Mostrar calificaciones y estadísticas del usuario
+                    GetBuilder<SwapHistoryController>(
+                      init: Get.put(SwapHistoryController()),
+                      builder: (SwapHistoryController historyController) {
+                        return Obx(() {
+                          final userStats = historyController.userStats.value;
+                          if (userStats != null && userStats.totalRatings > 0) {
+                            return GestureDetector(
+                              onTap: () => Get.toNamed(
+                                '/user-ratings',
+                                arguments: {
+                                  'userId': controller.uid.value,
+                                  'userName': name.isEmpty ? 'Usuario' : name,
+                                },
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    RatingStars(
+                                      rating: userStats.averageRating,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${userStats.averageRating.toStringAsFixed(1)} (${userStats.totalRatings})',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                colorScheme.onPrimaryContainer,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      size: 14,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        });
+                      },
+                    ),
                     const SizedBox(height: 12),
                     FilledButton.tonal(
                       onPressed: () => Get.toNamed('/edit-profile'),
@@ -94,15 +154,15 @@ class ProfileView extends GetView<AuthController> {
                         foregroundColor: Colors.white,
                         shape: const StadiumBorder(),
                       ),
-                      child: const Text('Edit profile'),
+                      child: const Text('Editar perfil'),
                     ),
                     const SizedBox(height: 22),
-                    const SectionTitle(title: 'Preferences'),
+                    const SectionTitle(title: 'Preferencias'),
                     SettingsCard(
                       children: [
                         SettingsTile(
                           leadingIcon: Icons.storefront_rounded,
-                          title: 'My store',
+                          title: 'Mi tienda',
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () async {
                             final StoreController store = Get.put(
@@ -118,23 +178,33 @@ class ProfileView extends GetView<AuthController> {
                           },
                         ),
                         const Divider(height: 1),
+                        SettingsTile(
+                          leadingIcon: Icons.history,
+                          title: 'Historial de intercambios',
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => Get.toNamed('/swap-history'),
+                        ),
+                        const Divider(height: 1),
                         SettingsSwitchTile(
                           leadingIcon: Icons.dark_mode_outlined,
-                          title: 'Dark mode',
+                          title: 'Modo oscuro',
                           value: isDark,
                           onChanged: (_) => controller.toggleTheme(),
                         ),
                         const Divider(height: 1),
                         SettingsTile(
                           leadingIcon: Icons.logout_rounded,
-                          title: 'Logout',
+                          title: 'Cerrar sesión',
                           titleColor: colorScheme.error,
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () => _confirmLogout(context),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 120),
+                    const SizedBox(height: 22),
+                    // Banner de anuncio en perfil
+                    const ProfileAdBannerWidget(),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),
@@ -151,6 +221,7 @@ class ProfileView extends GetView<AuthController> {
                 },
               ),
             ),
+            SliverToBoxAdapter(child: SizedBox(height: 150)),
           ],
         ),
       );
@@ -204,7 +275,7 @@ class _MySwapsPage extends GetView<SwapController> {
           if (items.isEmpty) {
             return Center(
               child: Text(
-                'Aún no tienes artículos',
+                'Aún no tienes artículos intercambiados',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.hintColor,
                 ),

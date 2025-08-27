@@ -14,6 +14,7 @@ import 'presentation/pages/auth/login_page.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'services/notification_service.dart';
 import 'services/cloud_messaging_service.dart';
+import 'services/ad_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,10 +27,11 @@ Future<void> main() async {
   // Configurar manejador de mensajes en segundo plano
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Inicializar servicios
+  // Inicializar servicios core primero
   Get.put<AuthController>(AuthController(), permanent: true);
   Get.put<NotificationService>(NotificationService(), permanent: true);
   Get.put<CloudMessagingService>(CloudMessagingService(), permanent: true);
+  Get.put<AdService>(AdService(), permanent: true);
 
   runApp(const MainApp());
 }

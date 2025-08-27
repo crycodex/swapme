@@ -8,6 +8,8 @@ enum MessageType {
   swapRejected,
   agreement,
   system,
+  productProposal,
+  moneyProposal,
 }
 
 class MessageModel {
@@ -99,5 +101,7 @@ class MessageModel {
     MessageType.swapAccepted,
     MessageType.swapRejected,
     MessageType.agreement,
+    MessageType.productProposal,
+    MessageType.moneyProposal,
   ].contains(type);
 }

@@ -193,7 +193,7 @@ class SwapFormSection extends StatelessWidget {
     final ColorScheme colorScheme = theme.colorScheme;
 
     return DropdownButtonFormField<String>(
-      value: controller.selectedSize.value,
+      initialValue: controller.selectedSize.value,
       decoration: InputDecoration(
         filled: true,
         fillColor: colorScheme.surface,

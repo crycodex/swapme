@@ -126,7 +126,7 @@ class _StoreItemEditorPageState extends State<StoreItemEditorPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: condition,
+                    initialValue: condition,
                     items: const [
                       DropdownMenuItem(value: 'Nuevo', child: Text('Nuevo')),
                       DropdownMenuItem(
@@ -146,7 +146,7 @@ class _StoreItemEditorPageState extends State<StoreItemEditorPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: category,
+                    initialValue: category,
                     items: const [
                       DropdownMenuItem(
                         value: 'Camisetas',

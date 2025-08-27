@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/chat/chat_controller.dart';
+import '../../../controllers/swap/swap_history_controller.dart';
 import '../../../data/models/chat_model.dart';
 import '../../../data/models/message_model.dart';
+import '../../../data/models/swap_history_model.dart';
+import '../../../data/models/swap_item_model.dart';
+import '../../widgets/molecules/product_selector.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -14,12 +18,12 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
-  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ChatController _chatController = Get.put(ChatController());
 
   ChatModel? _currentChat;
   bool _isAppInForeground = true;
+  bool _isRatingDialogShown = false;
 
   @override
   void initState() {
@@ -38,6 +42,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Marcar como leído cada vez que se recibe un nuevo mensaje
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupAutoMarkAsRead();
+      _setupChatStatusListener();
     });
   }
 
@@ -49,7 +54,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Notificar al controlador que ya no hay chat visible
     _chatController.setCurrentVisibleChat(null);
 
-    _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -80,9 +84,24 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       (chat) => chat.id == widget.chatId,
     );
     if (chat != null) {
+      final bool wasCompleted = _currentChat?.status == ChatStatus.completed;
+
       setState(() {
         _currentChat = chat;
       });
+
+      // Si el intercambio se acaba de completar y el usuario es el interesado,
+      // mostrar automáticamente el diálogo de calificación
+      if (!wasCompleted &&
+          chat.status == ChatStatus.completed &&
+          chat.interestedUserId == _chatController.currentUserId &&
+          !_isRatingDialogShown) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && !_isRatingDialogShown) {
+            _showRatingDialog();
+          }
+        });
+      }
     }
   }
 
@@ -97,7 +116,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Este método podría expandirse para manejar notificaciones específicas
     // cuando se implementen handlers de notificación más avanzados
-    debugPrint('Configurando manejo de notificaciones para chat: ${widget.chatId}');
+    debugPrint(
+      'Configurando manejo de notificaciones para chat: ${widget.chatId}',
+    );
   }
 
   void _setupAutoMarkAsRead() {
@@ -111,6 +132,46 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             _markChatAsRead();
           }
         });
+      }
+    });
+  }
+
+  void _setupChatStatusListener() {
+    // Escuchar cambios en el estado del chat
+    _chatController.chats.listen((chats) {
+      if (mounted) {
+        final ChatModel? updatedChat = chats.firstWhereOrNull(
+          (chat) => chat.id == widget.chatId,
+        );
+
+        if (updatedChat != null) {
+          final bool wasCompleted =
+              _currentChat?.status == ChatStatus.completed;
+          final bool isNowCompleted =
+              updatedChat.status == ChatStatus.completed;
+          final String currentUserId = _chatController.currentUserId!;
+
+          // Si el intercambio se acaba de completar y es el usuario interesado
+          if (!wasCompleted &&
+              isNowCompleted &&
+              updatedChat.interestedUserId == currentUserId &&
+              !_isRatingDialogShown) {
+            setState(() {
+              _currentChat = updatedChat;
+            });
+
+            // Mostrar diálogo de calificación automáticamente para el usuario interesado
+            Future.delayed(const Duration(milliseconds: 1000), () {
+              if (mounted && !_isRatingDialogShown) {
+                _showRatingDialog();
+              }
+            });
+          } else {
+            setState(() {
+              _currentChat = updatedChat;
+            });
+          }
+        }
       }
     });
   }
@@ -282,7 +343,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               },
             ),
           ),
-          if (_currentChat?.isExpired != true)
+          if (_currentChat?.isExpired != true &&
+              _currentChat?.status != ChatStatus.completed)
             Column(
               children: [
                 // Botones de acción rápida
@@ -291,35 +353,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _showSwapProposalDialog,
-                          icon: const Icon(Icons.swap_horiz, size: 18),
-                          label: const Text('Proponer'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _showAgreementDialog,
-                          icon: const Icon(Icons.handshake, size: 18),
-                          label: const Text('Acuerdo'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _buildActionButton(),
                 ),
-                _MessageInput(
-                  controller: _messageController,
-                  onSend: _sendMessage,
+                _ProductSelectorInput(
+                  onProductSelected: _sendProductProposal,
+                  onMoneySelected: _sendMoneyProposal,
                 ),
               ],
             ),
@@ -328,23 +366,159 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _sendMessage() async {
-    final String content = _messageController.text.trim();
-    if (content.isEmpty) return;
+  Widget _buildActionButton() {
+    if (_currentChat == null) {
+      return const SizedBox.shrink();
+    }
 
-    _messageController.clear();
+    final String currentUserId = _chatController.currentUserId!;
+    final bool isOwner = _currentChat!.swapItemOwnerId == currentUserId;
+    final bool isCompleted = _currentChat!.status == ChatStatus.completed;
 
+    if (isCompleted) {
+      // Si el intercambio ya está completado, mostrar botón de calificar
+      return FutureBuilder<bool>(
+        future: _checkIfUserHasRated(),
+        builder: (context, snapshot) {
+          final bool hasRated = snapshot.data ?? false;
+
+          if (hasRated) {
+            return OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Ya calificado'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            );
+          } else {
+            return FilledButton.icon(
+              onPressed: () => _showRatingDialog(),
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Calificar'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.white,
+              ),
+            );
+          }
+        },
+      );
+    } else if (isOwner) {
+      // Si es el dueño del artículo, mostrar botón de confirmar
+      return FilledButton.icon(
+        onPressed: _showConfirmSwapDialog,
+        icon: const Icon(Icons.check_circle, size: 18),
+        label: const Text('Confirmar'),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      );
+    } else {
+      // Si es el usuario interesado, mostrar mensaje informativo
+      return OutlinedButton.icon(
+        onPressed: null, // Deshabilitado
+        icon: const Icon(Icons.hourglass_empty, size: 18),
+        label: const Text('Esperando confirmación'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _checkIfUserHasRated() async {
+    if (_currentChat == null || _chatController.currentUserId == null) {
+      return false;
+    }
+
+    try {
+      SwapHistoryController historyController;
+      try {
+        historyController = Get.put(SwapHistoryController());
+      } catch (e) {
+        historyController = Get.put(SwapHistoryController());
+      }
+
+      // Buscar el historial de este chat
+      await historyController.loadUserSwapHistory();
+      final swapHistory = historyController.swapHistory
+          .where((swap) => swap.chatId == widget.chatId)
+          .firstOrNull;
+
+      if (swapHistory != null) {
+        final String otherUserId = _currentChat!.getOtherUserId(
+          _chatController.currentUserId!,
+        );
+        return await historyController.hasUserRated(
+          swapHistory.id,
+          otherUserId,
+        );
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Error verificando si el usuario ya calificó: $e');
+      return false;
+    }
+  }
+
+  Future<void> _sendProductProposal(SwapItemModel product) async {
     final bool success = await _chatController.sendMessage(
       chatId: widget.chatId,
-      content: content,
+      content: 'Te propongo intercambiar mi "${product.name}" por tu artículo.',
+      type: MessageType.productProposal,
+      metadata: {
+        'productId': product.id,
+        'productName': product.name,
+        'productImageUrl': product.imageUrl,
+        'productPrice': product.estimatedPrice,
+        'productSize': product.size,
+        'productCondition': product.condition,
+        'productDescription': product.description,
+      },
     );
 
     if (success) {
       _scrollToBottom();
+      Get.snackbar(
+        'Propuesta enviada',
+        'Tu propuesta de intercambio ha sido enviada',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+      );
     } else {
       Get.snackbar(
         'Error',
-        'No se pudo enviar el mensaje',
+        'No se pudo enviar la propuesta',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _sendMoneyProposal(double amount) async {
+    final bool success = await _chatController.sendMessage(
+      chatId: widget.chatId,
+      content: 'Te ofrezco \$${amount.toStringAsFixed(0)} por tu artículo.',
+      type: MessageType.moneyProposal,
+      metadata: {'amount': amount, 'currency': 'USD'},
+    );
+
+    if (success) {
+      _scrollToBottom();
+      Get.snackbar(
+        'Propuesta enviada',
+        'Tu oferta de dinero ha sido enviada',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        'No se pudo enviar la propuesta',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -470,23 +644,54 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  void _showSwapProposalDialog() {
-    final TextEditingController proposalController = TextEditingController();
+  void _showConfirmSwapDialog() {
+    final TextEditingController notesController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Proponer intercambio'),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green),
+            const SizedBox(width: 8),
+            const Text('Confirmar intercambio'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Describe tu propuesta de intercambio:'),
+            const Text(
+              '¿Estás seguro de que quieres confirmar este intercambio?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Al confirmar, el artículo se marcará como no disponible y se moverá al historial.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
+            const Text('Notas adicionales (opcional):'),
+            const SizedBox(height: 8),
             TextField(
-              controller: proposalController,
+              controller: notesController,
               maxLines: 3,
               decoration: const InputDecoration(
-                hintText:
-                    'Ej: Te ofrezco mi chaqueta de cuero por tu suéter...',
+                hintText: 'Ej: Intercambio realizado en el centro comercial...',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -499,65 +704,350 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           FilledButton(
             onPressed: () async {
-              final String proposal = proposalController.text.trim();
-              if (proposal.isNotEmpty) {
-                await _chatController.proposeSwap(
+              Get.back(); // Cerrar diálogo
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Confirmando intercambio...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                final bool success = await _chatController.confirmSwap(
                   chatId: widget.chatId,
-                  proposalMessage: proposal,
+                  notes: notesController.text.trim().isNotEmpty
+                      ? notesController.text.trim()
+                      : null,
                 );
-                Get.back();
-                _scrollToBottom();
+
+                Get.back(); // Cerrar indicador de carga
+
+                if (success) {
+                  _scrollToBottom();
+
+                  Get.snackbar(
+                    'Intercambio confirmado',
+                    'El intercambio se ha registrado exitosamente. Ahora puedes calificar al otro usuario.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 4),
+                  );
+
+                  // Recargar la información del chat para actualizar el estado
+                  _loadChatInfo();
+                } else {
+                  final String errorMessage =
+                      _chatController.error.value.isNotEmpty
+                      ? _chatController.error.value
+                      : 'No se pudo confirmar el intercambio. Inténtalo de nuevo.';
+
+                  Get.snackbar(
+                    'Error',
+                    errorMessage,
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 4),
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado. Inténtalo de nuevo.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
               }
             },
-            child: const Text('Enviar propuesta'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar intercambio'),
           ),
         ],
       ),
     );
   }
 
-  void _showAgreementDialog() {
-    final TextEditingController agreementController = TextEditingController();
+  void _showRatingDialog() async {
+    if (_currentChat == null || _isRatingDialogShown) return;
+
+    // Verificar si el usuario ya ha calificado
+    final bool hasRated = await _checkIfUserHasRated();
+    if (hasRated) {
+      Get.snackbar(
+        'Ya calificado',
+        'Ya has calificado a este usuario para este intercambio',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    _isRatingDialogShown = true;
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId!,
+    );
+    final String otherUserName =
+        _currentChat!.swapItemOwnerId == _chatController.currentUserId!
+        ? 'el usuario interesado'
+        : 'el propietario';
+
+    int selectedRating = 5;
+    final TextEditingController commentController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Crear acuerdo'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'Calificar intercambio',
+                style: TextStyle(
+                  color: Colors.amber.shade700,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Define los términos del acuerdo:'),
-            const SizedBox(height: 16),
+            Text(
+              '¿Cómo fue tu experiencia con $otherUserName?',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 20),
+
+            // Calificación con estrellas
+            Center(
+              child: Column(
+                children: [
+                  const Text(
+                    'Calificación:',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  StatefulBuilder(
+                    builder: (context, setState) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedRating = index + 1;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                index < selectedRating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.amber,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        }),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$selectedRating estrella${selectedRating != 1 ? 's' : ''}',
+                    style: TextStyle(
+                      color: Colors.amber.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Campo de comentario
+            const Text(
+              'Comentario (opcional):',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
             TextField(
-              controller: agreementController,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                hintText:
-                    'Ej: Intercambiamos en el centro comercial el sábado a las 3pm...',
-                border: OutlineInputBorder(),
+              controller: commentController,
+              maxLines: 3,
+              maxLength: 200,
+              decoration: InputDecoration(
+                hintText: 'Comparte tu experiencia...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.amber, width: 2),
+                ),
               ),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
+            onPressed: () {
+              _isRatingDialogShown = false;
+              Get.back();
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Omitir', style: TextStyle(fontSize: 16)),
           ),
           FilledButton(
             onPressed: () async {
-              final String agreement = agreementController.text.trim();
-              if (agreement.isNotEmpty) {
-                await _chatController.createAgreement(
-                  chatId: widget.chatId,
-                  agreementDetails: agreement,
+              _isRatingDialogShown = false;
+              Get.back();
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Enviando calificación...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                // Obtener el historial más reciente para este chat
+                SwapHistoryController historyController;
+                try {
+                  historyController = Get.put(SwapHistoryController());
+                } catch (e) {
+                  historyController = Get.put(SwapHistoryController());
+                }
+
+                // Buscar primero en el historial ya cargado
+                SwapHistoryModel? swapHistory = historyController.swapHistory
+                    .where((swap) => swap.chatId == widget.chatId)
+                    .firstOrNull;
+
+                // Si no se encuentra, cargar el historial
+                if (swapHistory == null) {
+                  await historyController.loadUserSwapHistory();
+                  swapHistory = historyController.swapHistory
+                      .where((swap) => swap.chatId == widget.chatId)
+                      .firstOrNull;
+                }
+
+                if (swapHistory != null) {
+                  final bool success = await historyController.rateUser(
+                    swapHistoryId: swapHistory.id,
+                    ratedUserId: otherUserId,
+                    rating: selectedRating,
+                    comment: commentController.text.trim().isNotEmpty
+                        ? commentController.text.trim()
+                        : null,
+                  );
+
+                  Get.back(); // Cerrar indicador de carga
+
+                  if (success) {
+                    Get.snackbar(
+                      'Calificación enviada',
+                      'Gracias por tu retroalimentación',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 3),
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                    );
+                  } else {
+                    Get.snackbar(
+                      'Error',
+                      'No se pudo enviar la calificación',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                } else {
+                  Get.back(); // Cerrar indicador de carga
+                  Get.snackbar(
+                    'Error',
+                    'No se encontró el historial del intercambio',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado: $e',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
                 );
-                Get.back();
-                _scrollToBottom();
               }
             },
-            child: const Text('Crear acuerdo'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Enviar calificación',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }
@@ -781,13 +1271,19 @@ class _MessageBubble extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: FilledButton.icon(
                         onPressed: () => onSwapResponse!(false),
                         icon: const Icon(Icons.close, size: 16),
                         label: const Text('Rechazar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.error,
-                          side: BorderSide(color: colorScheme.error),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
+                          ),
+                          backgroundColor: colorScheme.error,
+                          textStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.surface,
+                          ),
                         ),
                       ),
                     ),
@@ -891,6 +1387,276 @@ class _MessageBubble extends StatelessWidget {
           ),
         );
 
+      case MessageType.productProposal:
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isCurrentUser
+                ? colorScheme.primaryContainer
+                : colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isCurrentUser
+                  ? colorScheme.primary
+                  : colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.swap_horiz,
+                    color: isCurrentUser
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Propuesta de producto',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isCurrentUser
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Product info
+              if (message.metadata != null) ...[
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        message.metadata!['productImageUrl'] ?? '',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 50,
+                          height: 50,
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            message.metadata!['productName'] ?? '',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: isCurrentUser
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSecondaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                '\$${(message.metadata!['productPrice'] ?? 0.0).toStringAsFixed(0)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                message.metadata!['productSize'] ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                message.metadata!['productCondition'] ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCurrentUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isCurrentUser
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+              if (!isCurrentUser && onSwapResponse != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => onSwapResponse!(false),
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Rechazar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          side: BorderSide(color: colorScheme.error),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => onSwapResponse!(true),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Aceptar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+
+      case MessageType.moneyProposal:
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isCurrentUser
+                ? colorScheme.primaryContainer
+                : colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isCurrentUser
+                  ? colorScheme.primary
+                  : colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.attach_money,
+                    color: isCurrentUser
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Propuesta de dinero',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isCurrentUser
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Money amount display
+              if (message.metadata != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color:
+                        (isCurrentUser
+                                ? colorScheme.primary
+                                : colorScheme.secondary)
+                            .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.attach_money,
+                        color: isCurrentUser
+                            ? colorScheme.primary
+                            : colorScheme.secondary,
+                        size: 32,
+                      ),
+                      Text(
+                        '${(message.metadata!['amount'] ?? 0.0).toStringAsFixed(0)}',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: isCurrentUser
+                              ? colorScheme.primary
+                              : colorScheme.secondary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isCurrentUser
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+              if (!isCurrentUser && onSwapResponse != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => onSwapResponse!(false),
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Rechazar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          side: BorderSide(color: colorScheme.error),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => onSwapResponse!(true),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Aceptar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+
       default:
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -928,11 +1694,14 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _MessageInput extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
+class _ProductSelectorInput extends StatelessWidget {
+  final Function(SwapItemModel) onProductSelected;
+  final Function(double) onMoneySelected;
 
-  const _MessageInput({required this.controller, required this.onSend});
+  const _ProductSelectorInput({
+    required this.onProductSelected,
+    required this.onMoneySelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -949,41 +1718,68 @@ class _MessageInput extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: 'Escribe un mensaje...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+        child: GestureDetector(
+          onTap: () => _showProductSelector(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.swap_horiz, color: colorScheme.primary, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Hacer una propuesta...',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-                onSubmitted: (_) => onSend(),
-              ),
+                Icon(
+                  Icons.keyboard_arrow_up,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: onSend,
-              style: FilledButton.styleFrom(
-                shape: const CircleBorder(),
-                padding: const EdgeInsets.all(12),
-              ),
-              child: const Icon(Icons.send),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showProductSelector(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return ProductSelector(
+              onProductSelected: (SwapItemModel product) {
+                Navigator.of(context).pop();
+                onProductSelected(product);
+              },
+              onMoneySelected: (double amount) {
+                Navigator.of(context).pop();
+                onMoneySelected(amount);
+              },
+              onClosePressed: () => Navigator.of(context).pop(),
+            );
+          },
+        );
+      },
     );
   }
 }

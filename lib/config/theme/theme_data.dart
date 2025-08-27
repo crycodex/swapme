@@ -35,6 +35,8 @@ abstract final class AppTheme {
     // Direct ThemeData properties.
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
+    // Configuración de fuente Ubuntu
+    fontFamily: 'Ubuntu',
   );
 
   // The FlexColorScheme defined dark mode ThemeData.
@@ -55,5 +57,7 @@ abstract final class AppTheme {
     // Direct ThemeData properties.
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
+    // Configuración de fuente Ubuntu
+    fontFamily: 'Ubuntu',
   );
 }

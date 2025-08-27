@@ -4,9 +4,12 @@ import 'package:get/get.dart';
 import '../../../controllers/store/store_controller.dart';
 import '../../../data/models/store_model.dart';
 import '../../../data/models/store_item_model.dart';
+import '../../../data/models/rating_model.dart';
 import '../../../routes/routes.dart';
 import '../../../controllers/swap/swap_controller.dart';
 import '../../../data/models/swap_item_model.dart';
+import '../../widgets/molecules/store_rating_card.dart';
+import 'store_ratings_page.dart';
 
 class StoreDetailPage extends GetView<StoreController> {
   const StoreDetailPage({super.key});
@@ -19,212 +22,685 @@ class StoreDetailPage extends GetView<StoreController> {
     final bool mine = controller.isOwner(store);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(store.name),
-        actions: [
-          if (mine)
-            PopupMenuButton<String>(
-              onSelected: (String v) async {
-                if (v == 'edit') {
-                  Get.to(() => const StoreEditorPage(), arguments: store);
-                } else if (v == 'delete') {
-                  await controller.deleteStore(store.id);
-                  Get.back();
-                }
-              },
-              itemBuilder: (BuildContext context) =>
-                  const <PopupMenuEntry<String>>[
-                    PopupMenuItem<String>(value: 'edit', child: Text('Editar')),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Text('Eliminar'),
-                    ),
-                  ],
-            ),
-        ],
-      ),
+      backgroundColor: color.surface,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(0),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: store.bannerUrl.isEmpty
-                        ? Container(color: color.surfaceContainerHighest)
-                        : Image.network(store.bannerUrl, fit: BoxFit.cover),
-                  ),
-                ),
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: store.logoUrl.isEmpty
-                        ? null
-                        : NetworkImage(store.logoUrl),
-                    radius: 22,
-                  ),
-                  title: Text(
-                    store.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  subtitle: Text(store.description),
-                ),
-              ],
+          // AppBar personalizado
+          SliverAppBar(
+            expandedHeight: 280,
+            pinned: true,
+            backgroundColor: color.surface,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.white, size: 24),
+            title: Text(
+              store.name,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-              child: Row(
+            actions: [
+              if (mine)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onSelected: (String v) async {
+                    if (v == 'edit') {
+                      Get.to(() => const StoreEditorPage(), arguments: store);
+                    } else if (v == 'delete') {
+                      await controller.deleteStore(store.id);
+                      Get.back();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      const <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined),
+                              SizedBox(width: 8),
+                              Text('Editar'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text(
+                                'Eliminar',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    'Items',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  // Banner de la tienda
+                  Hero(
+                    tag: 'store-banner-${store.id}',
+                    child: store.bannerUrl.isEmpty
+                        ? Container(
+                            color: color.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.storefront_rounded,
+                              size: 64,
+                              color: color.onSurfaceVariant,
+                            ),
+                          )
+                        : Image.network(
+                            store.bannerUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: color.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 64,
+                                color: color.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                  ),
+                  // Gradiente para legibilidad del texto
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.6),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.3),
+                        ],
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  if (mine)
-                    OutlinedButton.icon(
-                      onPressed: () => Get.toNamed(
-                        Routes.createStoreItem,
-                        arguments: <String, dynamic>{'store': store},
-                      ),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar'),
-                    ),
                 ],
               ),
             ),
           ),
+
+          // Información de la tienda
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: color.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header con logo y nombre
+                  Row(
+                    children: [
+                      // Logo de la tienda
+                      Hero(
+                        tag: 'store-logo-${store.id}',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: color.outline.withValues(alpha: 0.2),
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(17),
+                            child: store.logoUrl.isEmpty
+                                ? Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: color.surfaceContainerHighest,
+                                    child: Icon(
+                                      Icons.storefront_rounded,
+                                      size: 40,
+                                      color: color.onSurfaceVariant,
+                                    ),
+                                  )
+                                : Image.network(
+                                    store.logoUrl,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: color.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        size: 40,
+                                        color: color.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      // Información de la tienda
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              store.name,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: color.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              store.description,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: color.onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Estadísticas rápidas
+                            Row(
+                              children: [
+                                // Rating
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.amber.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        size: 16,
+                                        color: Colors.amber.shade700,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        store.rating.toStringAsFixed(1),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.amber.shade700,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 12),
+
+                                // Cantidad de items
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: color.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: color.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_rounded,
+                                        size: 16,
+                                        color: color.primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${store.itemsCount} items',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: color.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Sección de calificaciones
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: StreamBuilder<List<RatingModel>>(
+                stream: controller.getStoreRatings(store.id),
+                builder: (context, snapshot) {
+                  final List<RatingModel> ratings = snapshot.data ?? [];
+
+                  return StoreRatingCard(
+                    store: store,
+                    ratings: ratings,
+                    onViewAllRatings: () => Get.to(
+                      () => StoreRatingsPage(store: store),
+                      transition: Transition.cupertino,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Sección de items
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2_rounded,
+                        color: color.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Productos',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: color.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (mine)
+                        OutlinedButton.icon(
+                          onPressed: () => Get.toNamed(
+                            Routes.createStoreItem,
+                            arguments: <String, dynamic>{'store': store},
+                          ),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Agregar'),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+
+          // Grid de items
           SliverToBoxAdapter(
             child: StreamBuilder<List<StoreItemModel>>(
               stream: controller.getItemsByStore(store.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
+                  return Container(
+                    height: 200,
+                    margin: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: color.primary),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Cargando productos...',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: color.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
+
                 final List<StoreItemModel> items =
                     snapshot.data ?? <StoreItemModel>[];
+
                 if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Center(child: Text('No hay artículos')),
+                  return Container(
+                    height: 200,
+                    margin: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: color.surfaceContainerHighest,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.inventory_2_outlined,
+                              size: 48,
+                              color: color.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No hay productos',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: color.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Esta tienda aún no tiene productos disponibles',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: color.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.76,
-                  ),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final StoreItemModel item = items[index];
-                    return GestureDetector(
-                      onTap: () =>
-                          Get.toNamed(Routes.storeItemDetail, arguments: item),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Image.network(
-                                item.imageUrl,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              left: 8,
-                              right: 8,
-                              bottom: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: color.surface.withValues(alpha: 0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '\$${item.price.toStringAsFixed(0)}',
-                                      style: TextStyle(
-                                        color: color.primary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (mine)
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: PopupMenuButton<String>(
-                                  onSelected: (String v) async {
-                                    if (v == 'edit') {
-                                      controller.startEditingStoreItem(item);
-                                      Get.toNamed(
-                                        Routes.createStoreItem,
-                                        arguments: <String, dynamic>{
-                                          'store': store,
-                                          'item': item,
-                                        },
-                                      );
-                                    } else if (v == 'delete') {
-                                      await controller.deleteStoreItem(
-                                        store.id,
-                                        item,
-                                      );
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) =>
-                                      const <PopupMenuEntry<String>>[
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Text('Editar'),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'delete',
-                                          child: Text('Eliminar'),
-                                        ),
-                                      ],
-                                ),
-                              ),
-                          ],
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.75,
                         ),
-                      ),
-                    );
-                  },
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final StoreItemModel item = items[index];
+                      return _StoreItemCard(
+                        item: item,
+                        store: store,
+                        isOwner: mine,
+                        theme: theme,
+                        color: color,
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
+
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
+    );
+  }
+}
+
+class _StoreItemCard extends StatelessWidget {
+  final StoreItemModel item;
+  final StoreModel store;
+  final bool isOwner;
+  final ThemeData theme;
+  final ColorScheme color;
+
+  const _StoreItemCard({
+    required this.item,
+    required this.store,
+    required this.isOwner,
+    required this.theme,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Get.toNamed(Routes.storeItemDetail, arguments: item),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen del producto
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: color.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 48,
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Botón de editar/eliminar para el dueño
+                    if (isOwner)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: PopupMenuButton<String>(
+                          icon: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: color.surface.withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.more_vert,
+                              size: 16,
+                              color: color.onSurface,
+                            ),
+                          ),
+                          onSelected: (String v) async {
+                            if (v == 'edit') {
+                              Get.put(StoreController()).startEditingStoreItem(
+                                item,
+                              );
+                              Get.toNamed(
+                                Routes.createStoreItem,
+                                arguments: <String, dynamic>{
+                                  'store': store,
+                                  'item': item,
+                                },
+                              );
+                            } else if (v == 'delete') {
+                              await Get.put(StoreController()).deleteStoreItem(
+                                store.id,
+                                item,
+                              );
+                            }
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              const <PopupMenuEntry<String>>[
+                                PopupMenuItem<String>(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_outlined),
+                                      SizedBox(width: 8),
+                                      Text('Editar'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Eliminar',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Información del producto
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: color.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Chips de condición y categoría
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.secondary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item.condition,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.secondary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.tertiary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item.category,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.tertiary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Precio
+                  Row(
+                    children: [
+                      Icon(Icons.attach_money, color: color.primary, size: 20),
+                      Text(
+                        item.price.toStringAsFixed(0),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: color.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
