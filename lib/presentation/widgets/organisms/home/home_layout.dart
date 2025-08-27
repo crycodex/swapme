@@ -87,7 +87,7 @@ class HomeLayout extends GetView<HomeController> {
                                 'SwapMe',
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                  color: colorScheme.primary,
                                   shadows: [
                                     Shadow(
                                       offset: const Offset(0, 1),
