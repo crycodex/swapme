@@ -251,12 +251,23 @@ class ProfileView extends GetView<AuthController> {
                           ),
                         ),
                         const Divider(height: 1),
-                        SettingsTile(
-                          leadingIcon: Icons.logout_rounded,
-                          title: 'Cerrar sesión',
-                          titleColor: colorScheme.error,
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => _confirmLogout(context),
+
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: SettingsTile(
+                            leadingIcon: Icons.logout_rounded,
+                            title: 'Cerrar sesión',
+                            titleColor: colorScheme.error,
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _confirmLogout(context),
+                          ),
                         ),
                       ],
                     ),
