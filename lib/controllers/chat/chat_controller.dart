@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -25,14 +26,28 @@ class ChatController extends GetxController {
   String? _currentVisibleChatId;
   bool _isAppInForeground = true;
 
+  // Timer para limpieza automática de chats expirados
+  Timer? _cleanupTimer;
+
   String? get currentUserId => _auth.currentUser?.uid;
+
+  @override
+  void onClose() {
+    _cleanupTimer?.cancel();
+    super.onClose();
+  }
 
   @override
   void onInit() {
     super.onInit();
     // El CloudMessagingService maneja la inicialización de notificaciones
     if (currentUserId != null) {
+      debugPrint('Iniciando ChatController - Limpieza automática activada');
       loadUserChats();
+      // Limpiar chats expirados al inicializar
+      cleanupExpiredChats();
+      // Iniciar limpieza automática cada 30 minutos
+      _startAutomaticCleanup();
     }
 
     // Inicializar filteredChats con todos los chats
@@ -43,6 +58,40 @@ class ChatController extends GetxController {
         searchChats(searchQuery.value);
       }
     });
+  }
+
+  /// Inicia la limpieza automática de chats expirados
+  void _startAutomaticCleanup() {
+    // Limpiar chats expirados cada 30 minutos para ser más efectivo
+    _cleanupTimer = Timer.periodic(const Duration(minutes: 30), (timer) {
+      if (currentUserId != null) {
+        _performAutomaticCleanup();
+      }
+    });
+  }
+
+  /// Ejecuta la limpieza automática de chats expirados
+  Future<void> _performAutomaticCleanup() async {
+    try {
+      debugPrint('🔄 Ejecutando limpieza automática de chats expirados...');
+
+      // Obtener todos los chats del usuario
+      final QuerySnapshot snapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: currentUserId)
+          .get();
+
+      final List<ChatModel> allChats = snapshot.docs
+          .map((doc) => ChatModel.fromFirestore(doc))
+          .toList();
+
+      // Procesar chats expirados
+      await _updateExpiredChats(allChats);
+
+      debugPrint('✅ Limpieza automática completada');
+    } catch (e) {
+      debugPrint('❌ Error en limpieza automática: $e');
+    }
   }
 
   // Métodos para controlar el estado de notificaciones
@@ -73,20 +122,17 @@ class ChatController extends GetxController {
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
         .listen(
-          (QuerySnapshot snapshot) {
+          (QuerySnapshot snapshot) async {
             final List<ChatModel> loadedChats = snapshot.docs
                 .map((doc) => ChatModel.fromFirestore(doc))
-                .where(
-                  (chat) =>
-                      !chat.isExpired || chat.status != ChatStatus.expired,
-                )
                 .toList();
 
+            // Actualizar la UI primero para mostrar los chats
             chats.value = loadedChats;
             isLoading.value = false;
 
-            // Actualizar chats expirados
-            _updateExpiredChats(loadedChats);
+            // Procesar y eliminar chats expirados en segundo plano
+            _processExpiredChatsInBackground(loadedChats);
           },
           onError: (e) {
             error.value = 'Error cargando chats: $e';
@@ -96,17 +142,36 @@ class ChatController extends GetxController {
   }
 
   Future<void> _updateExpiredChats(List<ChatModel> chats) async {
-    for (final ChatModel chat in chats) {
-      if (chat.isExpired && chat.status == ChatStatus.active) {
-        try {
-          await _firestore.collection('chats').doc(chat.id).update({
-            'status': ChatStatus.expired.name,
-          });
-        } catch (e) {
-          debugPrint('Error actualizando chat expirado ${chat.id}: $e');
-        }
+    final List<ChatModel> expiredChats = chats
+        .where((chat) => chat.isExpired)
+        .toList();
+
+    if (expiredChats.isEmpty) {
+      debugPrint('No hay chats expirados para limpiar');
+      return;
+    }
+
+    debugPrint(
+      'Encontrados ${expiredChats.length} chats expirados para eliminar',
+    );
+
+    for (final ChatModel chat in expiredChats) {
+      try {
+        // Eliminar completamente el chat expirado de la base de datos
+        await deleteChat(chat.id);
+        debugPrint('Chat expirado eliminado: ${chat.id}');
+      } catch (e) {
+        debugPrint('Error eliminando chat expirado ${chat.id}: $e');
       }
     }
+  }
+
+  /// Procesa chats expirados en segundo plano sin bloquear la UI
+  void _processExpiredChatsInBackground(List<ChatModel> chats) {
+    // Ejecutar en segundo plano para no bloquear la UI
+    Future.microtask(() async {
+      await _updateExpiredChats(chats);
+    });
   }
 
   Future<String?> createChat({
@@ -718,6 +783,100 @@ class ChatController extends GetxController {
     } catch (e) {
       error.value = 'Error eliminando chat: $e';
     }
+  }
+
+  /// Elimina todos los chats expirados de la base de datos
+  Future<void> cleanupExpiredChats() async {
+    if (currentUserId == null) return;
+
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      // Obtener todos los chats del usuario
+      final QuerySnapshot snapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: currentUserId)
+          .get();
+
+      final List<ChatModel> allChats = snapshot.docs
+          .map((doc) => ChatModel.fromFirestore(doc))
+          .toList();
+
+      // Filtrar chats expirados
+      final List<ChatModel> expiredChats = allChats
+          .where((chat) => chat.isExpired && chat.status == ChatStatus.active)
+          .toList();
+
+      if (expiredChats.isEmpty) {
+        debugPrint('No hay chats expirados para limpiar');
+        return;
+      }
+
+      debugPrint('Limpiando ${expiredChats.length} chats expirados...');
+
+      // Eliminar cada chat expirado
+      for (final ChatModel chat in expiredChats) {
+        try {
+          await deleteChat(chat.id);
+          debugPrint('Chat expirado eliminado: ${chat.id}');
+        } catch (e) {
+          debugPrint('Error eliminando chat expirado ${chat.id}: $e');
+        }
+      }
+
+      debugPrint('Limpieza de chats expirados completada');
+    } catch (e) {
+      error.value = 'Error limpiando chats expirados: $e';
+      debugPrint('Error en cleanupExpiredChats: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Método público para ejecutar limpieza manual de chats expirados
+  Future<void> manualCleanupExpiredChats() async {
+    await cleanupExpiredChats();
+  }
+
+  /// Fuerza la limpieza inmediata de chats expirados
+  Future<void> forceCleanupExpiredChats() async {
+    if (currentUserId == null) return;
+
+    try {
+      debugPrint('Forzando limpieza inmediata de chats expirados...');
+
+      // Obtener todos los chats del usuario
+      final QuerySnapshot snapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: currentUserId)
+          .get();
+
+      final List<ChatModel> allChats = snapshot.docs
+          .map((doc) => ChatModel.fromFirestore(doc))
+          .toList();
+
+      // Procesar chats expirados
+      await _updateExpiredChats(allChats);
+
+      // Recargar la lista de chats después de la limpieza
+      loadUserChats();
+    } catch (e) {
+      debugPrint('Error en limpieza forzada: $e');
+    }
+  }
+
+  /// Obtiene estadísticas sobre chats expirados
+  Map<String, int> getExpiredChatsStats() {
+    final int totalChats = chats.length;
+    final int expiredChats = chats.where((chat) => chat.isExpired).length;
+    final int activeChats = totalChats - expiredChats;
+
+    return {
+      'total': totalChats,
+      'active': activeChats,
+      'expired': expiredChats,
+    };
   }
 
   // Métodos de búsqueda

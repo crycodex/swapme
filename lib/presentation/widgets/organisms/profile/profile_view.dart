@@ -5,6 +5,7 @@ import '../../molecules/settings_card.dart';
 import '../../molecules/settings_tile.dart';
 import '../../../../controllers/auth/auth_controller.dart';
 import '../../../../controllers/home/home_controller.dart';
+import '../../../../controllers/limits/user_limits_controller.dart';
 import '../../molecules/swaps_section.dart';
 import '../../../../controllers/swap/swap_controller.dart';
 import '../../../../controllers/store/store_controller.dart';
@@ -160,23 +161,71 @@ class ProfileView extends GetView<AuthController> {
                     const SectionTitle(title: 'Preferencias'),
                     SettingsCard(
                       children: [
-                        SettingsTile(
-                          leadingIcon: Icons.storefront_rounded,
-                          title: 'Mi tienda',
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () async {
-                            final StoreController store = Get.put(
-                              StoreController(),
+                        // Permisos de mi tienda hidden
+                        /*  GetBuilder<UserLimitsController>(
+                          init: Get.put(UserLimitsController()),
+                          builder: (UserLimitsController limitsController) {
+                            final bool canCreateStore = limitsController
+                                .canUserCreateStore();
+
+                            return SettingsTile(
+                              leadingIcon: canCreateStore
+                                  ? Icons.storefront_rounded
+                                  : Icons.lock,
+                              title: canCreateStore
+                                  ? 'Mi tienda'
+                                  : 'Mi tienda (Premium)',
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (!canCreateStore)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Premium',
+                                        style: TextStyle(
+                                          color: Colors.amber[700],
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    canCreateStore
+                                        ? Icons.chevron_right_rounded
+                                        : Icons.lock,
+                                    color: canCreateStore ? null : Colors.grey,
+                                  ),
+                                ],
+                              ),
+                              onTap: canCreateStore
+                                  ? () async {
+                                      final StoreController store = Get.put(
+                                        StoreController(),
+                                      );
+                                      final StoreModel? mine = await store
+                                          .getMyStoreOnce();
+                                      if (mine == null) {
+                                        Get.toNamed('/store-editor');
+                                      } else {
+                                        Get.toNamed(
+                                          '/store-detail',
+                                          arguments: mine,
+                                        );
+                                      }
+                                    }
+                                  : () => _showPremiumRequiredDialog(context),
                             );
-                            final StoreModel? mine = await store
-                                .getMyStoreOnce();
-                            if (mine == null) {
-                              Get.toNamed('/store-editor');
-                            } else {
-                              Get.toNamed('/store-detail', arguments: mine);
-                            }
                           },
-                        ),
+                        ), */
                         const Divider(height: 1),
                         SettingsTile(
                           leadingIcon: Icons.history,
@@ -193,11 +242,32 @@ class ProfileView extends GetView<AuthController> {
                         ),
                         const Divider(height: 1),
                         SettingsTile(
-                          leadingIcon: Icons.logout_rounded,
-                          title: 'Cerrar sesión',
-                          titleColor: colorScheme.error,
+                          leadingIcon: Icons.language_outlined,
+                          title: 'Licencias',
                           trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => _confirmLogout(context),
+                          onTap: () => Get.toNamed(
+                            '/licenses',
+                            arguments: {'context': context},
+                          ),
+                        ),
+                        const Divider(height: 1),
+
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: SettingsTile(
+                            leadingIcon: Icons.logout_rounded,
+                            title: 'Cerrar sesión',
+                            titleColor: colorScheme.error,
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _confirmLogout(context),
+                          ),
                         ),
                       ],
                     ),
@@ -252,6 +322,52 @@ class ProfileView extends GetView<AuthController> {
         ],
       ),
       barrierDismissible: true,
+    );
+  }
+
+  void _showPremiumRequiredDialog(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme color = theme.colorScheme;
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.star, color: Colors.amber, size: 28),
+            const SizedBox(width: 12),
+            const Text('Función Premium'),
+          ],
+        ),
+        content: const Text(
+          'Para crear una tienda necesitas una cuenta Premium. '
+          'Los usuarios gratuitos tienen acceso limitado a 3 swaps por mes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancelar', style: TextStyle(color: color.secondary)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Get.back();
+              // Aquí puedes navegar a la pantalla de upgrade premium
+              Get.snackbar(
+                'Actualizar a Premium',
+                'Función en desarrollo',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.amber,
+                colorText: Colors.white,
+              );
+            },
+            icon: const Icon(Icons.star),
+            label: const Text('Actualizar a Premium'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

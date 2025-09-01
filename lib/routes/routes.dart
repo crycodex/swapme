@@ -13,6 +13,7 @@ import '../presentation/pages/profile/edit_profile_page.dart';
 import '../presentation/pages/profile/swap_history_page.dart';
 import '../presentation/pages/profile/user_ratings_page.dart';
 import '../presentation/pages/profile/seller_profile_page.dart';
+import '../presentation/pages/profile/licenses_page.dart';
 //swap
 import '../presentation/pages/swap/create_swap_page.dart';
 import '../presentation/pages/swap/swap_detail_page.dart';
@@ -40,6 +41,7 @@ class Routes {
   static const String storeItemEditor = '/store-item-editor';
   static const String createStoreItem = '/create-store-item';
   static const String storeRatings = '/store-ratings';
+  static const String licenses = '/licenses';
 
   static final List<GetPage> routes = [
     GetPage(name: Routes.welcome, page: () => const WelcomePage()),
@@ -110,6 +112,11 @@ class Routes {
         final StoreModel store = Get.arguments as StoreModel;
         return StoreRatingsPage(store: store);
       },
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.licenses,
+      page: () => const LicensesPage(),
       transition: Transition.rightToLeft,
     ),
   ];

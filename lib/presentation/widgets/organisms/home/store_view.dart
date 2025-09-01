@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/store/store_controller.dart';
+import '../../../../controllers/limits/user_limits_controller.dart';
 import '../../../../data/models/store_model.dart';
 import '../../../../routes/routes.dart';
 
@@ -100,43 +101,58 @@ class StoreView extends GetView<StoreController> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  StreamBuilder<StoreModel?>(
+                  //tienda hidden
+                 /*  StreamBuilder<StoreModel?>(
                     stream: controller.getMyStore(),
                     builder: (context, snapshot) {
                       final bool hasStore = snapshot.data != null;
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: color.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                      return GetBuilder<UserLimitsController>(
+                        init: Get.put(UserLimitsController()),
+                        builder: (UserLimitsController limitsController) {
+                          final bool canCreateStore = limitsController
+                              .canUserCreateStore();
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.primary.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          onPressed: hasStore
-                              ? () => Get.toNamed(
-                                  Routes.storeDetail,
-                                  arguments: snapshot.data,
-                                )
-                              : () => Get.toNamed(Routes.storeEditor),
-                          style: IconButton.styleFrom(
-                            backgroundColor: color.primary,
-                            foregroundColor: color.onPrimary,
-                            padding: const EdgeInsets.all(12),
-                          ),
-                          icon: Icon(
-                            hasStore
-                                ? Icons.storefront_rounded
-                                : Icons.add_business_rounded,
-                            size: 24,
-                          ),
-                        ),
+                            child: IconButton(
+                              onPressed: hasStore
+                                  ? () => Get.toNamed(
+                                      Routes.storeDetail,
+                                      arguments: snapshot.data,
+                                    )
+                                  : canCreateStore
+                                  ? () => Get.toNamed(Routes.storeEditor)
+                                  : () => _showPremiumRequiredDialog(context),
+                              style: IconButton.styleFrom(
+                                backgroundColor: hasStore || canCreateStore
+                                    ? color.primary
+                                    : Colors.grey,
+                                foregroundColor: color.onPrimary,
+                                padding: const EdgeInsets.all(12),
+                              ),
+                              icon: Icon(
+                                hasStore
+                                    ? Icons.storefront_rounded
+                                    : canCreateStore
+                                    ? Icons.add_business_rounded
+                                    : Icons.lock,
+                                size: 24,
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                  ),
+                  ), */
                 ],
               ),
             ),
@@ -298,6 +314,51 @@ class StoreView extends GetView<StoreController> {
             }),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      ),
+    );
+  }
+
+  void _showPremiumRequiredDialog(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme color = theme.colorScheme;
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.star, color: Colors.amber, size: 28),
+            const SizedBox(width: 12),
+            const Text('Función Premium'),
+          ],
+        ),
+        content: const Text(
+          'Para crear una tienda necesitas una cuenta Premium. '
+          'Los usuarios gratuitos tienen acceso limitado a 3 swaps por mes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancelar', style: TextStyle(color: color.secondary)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Get.back();
+              Get.snackbar(
+                'Actualizar a Premium',
+                'Función en desarrollo',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.amber,
+                colorText: Colors.white,
+              );
+            },
+            icon: const Icon(Icons.star),
+            label: const Text('Actualizar a Premium'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ],
       ),
     );

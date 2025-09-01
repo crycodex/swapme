@@ -15,9 +15,11 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Obx(() {
       return GlossyContainer(
-        height: 125,
+        height: 90 + bottomPadding,
         width: double.infinity,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(0),
@@ -29,67 +31,50 @@ class BottomNavBar extends StatelessWidget {
             width: 0.5,
           ),
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                colorScheme.surface.withValues(alpha: 0.8),
-                colorScheme.surface.withValues(alpha: 0.95),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: 8 + bottomPadding,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                index: 0,
+                icon: Icons.home_rounded,
+                label: 'Inicio',
+                controller: controller,
+                colorScheme: colorScheme,
+              ),
+              _NavItem(
+                index: 1,
+                icon: Icons.storefront_rounded,
+                label: 'Tienda',
+                controller: controller,
+                colorScheme: colorScheme,
+              ),
+              _CenterAction(
+                onPressed: () => Get.toNamed('/create-swap'),
+                isActive: controller.currentIndex.value == 2,
+                colorScheme: colorScheme,
+              ),
+              _NavItem(
+                index: 3,
+                icon: Icons.chat_bubble_rounded,
+                label: 'Mensajes',
+                controller: controller,
+                colorScheme: colorScheme,
+              ),
+              _NavItem(
+                index: 4,
+                icon: Icons.person_rounded,
+                label: 'Perfil',
+                controller: controller,
+                colorScheme: colorScheme,
               ),
             ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _NavItem(
-                    index: 0,
-                    icon: Icons.home_rounded,
-                    label: 'Inicio',
-                    controller: controller,
-                    colorScheme: colorScheme,
-                  ),
-                  _NavItem(
-                    index: 1,
-                    icon: Icons.storefront_rounded,
-                    label: 'Tienda',
-                    controller: controller,
-                    colorScheme: colorScheme,
-                  ),
-                  _CenterAction(
-                    onPressed: () => Get.toNamed('/create-swap'),
-                    isActive: controller.currentIndex.value == 2,
-                    colorScheme: colorScheme,
-                  ),
-                  _NavItem(
-                    index: 3,
-                    icon: Icons.chat_bubble_rounded,
-                    label: 'Mensajes',
-                    controller: controller,
-                    colorScheme: colorScheme,
-                  ),
-                  _NavItem(
-                    index: 4,
-                    icon: Icons.person_rounded,
-                    label: 'Perfil',
-                    controller: controller,
-                    colorScheme: colorScheme,
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       );

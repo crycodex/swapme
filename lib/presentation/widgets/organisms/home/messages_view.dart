@@ -57,45 +57,150 @@ class _MessagesViewState extends State<MessagesView> {
                       Obx(() {
                         final int unreadCount = _chatController
                             .getUnreadChatsCount();
-                        if (unreadCount == 0) return const SizedBox.shrink();
+                        _chatController.getExpiredChatsStats();
+                        final int expiringSoonCount = _chatController.chats
+                            .where(
+                              (chat) =>
+                                  !chat.isExpired &&
+                                  chat.expiresAt
+                                          .difference(DateTime.now())
+                                          .inHours <
+                                      24,
+                            )
+                            .length;
+                        final int expiredCount = _chatController.chats
+                            .where((chat) => chat.isExpired)
+                            .length;
 
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.3,
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (unreadCount > 0) ...[
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.circle,
+                                      size: 8,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      unreadCount.toString(),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme.onPrimary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (expiringSoonCount > 0) ...[
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$expiringSoonCount',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (expiredCount > 0) ...[
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.error,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.error.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.warning,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$expiredCount',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                size: 8,
-                                color: colorScheme.onPrimary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                unreadCount.toString(),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         );
                       }),
                     ],
@@ -113,6 +218,21 @@ class _MessagesViewState extends State<MessagesView> {
                   icon: const Icon(Icons.close),
                 ),
               ] else ...[
+                Obx(
+                  () => IconButton(
+                    onPressed: _chatController.isLoading.value
+                        ? null
+                        : () => _chatController.forceCleanupExpiredChats(),
+                    icon: _chatController.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.cleaning_services_outlined),
+                    tooltip: 'Limpiar chats expirados ahora',
+                  ),
+                ),
                 IconButton(
                   onPressed: () {
                     setState(() {
@@ -205,7 +325,7 @@ class _MessagesViewState extends State<MessagesView> {
                       Text(
                         isSearching
                             ? 'Intenta con otros términos de búsqueda'
-                            : 'Cuando intercambies artículos o contactes\ncon otras tiendas, verás tus conversaciones aquí',
+                            : 'Cuando intercambies artículos o contactes\ncon otras tiendas, verás tus conversaciones aquí.\n\nLos chats expiran en 7 días y se eliminan automáticamente.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.hintColor,
