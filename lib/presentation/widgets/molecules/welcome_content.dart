@@ -21,6 +21,13 @@ class WelcomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
+    // Ajustar tamaños de fuente según el dispositivo
+    final headlineSize = isWeb ? 56.0 : 48.0;
+    final sunSize = isWeb ? 120.0 : 100.0;
+    final clothSize = isWeb ? 160.0 : 135.0;
 
     Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: slideController, curve: Curves.easeOutCubic),
@@ -46,7 +53,10 @@ class WelcomeContent extends StatelessWidget {
         // Contenido principal
         SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: isWeb ? 40.0 : 20.0,
+              vertical: 20.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -54,7 +64,7 @@ class WelcomeContent extends StatelessWidget {
                 Align(
                   alignment: Alignment.topRight,
                   child: RotatingSun(
-                    size: 100,
+                    size: sunSize,
                     animation: bounceAnimation,
                     scaleAnimation: scaleAnimation,
                   ),
@@ -72,7 +82,7 @@ class WelcomeContent extends StatelessWidget {
                           theme.textTheme.headlineLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 48,
+                                fontSize: headlineSize,
                               ) ??
                               const TextStyle(
                                 color: Colors.white,
@@ -82,7 +92,7 @@ class WelcomeContent extends StatelessWidget {
                           theme.textTheme.headlineLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 48,
+                                fontSize: headlineSize,
                               ) ??
                               const TextStyle(
                                 color: Colors.white,
@@ -112,12 +122,12 @@ class WelcomeContent extends StatelessWidget {
                             theme.textTheme.headlineLarge?.copyWith(
                                   color: colorScheme.onSecondaryContainer,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 48,
+                                  fontSize: headlineSize,
                                 ) ??
                                 TextStyle(
                                   color: colorScheme.onSecondaryContainer,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 48,
+                                  fontSize: headlineSize,
                                 ),
                           ],
                           cascadeDuration: const Duration(milliseconds: 2500),
@@ -135,11 +145,13 @@ class WelcomeContent extends StatelessWidget {
                           Transform.rotate(
                             angle: -0.2, // Rotar un poco el buzo
                             child: BreathingCloth(
-                              size: 135,
+                              size: clothSize,
                               animation: bounceAnimation,
                               scaleAnimation: scaleAnimation,
                             ),
                           ),
+
+                          const SizedBox(width: 20),
 
                           // Textos "Dale una nueva vida a tu clóset" (lado derecho)
                           Expanded(
@@ -154,7 +166,7 @@ class WelcomeContent extends StatelessWidget {
                                 theme.textTheme.headlineLarge?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 48,
+                                      fontSize: headlineSize,
                                     ) ??
                                     const TextStyle(
                                       color: Colors.white,
@@ -164,7 +176,7 @@ class WelcomeContent extends StatelessWidget {
                                 theme.textTheme.headlineLarge?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 48,
+                                      fontSize: headlineSize,
                                     ) ??
                                     const TextStyle(
                                       color: Colors.white,
@@ -174,7 +186,7 @@ class WelcomeContent extends StatelessWidget {
                                 theme.textTheme.headlineLarge?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 48,
+                                      fontSize: headlineSize,
                                     ) ??
                                     const TextStyle(
                                       color: Colors.white,
@@ -184,12 +196,12 @@ class WelcomeContent extends StatelessWidget {
                                 theme.textTheme.headlineLarge?.copyWith(
                                       color: Colors.pink[200],
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 48,
+                                      fontSize: headlineSize,
                                     ) ??
                                     TextStyle(
                                       color: Colors.pink[200],
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 48,
+                                      fontSize: headlineSize,
                                     ),
                               ],
                               cascadeDuration: const Duration(

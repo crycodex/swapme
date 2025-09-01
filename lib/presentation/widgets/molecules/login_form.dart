@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'dart:io';
 import '../../../controllers/auth/login_controller.dart';
 import '../atoms/animated_button.dart';
 
@@ -21,6 +23,18 @@ class LoginForm extends GetView<LoginController> {
     final ColorScheme colorScheme = theme.colorScheme;
     final LoginController controller = Get.put(LoginController());
 
+    // Detectar plataforma y ajustar tamaños
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+    final isTablet = screenWidth > 400 && screenWidth <= 600;
+
+    // Ajustar tamaños según dispositivo
+    final inputHeight = isWeb ? 56.0 : 48.0;
+    final buttonHeight = isWeb ? 56.0 : 52.0;
+    final fontSize = isWeb ? 16.0 : 14.0;
+    final spacing = isWeb ? 20.0 : 16.0;
+    final smallSpacing = isWeb ? 8.0 : 6.0;
+
     return Form(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,10 +44,12 @@ class LoginForm extends GetView<LoginController> {
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
+              fontSize: fontSize,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: smallSpacing),
           Container(
+            height: inputHeight,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -47,12 +63,14 @@ class LoginForm extends GetView<LoginController> {
             ),
             child: TextFormField(
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              style: TextStyle(fontSize: fontSize),
+              decoration: InputDecoration(
                 hintText: 'email',
+                hintStyle: TextStyle(fontSize: fontSize),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
+                  vertical: isWeb ? 18 : 14,
                 ),
               ),
               onChanged: (String value) {
@@ -70,16 +88,18 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: spacing),
           Text(
             'Contraseña',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.secondary,
               fontWeight: FontWeight.w500,
+              fontSize: fontSize,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: smallSpacing),
           Container(
+            height: inputHeight,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -93,12 +113,14 @@ class LoginForm extends GetView<LoginController> {
             ),
             child: TextFormField(
               obscureText: true,
-              decoration: const InputDecoration(
+              style: TextStyle(fontSize: fontSize),
+              decoration: InputDecoration(
                 hintText: '********',
+                hintStyle: TextStyle(fontSize: fontSize),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
+                  vertical: isWeb ? 18 : 14,
                 ),
               ),
               onChanged: (String value) {
@@ -116,7 +138,7 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
 
-          const SizedBox(height: 8),
+          SizedBox(height: smallSpacing),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
@@ -125,19 +147,27 @@ class LoginForm extends GetView<LoginController> {
                   () => controller.handleForgotSubmit(context),
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.secondary,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isWeb ? 8 : 4,
+                  vertical: isWeb ? 8 : 4,
+                ),
               ),
-              child: const Text('¿Olvidaste tu contraseña?'),
+              child: Text(
+                '¿Olvidaste tu contraseña?',
+                style: TextStyle(fontSize: fontSize - 1),
+              ),
             ),
           ),
 
           Obx(() {
             if (controller.errorMessage.value.isNotEmpty) {
               return Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: EdgeInsets.only(top: smallSpacing),
                 child: Text(
                   controller.errorMessage.value,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.error,
+                    fontSize: fontSize - 2,
                   ),
                 ),
               );
@@ -145,7 +175,7 @@ class LoginForm extends GetView<LoginController> {
             return const SizedBox.shrink();
           }),
 
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
           AnimatedButton(
             text: 'Iniciar',
             onPressed: isLoading
@@ -156,7 +186,7 @@ class LoginForm extends GetView<LoginController> {
             backgroundColor: colorScheme.primary,
             textColor: Colors.grey,
             width: double.infinity,
-            height: 52,
+            height: buttonHeight,
             borderRadius: BorderRadius.circular(16),
             isLoading: isLoading,
           ),

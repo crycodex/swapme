@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:glossy/glossy.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:io';
 import '../molecules/login_form.dart';
 import '../molecules/social_login_buttons.dart';
 import '../molecules/register_form.dart';
@@ -122,6 +124,17 @@ class _LoginLayoutState extends State<LoginLayout>
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
     final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+    final isTablet = screenWidth > 400 && screenWidth <= 600;
+
+    // Ajustar tamaños según dispositivo
+    final glassHeightFactor = isWeb ? 0.85 : _glassHeightFactor;
+    final borderRadius = isWeb ? 40.0 : 30.0;
+    final padding = isWeb
+        ? const EdgeInsets.fromLTRB(40, 30, 40, 40)
+        : const EdgeInsets.fromLTRB(20, 20, 20, 28);
+    final titleSpacing = isWeb ? 32.0 : 24.0;
 
     final Animation<Offset> slideAnimation =
         Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
@@ -167,7 +180,7 @@ class _LoginLayoutState extends State<LoginLayout>
                 ),
               ),
 
-            // Título superior eliminado
+            // Contenedor principal con glassmorphism
             Positioned(
               bottom: 0,
               left: 0,
@@ -177,41 +190,51 @@ class _LoginLayoutState extends State<LoginLayout>
                 builder: (BuildContext context, Widget? child) {
                   return SlideTransition(
                     position: slideAnimation,
-                    child: GlossyContainer(
-                      width: double.infinity,
-                      height: screenHeight * _glassHeightFactor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _getCardTitle(),
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isWeb ? 500 : double.infinity,
+                        ),
+                        child: GlossyContainer(
+                          width: double.infinity,
+                          height: screenHeight * glassHeightFactor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(borderRadius),
+                            topRight: Radius.circular(borderRadius),
+                          ),
+                          child: Padding(
+                            padding: padding,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _getCardTitle(),
+                                  style: theme.textTheme.headlineMedium
+                                      ?.copyWith(
+                                        color: colorScheme.secondary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isWeb ? 28 : 24,
+                                      ),
+                                ),
+                                SizedBox(height: titleSpacing),
+                                Expanded(
+                                  child: PageView(
+                                    controller: _pageController,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    onPageChanged: (int index) {
+                                      setState(() => _currentPage = index);
+                                    },
+                                    children: [
+                                      _buildForgotPage(theme, colorScheme),
+                                      _buildLoginPage(theme, colorScheme),
+                                      _buildRegisterPage(theme, colorScheme),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 24),
-                            Expanded(
-                              child: PageView(
-                                controller: _pageController,
-                                physics: const NeverScrollableScrollPhysics(),
-                                onPageChanged: (int index) {
-                                  setState(() => _currentPage = index);
-                                },
-                                children: [
-                                  _buildForgotPage(theme, colorScheme),
-                                  _buildLoginPage(theme, colorScheme),
-                                  _buildRegisterPage(theme, colorScheme),
-                                ],
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -240,6 +263,40 @@ class _LoginLayoutState extends State<LoginLayout>
           ),
         ),
         const SizedBox(height: 16),
+        // Separador "o inicia con" solo si hay botones sociales
+        _buildSocialLoginSection(theme, colorScheme),
+        Center(
+          child: TextButton(
+            onPressed: () => _goToPage(2),
+            child: Text(
+              '¿No tienes cuenta? Regístrate',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialLoginSection(ThemeData theme, ColorScheme colorScheme) {
+    // Verificar si hay botones sociales para mostrar
+    bool hasSocialButtons = false;
+
+    if (!kIsWeb) {
+      if (Platform.isAndroid || Platform.isIOS) {
+        hasSocialButtons = true;
+      }
+    }
+
+    if (!hasSocialButtons) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
         Row(
           children: [
             Expanded(
@@ -265,18 +322,6 @@ class _LoginLayoutState extends State<LoginLayout>
           onApplePressed: widget.onAppleLoginPressed,
         ),
         const SizedBox(height: 12),
-        Center(
-          child: TextButton(
-            onPressed: () => _goToPage(2),
-            child: Text(
-              '¿No tienes cuenta? Regístrate',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
