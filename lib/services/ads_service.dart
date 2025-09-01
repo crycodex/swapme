@@ -4,7 +4,7 @@ import '../controllers/limits/user_limits_controller.dart';
 
 class AdsService extends GetxService {
   final UserLimitsController _userLimitsController =
-      Get.find<UserLimitsController>();
+      Get.put(UserLimitsController());
 
   BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;

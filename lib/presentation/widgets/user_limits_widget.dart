@@ -7,7 +7,7 @@ class UserLimitsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final UserLimitsController controller = Get.find<UserLimitsController>();
+    final UserLimitsController controller = Get.put(UserLimitsController());
 
     return Obx(() {
       final userLimits = controller.userLimits.value;

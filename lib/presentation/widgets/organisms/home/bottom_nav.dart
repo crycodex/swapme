@@ -19,7 +19,7 @@ class BottomNavBar extends StatelessWidget {
 
     return Obx(() {
       return GlossyContainer(
-        height: 125 + bottomPadding,
+        height: 90 + bottomPadding,
         width: double.infinity,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(0),

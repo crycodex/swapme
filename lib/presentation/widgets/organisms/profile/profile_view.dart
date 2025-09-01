@@ -242,6 +242,16 @@ class ProfileView extends GetView<AuthController> {
                         ),
                         const Divider(height: 1),
                         SettingsTile(
+                          leadingIcon: Icons.language_outlined,
+                          title: 'Licencias',
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => Get.toNamed(
+                            '/licenses',
+                            arguments: {'context': context},
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        SettingsTile(
                           leadingIcon: Icons.logout_rounded,
                           title: 'Cerrar sesión',
                           titleColor: colorScheme.error,
