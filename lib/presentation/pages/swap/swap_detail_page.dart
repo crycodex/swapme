@@ -242,14 +242,14 @@ class SwapDetailPage extends StatelessWidget {
               label: 'Intercambiar este artículo',
               hint: 'Abre el flujo para proponer un intercambio',
               child: Obx(() {
-                if (chatController.currentUserId == item.userId) {
+                if (chatController.currentUserId.value == item.userId) {
                   return FilledButton(
                     onPressed: null,
                     child: const Text('Tu artículo'),
                   );
                 }
 
-                if (chatController.currentUserId == null) {
+                if (chatController.currentUserId.value == null) {
                   return FilledButton(
                     onPressed: null,
                     child: const Text('Intercambiar'),
@@ -260,7 +260,8 @@ class SwapDetailPage extends StatelessWidget {
                 final existingChat = chatController.chats.firstWhereOrNull(
                   (chat) =>
                       chat.swapItemId == item.id &&
-                      chat.interestedUserId == chatController.currentUserId! &&
+                      chat.interestedUserId ==
+                          chatController.currentUserId.value! &&
                       chat.swapItemOwnerId == item.userId &&
                       !chat.isExpired,
                 );
@@ -286,7 +287,7 @@ class SwapDetailPage extends StatelessWidget {
     SwapItemModel item,
     ChatController chatController,
   ) async {
-    if (chatController.currentUserId == null) {
+    if (chatController.currentUserId.value == null) {
       Get.snackbar(
         'Error',
         'Debes iniciar sesión para intercambiar',
@@ -296,7 +297,7 @@ class SwapDetailPage extends StatelessWidget {
     }
 
     // Verificar si ya existe un chat activo para este artículo
-    final String currentUserId = chatController.currentUserId!;
+    final String? currentUserId = chatController.currentUserId.value;
     final existingChat = chatController.chats.firstWhereOrNull(
       (chat) =>
           chat.swapItemId == item.id &&
@@ -349,7 +350,7 @@ class SwapDetailPage extends StatelessWidget {
     try {
       final String? chatId = await chatController.createChat(
         swapItem: item,
-        interestedUserId: chatController.currentUserId!,
+        interestedUserId: chatController.currentUserId.value!,
       );
 
       Get.back();

@@ -94,7 +94,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       // mostrar automáticamente el diálogo de calificación
       if (!wasCompleted &&
           chat.status == ChatStatus.completed &&
-          chat.interestedUserId == _chatController.currentUserId &&
+          chat.interestedUserId == _chatController.currentUserId.value &&
           !_isRatingDialogShown) {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && !_isRatingDialogShown) {
@@ -149,7 +149,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               _currentChat?.status == ChatStatus.completed;
           final bool isNowCompleted =
               updatedChat.status == ChatStatus.completed;
-          final String currentUserId = _chatController.currentUserId!;
+          final String currentUserId = _chatController.currentUserId.value!;
 
           // Si el intercambio se acaba de completar y es el usuario interesado
           if (!wasCompleted &&
@@ -333,7 +333,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     return _MessageBubble(
                       message: message,
                       isCurrentUser:
-                          message.senderId == _chatController.currentUserId,
+                          message.senderId ==
+                          _chatController.currentUserId.value,
                       onSwapResponse: (bool accepted) {
                         _respondToSwap(accepted, message);
                       },
@@ -371,7 +372,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return const SizedBox.shrink();
     }
 
-    final String currentUserId = _chatController.currentUserId!;
+    final String currentUserId = _chatController.currentUserId.value!;
     final bool isOwner = _currentChat!.swapItemOwnerId == currentUserId;
     final bool isCompleted = _currentChat!.status == ChatStatus.completed;
 
@@ -429,7 +430,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<bool> _checkIfUserHasRated() async {
-    if (_currentChat == null || _chatController.currentUserId == null) {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
       return false;
     }
 
@@ -449,7 +450,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
       if (swapHistory != null) {
         final String otherUserId = _currentChat!.getOtherUserId(
-          _chatController.currentUserId!,
+          _chatController.currentUserId.value!,
         );
         return await historyController.hasUserRated(
           swapHistory.id,
@@ -806,10 +807,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _isRatingDialogShown = true;
 
     final String otherUserId = _currentChat!.getOtherUserId(
-      _chatController.currentUserId!,
+      _chatController.currentUserId.value!,
     );
     final String otherUserName =
-        _currentChat!.swapItemOwnerId == _chatController.currentUserId!
+        _currentChat!.swapItemOwnerId == _chatController.currentUserId.value!
         ? 'el usuario interesado'
         : 'el propietario';
 

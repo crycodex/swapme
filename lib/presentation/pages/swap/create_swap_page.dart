@@ -12,7 +12,7 @@ class CreateSwapPage extends GetView<SwapController> {
       init: SwapController(),
       builder: (SwapController controller) {
         return PopScope(
-          onPopInvoked: (bool didPop) async {
+          onPopInvokedWithResult: (bool didPop, dynamic result) async {
             if (didPop) {
               // Liberar la cámara cuando se salga de la página
               await controller.disposeCamera();
