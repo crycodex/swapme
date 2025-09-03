@@ -32,7 +32,7 @@ class LoginLayout extends StatefulWidget {
 
 class _LoginLayoutState extends State<LoginLayout>
     with TickerProviderStateMixin {
-  static const double _glassHeightFactor = 0.75;
+  static const double _glassHeightFactor = 0.65;
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -126,15 +126,22 @@ class _LoginLayoutState extends State<LoginLayout>
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
-    final isTablet = screenWidth > 400 && screenWidth <= 600;
 
-    // Ajustar tamaños según dispositivo
-    final glassHeightFactor = isWeb ? 0.85 : _glassHeightFactor;
+    // Ajustar tamaños según dispositivo y altura de pantalla
+    final double dynamicHeightFactor = screenHeight < 700
+        ? 0.7
+        : _glassHeightFactor;
+    final glassHeightFactor = isWeb ? 0.75 : dynamicHeightFactor;
     final borderRadius = isWeb ? 40.0 : 30.0;
     final padding = isWeb
-        ? const EdgeInsets.fromLTRB(40, 30, 40, 40)
-        : const EdgeInsets.fromLTRB(20, 20, 20, 28);
-    final titleSpacing = isWeb ? 32.0 : 24.0;
+        ? const EdgeInsets.fromLTRB(40, 24, 40, 32)
+        : EdgeInsets.fromLTRB(
+            20,
+            screenHeight < 700 ? 12 : 16,
+            20,
+            screenHeight < 700 ? 16 : 20,
+          );
+    final titleSpacing = isWeb ? 24.0 : (screenHeight < 700 ? 12.0 : 16.0);
 
     final Animation<Offset> slideAnimation =
         Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
@@ -206,6 +213,7 @@ class _LoginLayoutState extends State<LoginLayout>
                             padding: padding,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   _getCardTitle(),
@@ -213,11 +221,11 @@ class _LoginLayoutState extends State<LoginLayout>
                                       ?.copyWith(
                                         color: colorScheme.secondary,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: isWeb ? 28 : 24,
+                                        fontSize: isWeb ? 26 : 22,
                                       ),
                                 ),
                                 SizedBox(height: titleSpacing),
-                                Expanded(
+                                Flexible(
                                   child: PageView(
                                     controller: _pageController,
                                     physics:
@@ -251,8 +259,9 @@ class _LoginLayoutState extends State<LoginLayout>
   Widget _buildLoginPage(ThemeData theme, ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
+        Flexible(
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: LoginForm(
@@ -262,7 +271,7 @@ class _LoginLayoutState extends State<LoginLayout>
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Separador "o inicia con" solo si hay botones sociales
         _buildSocialLoginSection(theme, colorScheme),
         Center(
@@ -316,20 +325,21 @@ class _LoginLayoutState extends State<LoginLayout>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SocialLoginButtons(
           onGooglePressed: widget.onGoogleLoginPressed,
           onApplePressed: widget.onAppleLoginPressed,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
       ],
     );
   }
 
   Widget _buildRegisterPage(ThemeData theme, ColorScheme colorScheme) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
+        Flexible(
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: RegisterForm(
@@ -338,7 +348,7 @@ class _LoginLayoutState extends State<LoginLayout>
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Center(
           child: TextButton(
             onPressed: () => _goToPage(1),
@@ -357,8 +367,9 @@ class _LoginLayoutState extends State<LoginLayout>
 
   Widget _buildForgotPage(ThemeData theme, ColorScheme colorScheme) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
+        Flexible(
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: ForgotForm(
@@ -367,7 +378,7 @@ class _LoginLayoutState extends State<LoginLayout>
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Center(
           child: TextButton(
             onPressed: () => _goToPage(1),
