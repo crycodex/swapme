@@ -53,10 +53,7 @@ class WelcomeContent extends StatelessWidget {
         // Contenido principal
         SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isWeb ? 40.0 : 20.0,
-              vertical: 20.0,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: isWeb ? 40.0 : 15.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -108,10 +105,7 @@ class WelcomeContent extends StatelessWidget {
                       // "Estrena" con fondo especial (cinta)
                       Container(
                         margin: const EdgeInsets.only(bottom: 12.0),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0,
-                          vertical: 4.0,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         decoration: BoxDecoration(
                           color: colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(12),
