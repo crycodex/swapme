@@ -52,22 +52,22 @@ class SwapController extends GetxController {
     'Otros',
   ];
 
-  @override
-  void onInit() {
-    super.onInit();
-    initializeCamera();
-  }
+  // La cámara se inicializará solo cuando se necesite
 
   @override
   void onClose() {
-    cameraController?.dispose();
+    disposeCamera();
     nameController.dispose();
     descriptionController.dispose();
     super.onClose();
   }
 
   Future<void> initializeCamera() async {
+    // Si ya está inicializada, no hacer nada
+    if (isCameraInitialized.value) return;
+
     try {
+      isLoading.value = true;
       final List<CameraDescription> cameras = await availableCameras();
       if (cameras.isNotEmpty) {
         cameraController = CameraController(
@@ -78,6 +78,12 @@ class SwapController extends GetxController {
 
         await cameraController!.initialize();
         isCameraInitialized.value = true;
+      } else {
+        Get.snackbar(
+          'Error de Cámara',
+          'No se encontraron cámaras disponibles',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
       debugPrint('Error initializing camera: $e');
@@ -86,6 +92,17 @@ class SwapController extends GetxController {
         'No se pudo inicializar la cámara',
         snackPosition: SnackPosition.BOTTOM,
       );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> disposeCamera() async {
+    if (cameraController != null) {
+      await cameraController!.dispose();
+      cameraController = null;
+      isCameraInitialized.value = false;
+      isFlashOn.value = false;
     }
   }
 

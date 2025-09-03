@@ -11,10 +11,16 @@ class HomeController extends GetxController {
   final RxInt currentIndex = 0.obs;
   late final PageController pageController;
 
-  // Swap controller for getting user swaps
-  final SwapController _swapController = Get.put(SwapController());
   // Store controller for getting stores
   final StoreController _storeController = Get.put(StoreController());
+
+  // Lazy getter para SwapController - solo se crea cuando se necesita
+  SwapController get _swapController {
+    if (!Get.isRegistered<SwapController>()) {
+      Get.put(SwapController());
+    }
+    return Get.find<SwapController>();
+  }
 
   // User swaps stream
   Stream<List<SwapItemModel>> get userSwaps => _swapController.getUserSwaps();

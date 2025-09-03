@@ -36,6 +36,13 @@ class CreateSwapLayout extends GetView<SwapController> {
     final ThemeData theme = Theme.of(context);
     final MediaQueryData media = MediaQuery.of(context);
 
+    // Inicializar la cámara cuando se entra a la vista de cámara
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!controller.isCameraInitialized.value) {
+        controller.initializeCamera();
+      }
+    });
+
     return Scaffold(
       key: const ValueKey('camera'),
       backgroundColor: Colors.black,
@@ -48,7 +55,10 @@ class CreateSwapLayout extends GetView<SwapController> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Get.back(),
+                    onTap: () async {
+                      await controller.disposeCamera();
+                      Get.back();
+                    },
                     child: Container(
                       width: 40,
                       height: 40,
@@ -138,7 +148,10 @@ class CreateSwapLayout extends GetView<SwapController> {
                       top: media.padding.top + 16,
                       left: 20,
                       child: GestureDetector(
-                        onTap: () => Get.back(),
+                        onTap: () async {
+                          await controller.disposeCamera();
+                          Get.back();
+                        },
                         child: Container(
                           width: 40,
                           height: 40,

@@ -55,6 +55,89 @@ class AuthController extends GetxController {
   static const int maxEmailLength = 100;
   static const String specialCharacters = r'[!@#$%^&*(),.?":{}|<>]';
 
+  // Método para validar datos antes del login
+  bool _validateLoginData(String email, String password) {
+    try {
+      _handleAuthStatus(email, password);
+      return true;
+    } catch (e) {
+      debugPrint('Error de validación: $e');
+      return false;
+    }
+  }
+
+  // Método para verificar conectividad con Firebase
+  Future<bool> _checkFirebaseConnection() async {
+    try {
+      // Verificar si Firebase está inicializado
+      debugPrint('Firebase Auth app: ${_auth.app.name}');
+
+      // Verificar conectividad de forma más simple sin hacer login
+      // Solo verificamos que Firebase Auth esté disponible
+      final String? currentUser = _auth.currentUser?.uid;
+      debugPrint(
+        'Firebase Auth conectado correctamente. Usuario actual: ${currentUser ?? "ninguno"}',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Error de conectividad con Firebase: $e');
+      return false;
+    }
+  }
+
+  // Método para diagnosticar problemas de login
+  Future<Map<String, dynamic>> diagnoseLoginIssue(
+    String email,
+    String password,
+  ) async {
+    final Map<String, dynamic> diagnosis = {
+      'emailValid': false,
+      'passwordValid': false,
+      'firebaseConnected': false,
+      'emailFormat': false,
+      'errors': <String>[],
+    };
+
+    try {
+      // Validar email
+      final String cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail.isEmpty) {
+        diagnosis['errors'].add('Email vacío');
+      } else {
+        diagnosis['emailValid'] = true;
+
+        // Validar formato de email
+        if (RegExp(
+          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        ).hasMatch(cleanEmail)) {
+          diagnosis['emailFormat'] = true;
+        } else {
+          diagnosis['errors'].add('Formato de email inválido');
+        }
+      }
+
+      // Validar contraseña
+      final String cleanPassword = password.trim();
+      if (cleanPassword.isEmpty) {
+        diagnosis['errors'].add('Contraseña vacía');
+      } else if (cleanPassword.length >= minPasswordLength &&
+          cleanPassword.length <= maxPasswordLength) {
+        diagnosis['passwordValid'] = true;
+      } else {
+        diagnosis['errors'].add(
+          'Contraseña debe tener entre $minPasswordLength y $maxPasswordLength caracteres',
+        );
+      }
+
+      // Verificar conectividad
+      diagnosis['firebaseConnected'] = await _checkFirebaseConnection();
+    } catch (e) {
+      diagnosis['errors'].add('Error durante diagnóstico: $e');
+    }
+
+    return diagnosis;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -185,12 +268,17 @@ class AuthController extends GetxController {
 
   void _handleAuthErrors(FirebaseAuthException e, Function(String) onError) {
     String message;
+    debugPrint('Firebase Auth Error: ${e.code} - ${e.message}');
+
     switch (e.code) {
       case 'email-already-in-use':
         message = 'Este correo ya está en uso.';
         break;
       case 'invalid-email':
         message = 'Formato de correo inválido.';
+        break;
+      case 'invalid-credential':
+        message = 'Credenciales inválidas. Verifica tu email y contraseña.';
         break;
       case 'weak-password':
         message = 'La contraseña es muy débil.';
@@ -211,39 +299,55 @@ class AuthController extends GetxController {
         message = 'Operación no permitida.';
         break;
       case 'network-request-failed':
-        message = 'Error de conexión. Verifique su internet.';
+        message = 'Error de conexión. Verifica tu internet.';
+        break;
+      case 'invalid-argument':
+        message = 'Datos inválidos. Verifica tu email y contraseña.';
+        break;
+      case 'missing-email':
+        message = 'El email es requerido.';
+        break;
+      case 'missing-password':
+        message = 'La contraseña es requerida.';
         break;
       default:
-        message = 'Ocurrió un error inesperado.';
+        message = 'Error de autenticación: ${e.message ?? 'Error desconocido'}';
     }
     onError(message);
   }
 
   AuthStatus _handleAuthStatus(String email, String password) {
-    if (email.isEmpty || password.isEmpty) {
+    // Limpiar y normalizar el email
+    final String cleanEmail = email.trim().toLowerCase();
+    final String cleanPassword = password.trim();
+
+    if (cleanEmail.isEmpty || cleanPassword.isEmpty) {
       throw Exception('Por favor, ingrese un email y contraseña válidos');
     }
+
+    // Validar formato de email
     if (!RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
-    ).hasMatch(email)) {
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(cleanEmail)) {
       throw Exception('Por favor, ingrese un email válido');
     }
-    if (email.length < minEmailLength) {
+
+    if (cleanEmail.length < minEmailLength) {
       throw Exception(
         'El email debe tener al menos $minEmailLength caracteres',
       );
     }
-    if (email.length > maxEmailLength) {
+    if (cleanEmail.length > maxEmailLength) {
       throw Exception(
         'El email no puede tener más de $maxEmailLength caracteres',
       );
     }
-    if (password.length < minPasswordLength) {
+    if (cleanPassword.length < minPasswordLength) {
       throw Exception(
         'La contraseña debe tener al menos $minPasswordLength caracteres',
       );
     }
-    if (password.length > maxPasswordLength) {
+    if (cleanPassword.length > maxPasswordLength) {
       throw Exception(
         'La contraseña no puede tener más de $maxPasswordLength caracteres',
       );
@@ -282,11 +386,30 @@ class AuthController extends GetxController {
   }) async {
     try {
       isLoading.value = true;
+
+      // Validar datos antes de proceder
+      if (!_validateLoginData(email, password)) {
+        onError('Datos de entrada inválidos');
+        return;
+      }
+
+      // Verificar conectividad con Firebase
+      if (!await _checkFirebaseConnection()) {
+        onError('Error de conexión con el servidor');
+        return;
+      }
+
       authStatus.value = _handleAuthStatus(email, password);
-      final String userEmail = email.toLowerCase().trim();
+
+      // Limpiar y normalizar los datos
+      final String userEmail = email.trim().toLowerCase();
+      final String userPassword = password.trim();
+
+      debugPrint('Intentando login con email: $userEmail');
+
       final UserCredential cred = await _auth.signInWithEmailAndPassword(
         email: userEmail,
-        password: password,
+        password: userPassword,
       );
       final User? signedUser = cred.user;
       if (signedUser == null) {
