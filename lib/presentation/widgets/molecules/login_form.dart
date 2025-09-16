@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'dart:io';
 import '../../../controllers/auth/login_controller.dart';
 import '../atoms/animated_button.dart';
 
@@ -26,7 +24,6 @@ class LoginForm extends GetView<LoginController> {
     // Detectar plataforma y ajustar tamaños
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
-    final isTablet = screenWidth > 400 && screenWidth <= 600;
 
     // Ajustar tamaños según dispositivo
     final inputHeight = isWeb ? 56.0 : 48.0;
