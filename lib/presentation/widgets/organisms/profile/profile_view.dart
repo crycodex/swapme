@@ -14,6 +14,7 @@ import '../../../../data/models/store_model.dart';
 import '../../../../data/models/swap_item_model.dart';
 import '../../atoms/ad_banner_widget.dart';
 import '../../atoms/rating_stars.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -249,6 +250,57 @@ class ProfileView extends GetView<AuthController> {
                             '/licenses',
                             arguments: {'context': context},
                           ),
+                        ),
+                        const Divider(height: 1),
+                        SettingsTile(
+                          leadingIcon: Icons.privacy_tip_rounded,
+                          title: 'Política de privacidad',
+                          titleColor: colorScheme.onSurface,
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () async {
+                            try {
+                              final Uri url = Uri.parse(
+                                'https://swapme-landing.vercel.app/privacy',
+                              );
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } catch (e) {
+                              // Mostrar mensaje de error genérico
+                              Get.snackbar(
+                                'Error',
+                                'No se pudo abrir la política de privacidad',
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          },
+                        ),
+                        const Divider(height: 1),
+
+                        SettingsTile(
+                          leadingIcon: Icons.description_rounded,
+                          title: 'Términos y condiciones',
+                          titleColor: colorScheme.onSurface,
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () async {
+                            try {
+                              final Uri url = Uri.parse(
+                                'https://swapme-landing.vercel.app/terms',
+                              );
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } catch (e) {
+                              // Mostrar mensaje de error genérico
+                              Get.snackbar(
+                                'Error',
+                                'No se pudo abrir los términos y condiciones',
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          },
                         ),
                         const Divider(height: 1),
 

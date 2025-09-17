@@ -52,6 +52,8 @@ dependencies:
   camera: ^0.11.0+2
   #ads
   google_mobile_ads: ^6.0.0
+  #url launcher
+  url_launcher: ^6.3.2
 
 
 dev_dependencies:
