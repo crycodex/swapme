@@ -56,6 +56,16 @@ class _MainAppState extends State<MainApp> {
     // Esperar un tiempo mínimo para mostrar el splash screen
     await Future.delayed(const Duration(milliseconds: 2000));
 
+    // Inicializar Cloud Messaging Service después de que la app esté lista
+    try {
+      final CloudMessagingService cloudMessagingService =
+          Get.find<CloudMessagingService>();
+      await cloudMessagingService.initializeWhenReady();
+      debugPrint('Cloud Messaging Service inicializado correctamente');
+    } catch (e) {
+      debugPrint('Error inicializando Cloud Messaging Service: $e');
+    }
+
     setState(() {
       _isInitialized = true;
     });

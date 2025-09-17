@@ -34,6 +34,11 @@ class CloudMessagingService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
+    // No inicializar automáticamente, se hará manualmente cuando sea necesario
+  }
+
+  /// Inicializa el servicio manualmente cuando la app esté lista
+  Future<void> initializeWhenReady() async {
     await _initializeCloudMessaging();
   }
 
@@ -42,6 +47,13 @@ class CloudMessagingService extends GetxService {
     try {
       // Inicializar notificaciones locales primero
       await _initializeLocalNotifications();
+
+      // Configurar opciones de presentación para iOS
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
       // Solicitar permisos
       NotificationSettings settings = await _messaging.requestPermission(
@@ -57,29 +69,111 @@ class CloudMessagingService extends GetxService {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         debugPrint('Usuario otorgó permisos para notificaciones');
 
-        // Obtener token FCM
-        _fcmToken = await _messaging.getToken();
-        if (_fcmToken != null && currentUserId != null) {
-          await _saveTokenToDatabase(_fcmToken!);
-          await _subscribeToDefaultTopics();
-        }
-
-        // Configurar manejadores de mensajes
+        // Configurar manejadores de mensajes primero
         _setupMessageHandlers();
 
-        // Escuchar cambios de token
-        _messaging.onTokenRefresh.listen((String token) async {
-          _fcmToken = token;
-          debugPrint('Token FCM actualizado: $token');
-          if (currentUserId != null) {
-            await _saveTokenToDatabase(token);
-          }
-        });
+        // Para iOS, usar un enfoque más conservador
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          await _initializeForIOS();
+        } else {
+          // Para Android, inicialización normal
+          await _handlePushNotificationsToken();
+          await _subscribeToDefaultTopics();
+        }
       } else {
         debugPrint('Usuario denegó permisos para notificaciones');
       }
     } catch (e) {
       debugPrint('Error inicializando Cloud Messaging: $e');
+    }
+  }
+
+  /// Inicialización específica para iOS con manejo robusto de errores
+  Future<void> _initializeForIOS() async {
+    try {
+      // Esperar un poco más para que iOS esté completamente listo
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Intentar obtener token APNS de manera más suave
+      try {
+        final String? apnsToken = await _messaging.getAPNSToken();
+        if (apnsToken != null) {
+          debugPrint('Token APNS obtenido: $apnsToken');
+        } else {
+          debugPrint('Token APNS no disponible, continuando sin él');
+        }
+      } catch (e) {
+        debugPrint('No se pudo obtener token APNS: $e');
+      }
+
+      // Intentar obtener token FCM con manejo de errores
+      try {
+        await _handlePushNotificationsToken();
+        await _subscribeToDefaultTopics();
+        debugPrint('FCM inicializado correctamente en iOS');
+      } catch (e) {
+        debugPrint('Error inicializando FCM en iOS: $e');
+        // Reintentar después de un delay
+        Future.delayed(const Duration(seconds: 3), () async {
+          try {
+            await _handlePushNotificationsToken();
+            await _subscribeToDefaultTopics();
+            debugPrint('FCM inicializado en reintento');
+          } catch (retryError) {
+            debugPrint('Error en reintento de FCM: $retryError');
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error en inicialización iOS: $e');
+    }
+  }
+
+  /// Maneja el token FCM para notificaciones push
+  Future<void> _handlePushNotificationsToken() async {
+    try {
+      // En iOS, esperar un poco más si no tenemos token APNS
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      final String? token = await _messaging.getToken();
+      final String? userId = currentUserId;
+
+      if (token != null && userId != null) {
+        // Actualizar token en Firestore
+        await _saveTokenToDatabase(token);
+        _fcmToken = token;
+        debugPrint('FCM Token actualizado: $token');
+      } else if (token == null) {
+        debugPrint(
+          'No se pudo obtener token FCM, reintentando en 2 segundos...',
+        );
+        // Reintentar después de un delay
+        Future.delayed(const Duration(seconds: 2), () async {
+          try {
+            final String? retryToken = await _messaging.getToken();
+            if (retryToken != null && currentUserId != null) {
+              await _saveTokenToDatabase(retryToken);
+              _fcmToken = retryToken;
+              debugPrint('FCM Token obtenido en reintento: $retryToken');
+            }
+          } catch (e) {
+            debugPrint('Error en reintento de FCM token: $e');
+          }
+        });
+      }
+
+      // Escuchar cambios en el token
+      _messaging.onTokenRefresh.listen((String fcmToken) async {
+        _fcmToken = fcmToken;
+        debugPrint('FCM Token refrescado: $fcmToken');
+        if (currentUserId != null) {
+          await _saveTokenToDatabase(fcmToken);
+        }
+      });
+    } catch (e) {
+      debugPrint('Error manejando FCM token: $e');
     }
   }
 
@@ -133,6 +227,9 @@ class CloudMessagingService extends GetxService {
 
   /// Configura los manejadores de mensajes
   void _setupMessageHandlers() {
+    // Registrar manejador para mensajes en background (app terminada)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
     // Manejar mensajes cuando la app está en primer plano
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('Mensaje recibido en primer plano: ${message.messageId}');
@@ -141,7 +238,9 @@ class CloudMessagingService extends GetxService {
 
     // Manejar mensajes cuando la app está en segundo plano pero no terminada
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('Mensaje abrió la app desde segundo plano: ${message.messageId}');
+      debugPrint(
+        'Mensaje abrió la app desde segundo plano: ${message.messageId}',
+      );
       _handleMessageTap(message);
     });
 
@@ -161,30 +260,18 @@ class CloudMessagingService extends GetxService {
   }
 
   /// Maneja mensajes en primer plano
-  void _handleForegroundMessage(RemoteMessage message) {
-    final String? title = message.notification?.title;
-    final String? body = message.notification?.body;
+  Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    debugPrint('Mensaje recibido en primer plano: ${message.data}');
 
-    // Solo mostrar snackbar si no estamos en el chat específico
-    if (title != null &&
-        body != null &&
-        _shouldShowForegroundNotification(message)) {
-      Get.snackbar(
-        title,
-        body,
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 4),
-        onTap: (_) => _handleMessageTap(message),
+    final RemoteNotification? notification = message.notification;
+
+    if (notification != null) {
+      await _showLocalNotification(
+        title: notification.title ?? 'Nueva notificación',
+        body: notification.body ?? '',
+        payload: message.data.toString(),
       );
     }
-  }
-
-  /// Determina si debe mostrar notificación en primer plano
-  bool _shouldShowForegroundNotification(RemoteMessage message) {
-    // Lógica para determinar si mostrar notificación
-    // Por ejemplo, no mostrar si estamos en el chat específico
-    // Esta lógica se puede extender según necesidades
-    return true;
   }
 
   /// Maneja cuando el usuario toca una notificación
@@ -463,7 +550,9 @@ class CloudMessagingService extends GetxService {
       await AppBadgePlus.updateBadge(0);
       debugPrint('Badge limpiado al abrir la app');
     } catch (e) {
-      debugPrint('Error limpiando badge (no soportado en este dispositivo): $e');
+      debugPrint(
+        'Error limpiando badge (no soportado en este dispositivo): $e',
+      );
     }
   }
 
@@ -473,7 +562,7 @@ class CloudMessagingService extends GetxService {
   }
 
   /// Muestra una notificación local
-  static Future<void> _showLocalNotification({
+  Future<void> _showLocalNotification({
     required String title,
     required String body,
     String? payload,
@@ -515,6 +604,54 @@ class CloudMessagingService extends GetxService {
     } catch (e) {
       debugPrint('Error mostrando notificación local: $e');
     }
+  }
+}
+
+/// Muestra una notificación local (función de nivel superior para background handler)
+Future<void> _showLocalNotificationStatic({
+  required String title,
+  required String body,
+  String? payload,
+}) async {
+  try {
+    final FlutterLocalNotificationsPlugin localNotifications =
+        FlutterLocalNotificationsPlugin();
+
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'chat_messages',
+          'Mensajes de Chat',
+          channelDescription: 'Notificaciones de nuevos mensajes en chats',
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          enableVibration: true,
+          playSound: true,
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    await localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
+    );
+
+    debugPrint('Notificación local mostrada: $title - $body');
+  } catch (e) {
+    debugPrint('Error mostrando notificación local: $e');
   }
 }
 
@@ -593,7 +730,7 @@ Future<void> _handleNewMessageInBackground({
       await _updateBadgeCount();
 
       // Mostrar notificación local
-      await CloudMessagingService._showLocalNotification(
+      await _showLocalNotificationStatic(
         title: title ?? 'Nuevo mensaje',
         body: body ?? 'Tienes un mensaje nuevo',
         payload: 'chatId:$chatId,messageId:$messageId',
@@ -671,7 +808,9 @@ Future<void> _updateBadgeCount() async {
         await AppBadgePlus.updateBadge(0);
       }
     } catch (e) {
-      debugPrint('Error actualizando badge (no soportado en este dispositivo): $e');
+      debugPrint(
+        'Error actualizando badge (no soportado en este dispositivo): $e',
+      );
     }
 
     debugPrint('Badge count actualizado: $unreadCount mensajes no leídos');
