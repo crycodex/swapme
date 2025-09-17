@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../data/models/store_model.dart';
 //welcome page
 import '../presentation/pages/welcome/welcome_page.dart';
+//tutorial page
+import '../presentation/pages/tutorial/tutorial_page.dart';
 //login page
 import '../presentation/pages/auth/login_page.dart';
 //home page
@@ -27,6 +29,7 @@ import '../presentation/pages/store/store_ratings_page.dart';
 class Routes {
   //welcome page
   static const String welcome = '/welcome';
+  static const String tutorial = '/tutorial';
   static const String login = '/login';
   static const String home = '/home';
   static const String editProfile = '/edit-profile';
@@ -45,6 +48,12 @@ class Routes {
 
   static final List<GetPage> routes = [
     GetPage(name: Routes.welcome, page: () => const WelcomePage()),
+    GetPage(
+      name: Routes.tutorial,
+      page: () => const TutorialPage(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 500),
+    ),
     GetPage(name: Routes.login, page: () => const LoginPage()),
     GetPage(name: Routes.home, page: () => const HomePage()),
     GetPage(name: Routes.editProfile, page: () => const EditProfilePage()),

@@ -29,7 +29,7 @@ class ChatController extends GetxController {
   // Timer para limpieza automática de chats expirados
   Timer? _cleanupTimer;
 
-  String? get currentUserId => _auth.currentUser?.uid;
+  final RxnString currentUserId = RxnString();
 
   @override
   void onClose() {
@@ -40,15 +40,25 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // El CloudMessagingService maneja la inicialización de notificaciones
-    if (currentUserId != null) {
-      debugPrint('Iniciando ChatController - Limpieza automática activada');
-      loadUserChats();
-      // Limpiar chats expirados al inicializar
-      cleanupExpiredChats();
-      // Iniciar limpieza automática cada 30 minutos
-      _startAutomaticCleanup();
-    }
+
+    // Inicializar currentUserId
+    currentUserId.value = _auth.currentUser?.uid;
+
+    // Escuchar cambios en el estado de autenticación
+    _auth.authStateChanges().listen((User? user) {
+      currentUserId.value = user?.uid;
+      if (user != null) {
+        debugPrint('Usuario autenticado: ${user.uid}');
+        loadUserChats();
+        cleanupExpiredChats();
+        _startAutomaticCleanup();
+      } else {
+        debugPrint('Usuario no autenticado');
+        chats.clear();
+        filteredChats.clear();
+        _cleanupTimer?.cancel();
+      }
+    });
 
     // Inicializar filteredChats con todos los chats
     ever(chats, (List<ChatModel> chatList) {
@@ -64,7 +74,7 @@ class ChatController extends GetxController {
   void _startAutomaticCleanup() {
     // Limpiar chats expirados cada 30 minutos para ser más efectivo
     _cleanupTimer = Timer.periodic(const Duration(minutes: 30), (timer) {
-      if (currentUserId != null) {
+      if (currentUserId.value != null) {
         _performAutomaticCleanup();
       }
     });
@@ -78,7 +88,7 @@ class ChatController extends GetxController {
       // Obtener todos los chats del usuario
       final QuerySnapshot snapshot = await _firestore
           .collection('chats')
-          .where('participants', arrayContains: currentUserId)
+          .where('participants', arrayContains: currentUserId.value)
           .get();
 
       final List<ChatModel> allChats = snapshot.docs
@@ -111,14 +121,14 @@ class ChatController extends GetxController {
   }
 
   void loadUserChats() {
-    if (currentUserId == null) return;
+    if (currentUserId.value == null) return;
 
     isLoading.value = true;
     error.value = '';
 
     _firestore
         .collection('chats')
-        .where('participants', arrayContains: currentUserId)
+        .where('participants', arrayContains: currentUserId.value)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
         .listen(
@@ -178,7 +188,7 @@ class ChatController extends GetxController {
     required SwapItemModel swapItem,
     required String interestedUserId,
   }) async {
-    if (currentUserId == null) return null;
+    if (currentUserId.value == null) return null;
 
     try {
       // Verificar si ya existe un chat para este intercambio
@@ -252,7 +262,7 @@ class ChatController extends GetxController {
     required StoreItemModel storeItem,
     required String interestedUserId,
   }) async {
-    if (currentUserId == null) return null;
+    if (currentUserId.value == null) return null;
 
     try {
       // Primero, necesitamos obtener el dueño de la tienda
@@ -358,13 +368,13 @@ class ChatController extends GetxController {
     MessageType type = MessageType.text,
     Map<String, dynamic>? metadata,
   }) async {
-    if (currentUserId == null || content.trim().isEmpty) return false;
+    if (currentUserId.value == null || content.trim().isEmpty) return false;
 
     try {
       // Obtener información del usuario actual
       final DocumentSnapshot userDoc = await _firestore
           .collection('users')
-          .doc(currentUserId)
+          .doc(currentUserId.value)
           .get();
 
       final Map<String, dynamic>? userData =
@@ -375,7 +385,7 @@ class ChatController extends GetxController {
       final MessageModel message = MessageModel(
         id: '',
         chatId: chatId,
-        senderId: currentUserId!,
+        senderId: currentUserId.value!,
         senderName: userName,
         senderPhotoUrl: userPhotoUrl,
         content: content,
@@ -399,11 +409,11 @@ class ChatController extends GetxController {
 
       if (chatDoc.exists) {
         final ChatModel chat = ChatModel.fromFirestore(chatDoc);
-        final String otherUserId = chat.getOtherUserId(currentUserId!);
+        final String otherUserId = chat.getOtherUserId(currentUserId.value!);
 
         // Actualizar último mensaje en el chat
         final Map<String, bool> newReadBy = Map<String, bool>.from(chat.readBy);
-        newReadBy[currentUserId!] = true;
+        newReadBy[currentUserId.value!] = true;
         newReadBy[otherUserId] =
             false; // El otro usuario tiene mensajes sin leer
 
@@ -423,7 +433,7 @@ class ChatController extends GetxController {
             data: {
               'type': 'new_message',
               'chatId': chatId,
-              'senderId': currentUserId!,
+              'senderId': currentUserId.value!,
             },
           );
         }
@@ -465,7 +475,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> markChatAsRead(String chatId) async {
-    if (currentUserId == null) return;
+    if (currentUserId.value == null) return;
 
     try {
       // Obtener el chat actual
@@ -477,7 +487,7 @@ class ChatController extends GetxController {
       if (!chatDoc.exists) return;
 
       final ChatModel chat = ChatModel.fromFirestore(chatDoc);
-      final String otherUserId = chat.getOtherUserId(currentUserId!);
+      final String otherUserId = chat.getOtherUserId(currentUserId.value!);
 
       // Verificar si hay mensajes no leídos del otro usuario
       final QuerySnapshot unreadMessages = await _firestore
@@ -497,7 +507,7 @@ class ChatController extends GetxController {
 
         // Actualizar el estado del chat
         final Map<String, bool> newReadBy = Map<String, bool>.from(chat.readBy);
-        newReadBy[currentUserId!] = true;
+        newReadBy[currentUserId.value!] = true;
 
         // Verificar si ambos usuarios han leído todos los mensajes
         final bool hasUnreadMessages = await _hasUnreadMessages(chatId);
@@ -522,7 +532,7 @@ class ChatController extends GetxController {
 
   /// Limpia los contadores de mensajes no leídos cuando se marca como leído
   Future<void> _clearUnreadCounters(String chatId) async {
-    if (currentUserId == null) return;
+    if (currentUserId.value == null) return;
 
     try {
       final WriteBatch batch = _firestore.batch();
@@ -531,7 +541,7 @@ class ChatController extends GetxController {
       batch.set(
         _firestore
             .collection('users')
-            .doc(currentUserId!)
+            .doc(currentUserId.value!)
             .collection('unread_chats')
             .doc(chatId),
         {'hasUnread': false, 'lastUpdate': FieldValue.serverTimestamp()},
@@ -541,19 +551,19 @@ class ChatController extends GetxController {
       // Verificar si el documento del usuario existe y crear/actualizar contador
       final DocumentSnapshot userDoc = await _firestore
           .collection('users')
-          .doc(currentUserId!)
+          .doc(currentUserId.value!)
           .get();
 
       if (userDoc.exists) {
         // El documento existe, decrementar contador
-        batch.update(_firestore.collection('users').doc(currentUserId!), {
+        batch.update(_firestore.collection('users').doc(currentUserId.value!), {
           'unreadChatsCount': FieldValue.increment(-1),
           'lastUnreadUpdate': FieldValue.serverTimestamp(),
         });
       } else {
         // El documento no existe, crearlo con valores iniciales
         batch.set(
-          _firestore.collection('users').doc(currentUserId!),
+          _firestore.collection('users').doc(currentUserId.value!),
           {
             'unreadChatsCount': 0,
             'lastUnreadUpdate': FieldValue.serverTimestamp(),
@@ -672,7 +682,7 @@ class ChatController extends GetxController {
   }
 
   Future<bool> confirmSwap({required String chatId, String? notes}) async {
-    if (currentUserId == null) return false;
+    if (currentUserId.value == null) return false;
 
     try {
       // Obtener información del chat
@@ -726,25 +736,25 @@ class ChatController extends GetxController {
   }
 
   int getUnreadChatsCount() {
-    if (currentUserId == null) return 0;
+    if (currentUserId.value == null) return 0;
 
     return chats
         .where(
           (chat) =>
               chat.hasUnreadMessages &&
-              (chat.readBy[currentUserId] != true) &&
+              (chat.readBy[currentUserId.value] != true) &&
               !chat.isExpired, // No contar chats expirados
         )
         .length;
   }
 
   int getUnreadMessagesCount(String chatId) {
-    if (currentUserId == null) return 0;
+    if (currentUserId.value == null) return 0;
 
     final ChatModel? chat = chats.firstWhereOrNull((c) => c.id == chatId);
     if (chat == null ||
         !chat.hasUnreadMessages ||
-        chat.readBy[currentUserId] == true) {
+        chat.readBy[currentUserId.value] == true) {
       return 0;
     }
 
@@ -754,12 +764,12 @@ class ChatController extends GetxController {
   }
 
   bool hasUnreadMessages(String chatId) {
-    if (currentUserId == null) return false;
+    if (currentUserId.value == null) return false;
 
     final ChatModel? chat = chats.firstWhereOrNull((c) => c.id == chatId);
     if (chat == null) return false;
 
-    return chat.hasUnreadMessages && (chat.readBy[currentUserId] != true);
+    return chat.hasUnreadMessages && (chat.readBy[currentUserId.value] != true);
   }
 
   Future<void> deleteChat(String chatId) async {
@@ -787,7 +797,7 @@ class ChatController extends GetxController {
 
   /// Elimina todos los chats expirados de la base de datos
   Future<void> cleanupExpiredChats() async {
-    if (currentUserId == null) return;
+    if (currentUserId.value == null) return;
 
     try {
       isLoading.value = true;
@@ -796,7 +806,7 @@ class ChatController extends GetxController {
       // Obtener todos los chats del usuario
       final QuerySnapshot snapshot = await _firestore
           .collection('chats')
-          .where('participants', arrayContains: currentUserId)
+          .where('participants', arrayContains: currentUserId.value)
           .get();
 
       final List<ChatModel> allChats = snapshot.docs
@@ -841,7 +851,7 @@ class ChatController extends GetxController {
 
   /// Fuerza la limpieza inmediata de chats expirados
   Future<void> forceCleanupExpiredChats() async {
-    if (currentUserId == null) return;
+    if (currentUserId.value == null) return;
 
     try {
       debugPrint('Forzando limpieza inmediata de chats expirados...');
@@ -849,7 +859,7 @@ class ChatController extends GetxController {
       // Obtener todos los chats del usuario
       final QuerySnapshot snapshot = await _firestore
           .collection('chats')
-          .where('participants', arrayContains: currentUserId)
+          .where('participants', arrayContains: currentUserId.value)
           .get();
 
       final List<ChatModel> allChats = snapshot.docs

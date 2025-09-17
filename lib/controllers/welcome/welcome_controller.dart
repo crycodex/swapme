@@ -14,8 +14,8 @@ class WelcomeController extends GetxController {
       // Simular una carga
       await Future.delayed(const Duration(milliseconds: 1500));
 
-      // Navegar a la página de login usando rutas
-      Get.offAllNamed(Routes.login);
+      // Navegar a la página de tutorial usando rutas
+      Get.offAllNamed(Routes.tutorial);
     } catch (error) {
       isLoading.value = false;
       hasError.value = true;

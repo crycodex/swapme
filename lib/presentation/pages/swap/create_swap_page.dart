@@ -11,7 +11,15 @@ class CreateSwapPage extends GetView<SwapController> {
     return GetBuilder<SwapController>(
       init: SwapController(),
       builder: (SwapController controller) {
-        return const CreateSwapLayout();
+        return PopScope(
+          onPopInvokedWithResult: (bool didPop, dynamic result) async {
+            if (didPop) {
+              // Liberar la cámara cuando se salga de la página
+              await controller.disposeCamera();
+            }
+          },
+          child: const CreateSwapLayout(),
+        );
       },
     );
   }

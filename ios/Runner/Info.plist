@@ -75,5 +75,15 @@
 		</dict>
 	</array>
 	<!-- End of the Google Sign-in Section -->
+	
+	<!-- URL Launcher Configuration -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
+		<string>tel</string>
+		<string>sms</string>
+	</array>
 </dict>
 </plist>

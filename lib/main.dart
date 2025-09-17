@@ -36,8 +36,31 @@ Future<void> main() async {
   runApp(const MainApp());
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Esperar un tiempo mínimo para mostrar el splash screen
+    await Future.delayed(const Duration(milliseconds: 2000));
+
+    setState(() {
+      _isInitialized = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -47,22 +70,24 @@ class MainApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       getPages: Routes.routes,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SplashScreen();
-          }
-          final User? user = snapshot.data;
-          if (user != null) {
-            if (user.emailVerified) {
-              return const HomePage();
-            }
-            return const LoginPage();
-          }
-          return const WelcomePage();
-        },
-      ),
+      home: _isInitialized
+          ? StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SplashScreen();
+                }
+                final User? user = snapshot.data;
+                if (user != null) {
+                  if (user.emailVerified) {
+                    return const HomePage();
+                  }
+                  return const LoginPage();
+                }
+                return const WelcomePage();
+              },
+            )
+          : const SplashScreen(),
     );
   }
 }

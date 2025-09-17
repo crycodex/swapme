@@ -395,7 +395,7 @@ class _ChatListItem extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
     final ChatController chatController = Get.put(ChatController());
-    final String? currentUserId = chatController.currentUserId;
+    final String? currentUserId = chatController.currentUserId.value;
 
     if (currentUserId == null) return const SizedBox.shrink();
 

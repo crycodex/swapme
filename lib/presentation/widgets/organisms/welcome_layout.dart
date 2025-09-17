@@ -112,6 +112,8 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
 
     // Animación para el slider
     final sliderAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -124,61 +126,75 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
         children: [
           // Contenido principal (fondo púrpura)
           Expanded(
-            child: WelcomeContent(
-              fadeController: _fadeController,
-              slideController: _slideController,
-              bounceController: _bounceController,
-              scaleController: _scaleController,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isWeb ? 800 : double.infinity,
+                ),
+                child: WelcomeContent(
+                  fadeController: _fadeController,
+                  slideController: _slideController,
+                  bounceController: _bounceController,
+                  scaleController: _scaleController,
+                ),
+              ),
             ),
           ),
 
           // Área del slider con efecto glassmorphism
-          GlossyContainer(
-            width: double.infinity,
-            height: 150, // Altura fija para el contenedor glossy
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(50),
-              topRight: Radius.circular(50),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Slider animado
-                  AnimatedBuilder(
-                    animation: sliderAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: sliderAnimation.value,
-                        child: _buildSlider(),
-                      );
-                    },
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isWeb ? 800 : double.infinity,
+              ),
+              child: GlossyContainer(
+                width: double.infinity,
+                height: 150, // Altura fija para el contenedor glossy
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(50),
+                  topRight: Radius.circular(50),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Slider animado
+                      AnimatedBuilder(
+                        animation: sliderAnimation,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: sliderAnimation.value,
+                            child: _buildSlider(),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Texto de ayuda
+                      if (!widget.isLoading)
+                        AnimatedBuilder(
+                          animation: sliderAnimation,
+                          builder: (context, child) {
+                            return Opacity(
+                              opacity: sliderAnimation.value.clamp(0.0, 1.0),
+                              child: Text(
+                                'Desliza para comenzar tu experiencia',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.outlineVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            );
+                          },
+                        ),
+
+                      const SizedBox(height: 20),
+                    ],
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // Texto de ayuda
-                  if (!widget.isLoading)
-                    AnimatedBuilder(
-                      animation: sliderAnimation,
-                      builder: (context, child) {
-                        return Opacity(
-                          opacity: sliderAnimation.value.clamp(0.0, 1.0),
-                          child: Text(
-                            'Desliza para comenzar tu experiencia',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.outlineVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                      },
-                    ),
-
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
           ),
@@ -190,6 +206,9 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
   Widget _buildSlider() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+    final maxSliderWidth = isWeb ? 600.0 : screenWidth * 0.85;
 
     return Container(
       width: double.infinity,
@@ -207,7 +226,7 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
           // Fondo de progreso
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: MediaQuery.of(context).size.width * 0.85 * _sliderValue,
+            width: maxSliderWidth * _sliderValue,
             decoration: BoxDecoration(
               color: colorScheme.primary,
               borderRadius: BorderRadius.circular(50),
@@ -216,8 +235,7 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
 
           // Slider thumb
           Positioned(
-            left:
-                (MediaQuery.of(context).size.width * 0.85 - 48) * _sliderValue,
+            left: (maxSliderWidth - 48) * _sliderValue,
             top: 4,
             child: GestureDetector(
               onPanUpdate: (details) {
@@ -226,8 +244,8 @@ class _WelcomeLayoutState extends State<WelcomeLayout>
                 final localPosition = renderBox.globalToLocal(
                   details.globalPosition,
                 );
-                final maxWidth = MediaQuery.of(context).size.width * 0.85 - 48;
-                final newValue = (localPosition.dx / maxWidth).clamp(0.0, 1.0);
+                final newValue = (localPosition.dx / (maxSliderWidth - 48))
+                    .clamp(0.0, 1.0);
                 _onSliderChanged(newValue);
               },
               onPanEnd: (_) => _onSliderEnd(),

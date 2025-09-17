@@ -277,7 +277,7 @@ class StoreItemDetailPage extends StatelessWidget {
               label: 'Intercambiar este producto',
               hint: 'Abre el flujo para proponer un intercambio',
               child: Obx(() {
-                if (chatController.currentUserId == null) {
+                if (chatController.currentUserId.value == null) {
                   return FilledButton(
                     onPressed: null,
                     style: FilledButton.styleFrom(
@@ -296,7 +296,7 @@ class StoreItemDetailPage extends StatelessWidget {
                   final Map<String, dynamic> chatData = chat.toFirestore();
                   return chatData['storeItemId'] == item.id &&
                       chatData['interestedUserId'] ==
-                          chatController.currentUserId! &&
+                          chatController.currentUserId.value! &&
                       !chat.isExpired;
                 });
 
@@ -343,7 +343,7 @@ class StoreItemDetailPage extends StatelessWidget {
     StoreItemModel item,
     ChatController chatController,
   ) async {
-    if (chatController.currentUserId == null) {
+    if (chatController.currentUserId.value == null) {
       Get.snackbar(
         'Error',
         'Debes iniciar sesión para intercambiar',
@@ -355,7 +355,7 @@ class StoreItemDetailPage extends StatelessWidget {
     }
 
     // Verificar si ya existe un chat activo para este producto de tienda
-    final String currentUserId = chatController.currentUserId!;
+    final String currentUserId = chatController.currentUserId.value!;
     final existingChat = chatController.chats.firstWhereOrNull((chat) {
       // Para store items, verificamos swapItemId (que ahora contiene storeItemId)
       final Map<String, dynamic> chatData = chat.toFirestore();
@@ -412,7 +412,7 @@ class StoreItemDetailPage extends StatelessWidget {
     try {
       final String? chatId = await chatController.createChatForStoreItem(
         storeItem: item,
-        interestedUserId: chatController.currentUserId!,
+        interestedUserId: chatController.currentUserId.value!,
       );
 
       Get.back(); // Cerrar indicador de carga
