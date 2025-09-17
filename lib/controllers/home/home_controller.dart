@@ -19,7 +19,7 @@ class HomeController extends GetxController {
     if (!Get.isRegistered<SwapController>()) {
       Get.put(SwapController());
     }
-    return Get.find<SwapController>();
+    return Get.put(SwapController());
   }
 
   // User swaps stream
