@@ -21,6 +21,9 @@ class LoginForm extends GetView<LoginController> {
     final ColorScheme colorScheme = theme.colorScheme;
     final LoginController controller = Get.put(LoginController());
 
+    // Variable para controlar la visibilidad de la contraseña
+    final RxBool obscurePassword = true.obs;
+
     // Detectar plataforma y ajustar tamaños
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
@@ -108,30 +111,43 @@ class LoginForm extends GetView<LoginController> {
                 ),
               ],
             ),
-            child: TextFormField(
-              obscureText: true,
-              style: TextStyle(fontSize: fontSize),
-              decoration: InputDecoration(
-                hintText: '********',
-                hintStyle: TextStyle(fontSize: fontSize),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: isWeb ? 18 : 14,
+            child: Obx(
+              () => TextFormField(
+                obscureText: obscurePassword.value,
+                style: TextStyle(fontSize: fontSize),
+                decoration: InputDecoration(
+                  hintText: '********',
+                  hintStyle: TextStyle(fontSize: fontSize),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: isWeb ? 18 : 14,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        obscurePassword.value = !obscurePassword.value,
+                  ),
                 ),
+                onChanged: (String value) {
+                  controller.setPassword(value);
+                },
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu contraseña';
+                  }
+                  if (value.length < 6) {
+                    return 'La contraseña debe tener al menos 6 caracteres';
+                  }
+                  return null;
+                },
               ),
-              onChanged: (String value) {
-                controller.setPassword(value);
-              },
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor ingresa tu contraseña';
-                }
-                if (value.length < 6) {
-                  return 'La contraseña debe tener al menos 6 caracteres';
-                }
-                return null;
-              },
             ),
           ),
 
@@ -181,7 +197,7 @@ class LoginForm extends GetView<LoginController> {
                       ? onLoginPressed!.call()
                       : controller.handleLoginPressed(context)),
             backgroundColor: colorScheme.primary,
-            textColor: Colors.grey,
+            textColor: colorScheme.onPrimary,
             width: double.infinity,
             height: buttonHeight,
             borderRadius: BorderRadius.circular(16),

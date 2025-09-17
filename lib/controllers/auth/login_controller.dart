@@ -112,11 +112,25 @@ class LoginController extends GetxController {
         registerEmail.value.isEmpty ||
         registerPassword.value.isEmpty ||
         registerPasswordConfirm.value.isEmpty) {
-      setErrorMessage('Por favor completa todos los campos');
+      Get.snackbar(
+        'Error',
+        'Por favor completa todos los campos',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
       return;
     }
     if (registerPassword.value != registerPasswordConfirm.value) {
-      setErrorMessage('Las contraseñas no coinciden');
+      Get.snackbar(
+        'Error',
+        'Las contraseñas no coinciden',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
       return;
     }
 
@@ -131,6 +145,7 @@ class LoginController extends GetxController {
         name: registerName.value,
         onSuccess: () {
           registrationCompleted.value = true;
+          isLoading.value = false; // Asegurar que el loading se detenga
           Get.snackbar(
             'Registro exitoso',
             'Te enviamos un correo para verificar tu cuenta. Revisa tu bandeja.',
@@ -139,11 +154,28 @@ class LoginController extends GetxController {
           );
           Get.offAllNamed(Routes.login);
         },
-        onError: (String msg) => setErrorMessage(msg),
+        onError: (String msg) {
+          Get.snackbar(
+            'Error',
+            msg,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+          isLoading.value =
+              false; // Asegurar que el loading se detenga en caso de error
+        },
       );
     } catch (e) {
-      setErrorMessage('No se pudo registrar: ${e.toString()}');
-    } finally {
+      Get.snackbar(
+        'Error',
+        'No se pudo registrar: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
       isLoading.value = false;
     }
   }

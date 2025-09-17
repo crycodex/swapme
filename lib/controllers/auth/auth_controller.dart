@@ -475,7 +475,15 @@ class AuthController extends GetxController {
   }) async {
     try {
       isLoading.value = true;
-      authStatus.value = _handleAuthStatus(email, password);
+
+      // Validar datos antes de proceder
+      try {
+        _handleAuthStatus(email, password);
+      } catch (e) {
+        onError(e.toString());
+        return;
+      }
+
       final String userEmail = email.toLowerCase().trim();
       final UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: userEmail,

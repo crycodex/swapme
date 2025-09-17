@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../controllers/auth/login_controller.dart';
 import '../atoms/animated_button.dart';
 
@@ -13,6 +14,10 @@ class RegisterForm extends GetView<LoginController> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
+
+    // Variables para controlar la visibilidad de las contraseñas
+    final RxBool obscurePassword = true.obs;
+    final RxBool obscurePasswordConfirm = true.obs;
 
     // Detectar plataforma y ajustar tamaños
     final screenWidth = MediaQuery.of(context).size.width;
@@ -98,19 +103,32 @@ class RegisterForm extends GetView<LoginController> {
           _buildInputContainer(
             height: inputHeight,
             fontSize: fontSize,
-            child: TextFormField(
-              obscureText: true,
-              style: TextStyle(fontSize: fontSize),
-              decoration: InputDecoration(
-                hintText: '********',
-                hintStyle: TextStyle(fontSize: fontSize),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: isWeb ? 18 : 14,
+            child: Obx(
+              () => TextFormField(
+                obscureText: obscurePassword.value,
+                style: TextStyle(fontSize: fontSize),
+                decoration: InputDecoration(
+                  hintText: '********',
+                  hintStyle: TextStyle(fontSize: fontSize),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: isWeb ? 18 : 14,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        obscurePassword.value = !obscurePassword.value,
+                  ),
                 ),
+                onChanged: (String v) => controller.setRegisterPassword(v),
               ),
-              onChanged: (String v) => controller.setRegisterPassword(v),
             ),
           ),
 
@@ -127,19 +145,33 @@ class RegisterForm extends GetView<LoginController> {
           _buildInputContainer(
             height: inputHeight,
             fontSize: fontSize,
-            child: TextFormField(
-              obscureText: true,
-              style: TextStyle(fontSize: fontSize),
-              decoration: InputDecoration(
-                hintText: '********',
-                hintStyle: TextStyle(fontSize: fontSize),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: isWeb ? 18 : 14,
+            child: Obx(
+              () => TextFormField(
+                obscureText: obscurePasswordConfirm.value,
+                style: TextStyle(fontSize: fontSize),
+                decoration: InputDecoration(
+                  hintText: '********',
+                  hintStyle: TextStyle(fontSize: fontSize),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: isWeb ? 18 : 14,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePasswordConfirm.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      size: 20,
+                    ),
+                    onPressed: () => obscurePasswordConfirm.value =
+                        !obscurePasswordConfirm.value,
+                  ),
                 ),
+                onChanged: (String v) =>
+                    controller.setRegisterPasswordConfirm(v),
               ),
-              onChanged: (String v) => controller.setRegisterPasswordConfirm(v),
             ),
           ),
 
@@ -150,11 +182,41 @@ class RegisterForm extends GetView<LoginController> {
                 ? null
                 : (onSubmit ?? () => controller.handleRegisterPressed(context)),
             backgroundColor: colorScheme.primary,
-            textColor: Colors.grey,
+            textColor: colorScheme.onPrimary,
             width: double.infinity,
             height: buttonHeight,
             borderRadius: BorderRadius.circular(16),
             isLoading: isLoading,
+          ),
+
+          // Enlace a términos y condiciones
+          Center(
+            child: GestureDetector(
+              onTap: () => _launchTermsAndConditions(),
+              child: RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: fontSize - 2,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  children: [
+                    const TextSpan(
+                      text: 'Al crear una cuenta, aceptas nuestros ',
+                    ),
+                    TextSpan(
+                      text: 'Términos',
+                      style: TextStyle(
+                        color: colorScheme.primaryContainer,
+                        decoration: TextDecoration.underline,
+                        decorationColor: colorScheme.primaryContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -181,5 +243,26 @@ class RegisterForm extends GetView<LoginController> {
       ),
       child: child,
     );
+  }
+
+  Future<void> _launchTermsAndConditions() async {
+    final Uri url = Uri.parse('https://swapme-landing.vercel.app/terms');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'Error',
+          'No se pudo abrir los términos y condiciones',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir los términos y condiciones',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }
