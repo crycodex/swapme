@@ -60,6 +60,19 @@ class _MainAppState extends State<MainApp> {
     // Esperar un tiempo mínimo para mostrar el splash screen
     await Future.delayed(const Duration(milliseconds: 2000));
 
+    // Verificar la persistencia de la sesión de Firebase Auth
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        debugPrint('Usuario persistente encontrado: ${currentUser.email}');
+        debugPrint('Email verificado: ${currentUser.emailVerified}');
+      } else {
+        debugPrint('No hay usuario persistente');
+      }
+    } catch (e) {
+      debugPrint('Error verificando persistencia de sesión: $e');
+    }
+
     // Inicializar Cloud Messaging Service después de que la app esté lista
     try {
       final CloudMessagingService cloudMessagingService =
@@ -93,8 +106,14 @@ class _MainAppState extends State<MainApp> {
                 }
                 final User? user = snapshot.data;
                 if (user != null) {
-                  // Usuario autenticado - ir a HomePage independientemente del estado de verificación
-                  return const HomePage();
+                  // Usuario autenticado - verificar estado de email
+                  if (user.emailVerified) {
+                    return const HomePage();
+                  } else {
+                    // Usuario autenticado pero email no verificado - mantener en WelcomePage
+                    // pero mostrar opciones de login para reenviar verificación
+                    return const WelcomePage();
+                  }
                 }
                 // Usuario no autenticado - ir a WelcomePage
                 return const WelcomePage();
