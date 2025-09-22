@@ -235,6 +235,37 @@ class ProfileView extends GetView<AuthController> {
                           onTap: () => Get.toNamed('/swap-history'),
                         ),
                         const Divider(height: 1),
+                        SettingsTile(
+                          leadingIcon: Icons.person_off,
+                          title: 'Usuarios bloqueados',
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => Get.toNamed('/blocked-users'),
+                        ),
+                        // Solo mostrar para administradores
+                        Obx(() {
+                          // Aquí puedes verificar si el usuario es admin
+                          // Por ahora lo mostramos siempre, pero puedes agregar lógica de verificación
+                          final bool isAdmin =
+                              controller.userEmail.value.contains('admin') ||
+                              controller.userEmail.value.contains('moderator');
+
+                          if (!isAdmin) return const SizedBox.shrink();
+
+                          return Column(
+                            children: [
+                              const Divider(height: 1),
+                              SettingsTile(
+                                leadingIcon: Icons.admin_panel_settings,
+                                title: 'Panel de Moderación',
+                                trailing: const Icon(
+                                  Icons.chevron_right_rounded,
+                                ),
+                                onTap: () => Get.toNamed('/admin-reports'),
+                              ),
+                            ],
+                          );
+                        }),
+                        const Divider(height: 1),
                         SettingsSwitchTile(
                           leadingIcon: Icons.dark_mode_outlined,
                           title: 'Modo oscuro',

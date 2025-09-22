@@ -25,6 +25,11 @@ import '../presentation/pages/store/store_item_detail_page.dart';
 import '../presentation/pages/store/store_item_editor_page.dart';
 import '../presentation/pages/store/create_store_item_page.dart';
 import '../presentation/pages/store/store_ratings_page.dart';
+// moderation
+import '../presentation/pages/moderation/report_content_page.dart';
+import '../presentation/pages/moderation/blocked_users_page.dart';
+// admin
+import '../presentation/pages/admin/admin_reports_page.dart';
 
 class Routes {
   //welcome page
@@ -45,6 +50,9 @@ class Routes {
   static const String createStoreItem = '/create-store-item';
   static const String storeRatings = '/store-ratings';
   static const String licenses = '/licenses';
+  static const String reportContent = '/report-content';
+  static const String blockedUsers = '/blocked-users';
+  static const String adminReports = '/admin-reports';
 
   static final List<GetPage> routes = [
     GetPage(name: Routes.welcome, page: () => const WelcomePage()),
@@ -126,6 +134,28 @@ class Routes {
     GetPage(
       name: Routes.licenses,
       page: () => const LicensesPage(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.reportContent,
+      page: () {
+        final Map<String, dynamic> args = Get.arguments as Map<String, dynamic>;
+        return ReportContentPage(
+          reportedUserId: args['reportedUserId'] as String,
+          contentId: args['contentId'] as String?,
+          contentType: args['contentType'] as String?,
+        );
+      },
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.blockedUsers,
+      page: () => const BlockedUsersPage(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.adminReports,
+      page: () => const AdminReportsPage(),
       transition: Transition.rightToLeft,
     ),
   ];

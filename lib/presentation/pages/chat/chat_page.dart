@@ -6,6 +6,7 @@ import '../../../data/models/chat_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../../data/models/swap_history_model.dart';
 import '../../../data/models/swap_item_model.dart';
+import '../../../routes/routes.dart';
 import '../../widgets/molecules/product_selector.dart';
 
 class ChatPage extends StatefulWidget {
@@ -245,12 +246,51 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             PopupMenuButton<String>(
               onSelected: (String value) {
                 switch (value) {
+                  case 'report':
+                    _showReportUserDialog();
+                    break;
+                  case 'block':
+                    _showBlockUserDialog();
+                    break;
+                  case 'blocked_users':
+                    Get.toNamed(Routes.blockedUsers);
+                    break;
                   case 'delete':
                     _showDeleteChatDialog();
                     break;
                 }
               },
               itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.report_outlined, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Reportar usuario'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Bloquear usuario'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'blocked_users',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_off, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Text('Usuarios bloqueados'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem<String>(
                   value: 'delete',
                   child: Row(
@@ -1089,6 +1129,129 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (remaining.inHours < 24) return colorScheme.error;
     if (remaining.inDays < 3) return Colors.orange;
     return colorScheme.secondary;
+  }
+
+  void _showReportUserDialog() {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId.value!,
+    );
+
+    Get.toNamed(
+      Routes.reportContent,
+      arguments: {
+        'reportedUserId': otherUserId,
+        'contentType': 'chat',
+        'contentId': widget.chatId,
+      },
+    );
+  }
+
+  void _showBlockUserDialog() {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId.value!,
+    );
+
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.block, color: colorScheme.error, size: 24),
+            const SizedBox(width: 8),
+            const Text('Bloquear Usuario'),
+          ],
+        ),
+        content: const Text(
+          '¿Estás seguro de que quieres bloquear a este usuario? '
+          'No podrás recibir mensajes de él y no podrás contactarlo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back();
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Bloqueando usuario...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                final bool success = await _chatController.blockUser(
+                  otherUserId,
+                  reason: 'Bloqueado desde chat',
+                );
+
+                Get.back(); // Cerrar indicador de carga
+
+                if (success) {
+                  Get.snackbar(
+                    'Usuario bloqueado',
+                    'El usuario ha sido bloqueado exitosamente',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+
+                  // Regresar a la lista de chats
+                  Get.back();
+                } else {
+                  Get.snackbar(
+                    'Error',
+                    'No se pudo bloquear al usuario',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red.withValues(alpha: 0.8),
+                  colorText: Colors.white,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            child: const Text('Bloquear'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

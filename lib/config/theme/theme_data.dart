@@ -18,6 +18,9 @@ import 'color_data.dart';
 ///   darkTheme: AppTheme.dark,
 /// );
 abstract final class AppTheme {
+  // Color primario del tema
+  static Color get primaryColor => lightColorScheme.primary;
+
   // The FlexColorScheme defined light mode ThemeData.
   static ThemeData light = FlexThemeData.light(
     // Usar el ColorScheme definido en color_data.dart

@@ -10,11 +10,11 @@ import './routes/routes.dart';
 import 'splash_screen.dart';
 import 'presentation/pages/home/home_page.dart';
 import 'presentation/pages/welcome/welcome_page.dart';
-import 'presentation/pages/auth/login_page.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'services/notification_service.dart';
 import 'services/cloud_messaging_service.dart';
 import 'services/ad_service.dart';
+import 'services/content_moderation_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +32,10 @@ Future<void> main() async {
   Get.put<NotificationService>(NotificationService(), permanent: true);
   Get.put<CloudMessagingService>(CloudMessagingService(), permanent: true);
   Get.put<AdService>(AdService(), permanent: true);
+  Get.put<ContentModerationService>(
+    ContentModerationService(),
+    permanent: true,
+  );
 
   runApp(const MainApp());
 }
@@ -89,11 +93,10 @@ class _MainAppState extends State<MainApp> {
                 }
                 final User? user = snapshot.data;
                 if (user != null) {
-                  if (user.emailVerified) {
-                    return const HomePage();
-                  }
-                  return const LoginPage();
+                  // Usuario autenticado - ir a HomePage independientemente del estado de verificación
+                  return const HomePage();
                 }
+                // Usuario no autenticado - ir a WelcomePage
                 return const WelcomePage();
               },
             )

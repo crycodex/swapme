@@ -149,12 +149,19 @@ class AuthController extends GetxController {
       final User? currentUser = _auth.currentUser;
       if (currentUser != null) {
         uid.value = currentUser.uid;
+        email.value = currentUser.email ?? '';
+        name.value = currentUser.displayName ?? '';
+        profilePicture.value = currentUser.photoURL ?? '';
+
         await _loadUserData();
         await _loadTheme();
         await _loadSecuritySettings();
         authStatus.value = AuthStatus.authenticated;
+
+        debugPrint('Usuario autenticado encontrado: ${currentUser.email}');
       } else {
         authStatus.value = AuthStatus.unauthenticated;
+        debugPrint('No hay usuario autenticado');
       }
     } catch (e) {
       debugPrint('Error al inicializar auth: $e');
@@ -415,12 +422,14 @@ class AuthController extends GetxController {
       if (signedUser == null) {
         throw Exception('No se pudo iniciar sesión');
       }
-      if (!signedUser.emailVerified) {
-        await signedUser.sendEmailVerification();
-        throw Exception(
-          'Verifica tu correo electrónico. Enviamos un nuevo correo.',
-        );
-      }
+      // Comentado para permitir login sin verificación de email
+      // La verificación se puede manejar dentro de la app si es necesario
+      // if (!signedUser.emailVerified) {
+      //   await signedUser.sendEmailVerification();
+      //   throw Exception(
+      //     'Verifica tu correo electrónico. Enviamos un nuevo correo.',
+      //   );
+      // }
       final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore
           .collection('users')
           .doc(signedUser.uid)
