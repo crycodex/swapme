@@ -17,8 +17,9 @@ class ChatController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CloudMessagingService _cloudMessagingService =
       CloudMessagingService.instance;
-  final ContentModerationService _moderationService =
-      Get.put(ContentModerationService(),);
+  final ContentModerationService _moderationService = Get.put(
+    ContentModerationService(),
+  );
 
   final RxList<ChatModel> chats = <ChatModel>[].obs;
   final RxList<ChatModel> filteredChats = <ChatModel>[].obs;
@@ -403,7 +404,7 @@ class ChatController extends GetxController {
         final ChatModel chat = ChatModel.fromFirestore(chatDocForBlock);
         final String otherUserId = chat.getOtherUserId(currentUserId.value!);
 
-        // Verificar si el usuario actual está bloqueado por el otro usuario
+        // Verificar si el otro usuario está bloqueado por el usuario actual
         final bool isBlocked = await _moderationService.isUserBlocked(
           otherUserId,
         );

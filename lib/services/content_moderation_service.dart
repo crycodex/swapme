@@ -51,7 +51,7 @@ class ContentModerationService extends GetxService {
     r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
     r'www\.\w+\.\w+',
     r'\b\d{10,}\b', // Números largos (posibles teléfonos)
-    r'[A-Z]{5,}', // Texto en mayúsculas excesivo
+    r'\b[A-Z]{8,}\b', // Texto en mayúsculas excesivo (palabras completas de 8+ caracteres)
   ];
 
   @override
@@ -67,11 +67,13 @@ class ContentModerationService extends GetxService {
   /// Valida el contenido de texto antes de enviarlo
   Future<ModerationResult> validateContent(String content) async {
     try {
+      debugPrint('Validando contenido: "$content"');
       final String lowerContent = content.toLowerCase();
 
       // Verificar palabras prohibidas
       for (final String word in _prohibitedWords) {
         if (lowerContent.contains(word.toLowerCase())) {
+          debugPrint('Contenido rechazado por palabra prohibida: $word');
           return ModerationResult(
             isValid: false,
             reason: 'El contenido contiene palabras inapropiadas',
@@ -84,6 +86,10 @@ class ContentModerationService extends GetxService {
       for (final String pattern in _spamPatterns) {
         final RegExp regex = RegExp(pattern, caseSensitive: false);
         if (regex.hasMatch(content)) {
+          final Match? match = regex.firstMatch(content);
+          debugPrint('Contenido rechazado por patrón de spam: $pattern');
+          debugPrint('Texto que coincidió: "${match?.group(0)}"');
+          debugPrint('Contenido original: "$content"');
           return ModerationResult(
             isValid: false,
             reason: 'El contenido contiene patrones de spam',
@@ -94,6 +100,9 @@ class ContentModerationService extends GetxService {
 
       // Verificar longitud excesiva (posible spam)
       if (content.length > 1000) {
+        debugPrint(
+          'Contenido rechazado por longitud excesiva: ${content.length}',
+        );
         return ModerationResult(
           isValid: false,
           reason: 'El contenido es demasiado largo',
@@ -102,12 +111,14 @@ class ContentModerationService extends GetxService {
 
       // Verificar repetición excesiva de caracteres
       if (_hasExcessiveRepetition(content)) {
+        debugPrint('Contenido rechazado por repetición excesiva');
         return ModerationResult(
           isValid: false,
           reason: 'El contenido contiene repeticiones excesivas',
         );
       }
 
+      debugPrint('Contenido validado exitosamente');
       return ModerationResult(isValid: true);
     } catch (e) {
       debugPrint('Error validando contenido: $e');
@@ -129,7 +140,7 @@ class ContentModerationService extends GetxService {
 
     // Si algún carácter se repite más del 30% del contenido
     final double threshold = content.length * 0.3;
-    return charCount.values.any((count) => count > threshold);
+    return charCount.values.any((charCount) => charCount > threshold);
   }
 
   /// Reporta contenido inapropiado
