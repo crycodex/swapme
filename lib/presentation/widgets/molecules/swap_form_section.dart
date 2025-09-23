@@ -123,11 +123,6 @@ class SwapFormSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Obx(() => _buildConditionSelector(context)),
-            const SizedBox(height: 32),
-
-            // Submit button
-            Obx(() => _buildSubmitButton(context)),
-
             // Bottom padding for safe area
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
           ],
@@ -332,45 +327,6 @@ class SwapFormSection extends StatelessWidget {
           onTap: () => controller.updateCondition(condition),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildSubmitButton(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: controller.isLoading.value
-            ? null
-            : () => controller.createSwapItem(),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: controller.isLoading.value
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: colorScheme.onPrimary,
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                'Crear Swap',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
     );
   }
 }

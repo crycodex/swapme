@@ -714,8 +714,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   /// Verifica si un usuario está bloqueado de forma optimizada
   Future<bool> _checkIfUserIsBlockedById(String userId) async {
     try {
-      final ContentModerationService moderationService =
-          Get.put(ContentModerationService(),);
+      final ContentModerationService moderationService = Get.put(
+        ContentModerationService(),
+      );
       return await moderationService.isUserBlocked(userId);
     } catch (e) {
       debugPrint('Error verificando si usuario está bloqueado: $e');
@@ -1020,7 +1021,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               Icon(Icons.star, color: Colors.amber, size: 28),
               const SizedBox(width: 12),
               Text(
-                'Calificar intercambio',
+                'Calificar ',
                 style: TextStyle(
                   color: Colors.amber.shade700,
                   fontWeight: FontWeight.w700,
@@ -1350,8 +1351,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               );
 
               try {
-                final ContentModerationService moderationService =
-                    Get.put(ContentModerationService(),);
+                final ContentModerationService moderationService = Get.put(
+                  ContentModerationService(),
+                );
                 final bool success = await moderationService.unblockUser(
                   otherUserId,
                 );
