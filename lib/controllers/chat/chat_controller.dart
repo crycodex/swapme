@@ -18,7 +18,7 @@ class ChatController extends GetxController {
   final CloudMessagingService _cloudMessagingService =
       CloudMessagingService.instance;
   final ContentModerationService _moderationService =
-      Get.find<ContentModerationService>();
+      Get.put(ContentModerationService(),);
 
   final RxList<ChatModel> chats = <ChatModel>[].obs;
   final RxList<ChatModel> filteredChats = <ChatModel>[].obs;
@@ -408,7 +408,8 @@ class ChatController extends GetxController {
           otherUserId,
         );
         if (isBlocked) {
-          error.value = 'No puedes enviar mensajes a este usuario';
+          error.value =
+              'No puedes enviar mensajes a este usuario porque está bloqueado';
           return false;
         }
       }

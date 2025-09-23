@@ -179,114 +179,58 @@ class _BottomAdGlobalController {
   }
 }
 
-// Manager para ads en bottom navigation - sin singleton para evitar duplicados
+// Manager para ads en bottom navigation - singleton para evitar duplicados
 class BottomAdManager {
-  BannerAd? _bottomAd;
-  bool _isAdLoaded = false;
-  bool _isAdLoading = false;
-  bool _isAdFailedToLoad = false;
-  final AdService _adService = AdService.instance;
-  final List<VoidCallback> _loadingCallbacks = [];
+  static BottomAdManager? _instance;
+  static BottomAdManager get instance {
+    _instance ??= BottomAdManager._internal();
+    return _instance!;
+  }
+
+  BottomAdManager._internal();
+
+  final AdService adService = AdService.instance;
   final _BottomAdGlobalController _globalController =
       _BottomAdGlobalController();
 
-  bool get isAdLoaded => _isAdLoaded;
-  bool get isAdLoading => _isAdLoading;
-  bool get isAdFailed => _isAdFailedToLoad;
-  BannerAd? get bottomAd => _bottomAd;
-
-  Future<void> loadBottomAd() async {
-    if (_isAdLoaded || _isAdLoading) return;
-
+  // Crear una nueva instancia de BannerAd para cada widget
+  BannerAd? createBottomAd({
+    required VoidCallback onAdLoaded,
+    required Function(LoadAdError) onAdFailedToLoad,
+  }) {
     // Verificar si podemos crear un nuevo ad
     if (!_globalController.canCreateAd()) {
       debugPrint(
         '[BottomAdManager] No se puede crear más ads (límite alcanzado)',
       );
-      _isAdFailedToLoad = true;
-      _notifyCallbacks();
-      return;
+      onAdFailedToLoad(LoadAdError(0, 'Límite de ads alcanzado', '', null));
+      return null;
     }
 
-    _isAdLoading = true;
-    _isAdFailedToLoad = false;
-
     try {
-      final bool isReady = await _adService.isSDKReady();
-      if (!isReady) {
-        debugPrint('[BottomAdManager] SDK de AdMob no está listo');
-        _isAdLoading = false;
-        _isAdFailedToLoad = true;
-        _notifyCallbacks();
-        return;
-      }
-
-      _bottomAd = _adService.createBannerAd(
+      final bannerAd = adService.createBannerAd(
         adSize: AdSize.banner,
         onAdLoaded: () {
           debugPrint('[BottomAdManager] Bottom ad cargado exitosamente');
           _globalController.registerAd();
-          _isAdLoaded = true;
-          _isAdLoading = false;
-          _isAdFailedToLoad = false;
-          _notifyCallbacks();
+          onAdLoaded();
         },
         onAdFailedToLoad: (LoadAdError error) {
           debugPrint('[BottomAdManager] Error cargando bottom ad: $error');
-          _isAdLoaded = false;
-          _isAdLoading = false;
-          _isAdFailedToLoad = true;
-          _bottomAd?.dispose();
-          _bottomAd = null;
-          _notifyCallbacks();
+          onAdFailedToLoad(error);
         },
       );
 
-      await _bottomAd?.load();
+      return bannerAd;
     } catch (e) {
       debugPrint('[BottomAdManager] Error al crear bottom ad: $e');
-      _isAdLoaded = false;
-      _isAdLoading = false;
-      _isAdFailedToLoad = true;
-      _notifyCallbacks();
+      onAdFailedToLoad(LoadAdError(0, e.toString(), '', null));
+      return null;
     }
   }
 
-  void addLoadingCallback(VoidCallback callback) {
-    _loadingCallbacks.add(callback);
-  }
-
-  void removeLoadingCallback(VoidCallback callback) {
-    _loadingCallbacks.remove(callback);
-  }
-
-  void _notifyCallbacks() {
-    for (final callback in _loadingCallbacks) {
-      callback();
-    }
-  }
-
-  void refresh() {
-    debugPrint('[BottomAdManager] Refrescando ad...');
-    dispose();
-    loadBottomAd();
-  }
-
-  void dispose() {
-    if (_isAdLoaded) {
-      _globalController.unregisterAd();
-    }
-    _bottomAd?.dispose();
-    _bottomAd = null;
-    _isAdLoaded = false;
-    _isAdLoading = false;
-    _isAdFailedToLoad = false;
-    _loadingCallbacks.clear();
-  }
-
-  // Método para verificar si el ad sigue siendo válido
-  bool isAdValid() {
-    return _bottomAd != null && _isAdLoaded && !_isAdFailedToLoad;
+  void unregisterAd() {
+    _globalController.unregisterAd();
   }
 }
 
@@ -299,26 +243,21 @@ class BottomAdBannerWidget extends StatefulWidget {
 }
 
 class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
-  BottomAdManager? _adManager;
-  late VoidCallback _updateCallback;
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+  bool _isAdLoading = false;
+  bool _isAdFailedToLoad = false;
+  late BottomAdManager _adManager;
 
   @override
   void initState() {
     super.initState();
-    _adManager = BottomAdManager();
-
-    _updateCallback = () {
-      if (mounted) {
-        setState(() {});
-      }
-    };
-
-    _adManager?.addLoadingCallback(_updateCallback);
+    _adManager = BottomAdManager.instance;
 
     // Cargar ad con delay
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted && _adManager != null) {
-        _adManager!.loadBottomAd();
+      if (mounted) {
+        _loadBottomAd();
       }
     });
 
@@ -326,12 +265,68 @@ class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
     Future.delayed(const Duration(minutes: 5), _checkAdValidity);
   }
 
-  void _checkAdValidity() {
-    if (!mounted || _adManager == null) return;
+  Future<void> _loadBottomAd() async {
+    if (_isAdLoaded || _isAdLoading) return;
 
-    if (!_adManager!.isAdValid() && !_adManager!.isAdLoading) {
+    _isAdLoading = true;
+    _isAdFailedToLoad = false;
+
+    try {
+      final bool isReady = await _adManager.adService.isSDKReady();
+      if (!isReady) {
+        debugPrint('[BottomAdBannerWidget] SDK de AdMob no está listo');
+        if (mounted) {
+          setState(() {
+            _isAdLoading = false;
+            _isAdFailedToLoad = true;
+          });
+        }
+        return;
+      }
+
+      _bannerAd = _adManager.createBottomAd(
+        onAdLoaded: () {
+          if (mounted) {
+            setState(() {
+              _isAdLoaded = true;
+              _isAdLoading = false;
+              _isAdFailedToLoad = false;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          debugPrint('[BottomAdBannerWidget] Error cargando ad: $error');
+          if (mounted) {
+            setState(() {
+              _isAdLoaded = false;
+              _isAdLoading = false;
+              _isAdFailedToLoad = true;
+            });
+          }
+        },
+      );
+
+      if (_bannerAd != null) {
+        await _bannerAd!.load();
+      }
+    } catch (e) {
+      debugPrint('[BottomAdBannerWidget] Error al crear ad: $e');
+      if (mounted) {
+        setState(() {
+          _isAdLoaded = false;
+          _isAdLoading = false;
+          _isAdFailedToLoad = true;
+        });
+      }
+    }
+  }
+
+  void _checkAdValidity() {
+    if (!mounted) return;
+
+    if (!_isAdLoaded && !_isAdLoading) {
       debugPrint('[BottomAdBannerWidget] Ad no válido, recargando...');
-      _adManager!.refresh();
+      _loadBottomAd();
     }
 
     // Programar siguiente verificación
@@ -340,9 +335,10 @@ class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
 
   @override
   void dispose() {
-    _adManager?.removeLoadingCallback(_updateCallback);
-    _adManager?.dispose();
-    _adManager = null;
+    if (_isAdLoaded) {
+      _adManager.unregisterAd();
+    }
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -350,13 +346,13 @@ class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-    // Si no hay manager o el ad falló al cargar, no mostrar nada
-    if (_adManager == null || _adManager!.isAdFailed) {
+    // Si el ad falló al cargar, no mostrar nada
+    if (_isAdFailedToLoad) {
       return const SizedBox.shrink();
     }
 
     // Si el ad no está cargado, mostrar placeholder
-    if (!_adManager!.isAdLoaded || _adManager!.bottomAd == null) {
+    if (!_isAdLoaded || _bannerAd == null) {
       return Container(
         width: AdSize.banner.width.toDouble(),
         height: AdSize.banner.height.toDouble(),
@@ -398,7 +394,7 @@ class _BottomAdBannerWidgetState extends State<BottomAdBannerWidget> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: AdWidget(ad: _adManager!.bottomAd!),
+        child: AdWidget(ad: _bannerAd!),
       ),
     );
   }

@@ -22,7 +22,7 @@ class ReportContentPage extends StatefulWidget {
 
 class _ReportContentPageState extends State<ReportContentPage> {
   final ContentModerationService _moderationService =
-      Get.find<ContentModerationService>();
+      Get.put<ContentModerationService>(ContentModerationService());
   final TextEditingController _descriptionController = TextEditingController();
 
   ReportType _selectedType = ReportType.inappropriateContent;

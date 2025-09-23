@@ -13,7 +13,7 @@ class AdminReportsPage extends StatefulWidget {
 
 class _AdminReportsPageState extends State<AdminReportsPage> {
   final ContentModerationService _moderationService =
-      Get.find<ContentModerationService>();
+      Get.put<ContentModerationService>(ContentModerationService());
   final RxString _selectedFilter = 'all'.obs;
 
   @override

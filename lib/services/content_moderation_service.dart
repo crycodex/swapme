@@ -173,32 +173,48 @@ class ContentModerationService extends GetxService {
       final User? currentUser = _auth.currentUser;
       if (currentUser == null) return false;
 
+      if (currentUser.uid == blockedUserId) {
+        debugPrint('No puedes bloquearte a ti mismo');
+        return false;
+      }
+
       // Verificar si ya está bloqueado
-      final QuerySnapshot existingBlock = await _firestore
+      final DocumentSnapshot existingBlock = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
           .collection('blocked_users')
-          .where('blockerId', isEqualTo: currentUser.uid)
-          .where('blockedUserId', isEqualTo: blockedUserId)
-          .where('isActive', isEqualTo: true)
-          .limit(1)
+          .doc(blockedUserId)
           .get();
 
-      if (existingBlock.docs.isNotEmpty) {
-        return true; // Ya está bloqueado
+      if (existingBlock.exists) {
+        final Map<String, dynamic>? data =
+            existingBlock.data() as Map<String, dynamic>?;
+        if (data?['isActive'] == true) {
+          debugPrint('Usuario ya está bloqueado');
+          return true; // Ya está bloqueado
+        }
       }
 
       final BlockedUserModel block = BlockedUserModel(
-        id: '',
+        id: blockedUserId,
         blockerId: currentUser.uid,
         blockedUserId: blockedUserId,
         reason: reason,
         createdAt: DateTime.now(),
+        isActive: true,
       );
 
-      await _firestore.collection('blocked_users').add(block.toFirestore());
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('blocked_users')
+          .doc(blockedUserId)
+          .set(block.toFirestore());
 
       // Actualizar estadísticas del usuario bloqueado
       await _updateUserBlockStats(blockedUserId);
 
+      debugPrint('Usuario $blockedUserId bloqueado exitosamente');
       return true;
     } catch (e) {
       debugPrint('Error bloqueando usuario: $e');
@@ -212,20 +228,26 @@ class ContentModerationService extends GetxService {
       final User? currentUser = _auth.currentUser;
       if (currentUser == null) return false;
 
-      final QuerySnapshot blocks = await _firestore
+      final DocumentSnapshot blockDoc = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
           .collection('blocked_users')
-          .where('blockerId', isEqualTo: currentUser.uid)
-          .where('blockedUserId', isEqualTo: blockedUserId)
-          .where('isActive', isEqualTo: true)
+          .doc(blockedUserId)
           .get();
 
-      final WriteBatch batch = _firestore.batch();
-
-      for (final DocumentSnapshot doc in blocks.docs) {
-        batch.update(doc.reference, {'isActive': false});
+      if (!blockDoc.exists) {
+        debugPrint('Usuario no estaba bloqueado');
+        return true; // No estaba bloqueado, consideramos éxito
       }
 
-      await batch.commit();
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('blocked_users')
+          .doc(blockedUserId)
+          .update({'isActive': false});
+
+      debugPrint('Usuario $blockedUserId desbloqueado exitosamente');
       return true;
     } catch (e) {
       debugPrint('Error desbloqueando usuario: $e');
@@ -239,15 +261,17 @@ class ContentModerationService extends GetxService {
       final User? currentUser = _auth.currentUser;
       if (currentUser == null) return false;
 
-      final QuerySnapshot block = await _firestore
+      final DocumentSnapshot block = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
           .collection('blocked_users')
-          .where('blockerId', isEqualTo: currentUser.uid)
-          .where('blockedUserId', isEqualTo: userId)
-          .where('isActive', isEqualTo: true)
-          .limit(1)
+          .doc(userId)
           .get();
 
-      return block.docs.isNotEmpty;
+      if (!block.exists) return false;
+
+      final Map<String, dynamic>? data = block.data() as Map<String, dynamic>?;
+      return data?['isActive'] == true;
     } catch (e) {
       debugPrint('Error verificando si usuario está bloqueado: $e');
       return false;
@@ -261,8 +285,9 @@ class ContentModerationService extends GetxService {
       if (currentUser == null) return Stream.value([]);
 
       return _firestore
+          .collection('users')
+          .doc(currentUser.uid)
           .collection('blocked_users')
-          .where('blockerId', isEqualTo: currentUser.uid)
           .where('isActive', isEqualTo: true)
           .orderBy('createdAt', descending: true)
           .snapshots()

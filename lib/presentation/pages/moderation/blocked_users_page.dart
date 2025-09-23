@@ -13,8 +13,9 @@ class BlockedUsersPage extends StatefulWidget {
 }
 
 class _BlockedUsersPageState extends State<BlockedUsersPage> {
-  final ContentModerationService _moderationService =
-      Get.find<ContentModerationService>();
+  final ContentModerationService _moderationService = Get.put(
+    ContentModerationService(),
+  );
 
   Future<void> _unblockUser(String blockedUserId) async {
     try {
@@ -160,6 +161,7 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
                   }
 
                   if (snapshot.hasError) {
+                    print(snapshot.error);
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -176,6 +178,15 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
                               fontSize: 16,
                               color: Colors.red[600],
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Error: ${snapshot.error}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red[500],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
@@ -267,13 +278,25 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  FutureBuilder<String>(
+                    future: _getUserName(blockedUser.blockedUserId),
+                    builder: (context, snapshot) {
+                      final String userName =
+                          snapshot.data ?? 'Usuario bloqueado';
+                      return Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 4),
                   Text(
-                    'Usuario Bloqueado',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                    'ID: ${blockedUser.blockedUserId}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -318,6 +341,29 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
       return '${difference.inMinutes} minuto${difference.inMinutes == 1 ? '' : 's'}';
     } else {
       return 'Hace un momento';
+    }
+  }
+
+  /// Obtiene el nombre del usuario desde Firestore
+  Future<String> _getUserName(String userId) async {
+    try {
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        final Map<String, dynamic>? data =
+            userDoc.data() as Map<String, dynamic>?;
+        final String? name = data?['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          return name;
+        }
+      }
+      return 'Usuario desconocido';
+    } catch (e) {
+      debugPrint('Error obteniendo nombre de usuario: $e');
+      return 'Usuario desconocido';
     }
   }
 }

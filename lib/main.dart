@@ -75,8 +75,9 @@ class _MainAppState extends State<MainApp> {
 
     // Inicializar Cloud Messaging Service después de que la app esté lista
     try {
+      Get.put<CloudMessagingService>(CloudMessagingService());
       final CloudMessagingService cloudMessagingService =
-          Get.find<CloudMessagingService>();
+          Get.put<CloudMessagingService>(CloudMessagingService());
       await cloudMessagingService.initializeWhenReady();
       debugPrint('Cloud Messaging Service inicializado correctamente');
     } catch (e) {
