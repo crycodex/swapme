@@ -1,10 +1,12 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:get/get.dart';
+import 'dart:io';
 import '../controllers/limits/user_limits_controller.dart';
 
 class AdsService extends GetxService {
-  final UserLimitsController _userLimitsController =
-      Get.put(UserLimitsController());
+  final UserLimitsController _userLimitsController = Get.put(
+    UserLimitsController(),
+  );
 
   BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;
@@ -87,15 +89,25 @@ class AdsService extends GetxService {
     }
   }
 
-  // Obtener ID del anuncio banner (reemplazar con tu ID real)
+  // Obtener ID del anuncio banner según la plataforma
   String _getBannerAdUnitId() {
-    // Usar IDs de prueba para desarrollo
+    if (Platform.isIOS) {
+      return 'ca-app-pub-6468767225905546/5963869932';
+    } else if (Platform.isAndroid) {
+      return 'ca-app-pub-6468767225905546/1592577751';
+    }
+    // Fallback para otras plataformas (usar ID de prueba)
     return 'ca-app-pub-3940256099942544/6300978111';
   }
 
-  // Obtener ID del anuncio intersticial (reemplazar con tu ID real)
+  // Obtener ID del anuncio intersticial según la plataforma
   String _getInterstitialAdUnitId() {
-    // Usar IDs de prueba para desarrollo
+    if (Platform.isIOS) {
+      return 'ca-app-pub-6468767225905546/2480855614';
+    } else if (Platform.isAndroid) {
+      return 'ca-app-pub-6468767225905546/5542773857';
+    }
+    // Fallback para otras plataformas (usar ID de prueba)
     return 'ca-app-pub-3940256099942544/1033173712';
   }
 

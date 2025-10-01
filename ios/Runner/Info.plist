@@ -22,16 +22,50 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.138107844519-2mrj6rtdrh01n84j5ct6tl7rohr4ka7h</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-6468767225905546~9917990024</string>
+	<key>GIDClientID</key>
+	<string>138107844519-2mrj6rtdrh01n84j5ct6tl7rohr4ka7h.apps.googleusercontent.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
+		<string>tel</string>
+		<string>sms</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to take photos of your items</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone to record videos of your items</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -48,42 +82,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-6468767225905546~9917990024</string>
-	<key>SKAdNetworkItems</key>
-	<array>
-		<dict>
-			<key>SKAdNetworkIdentifier</key>
-			<string>cstr6suwn9.skadnetwork</string>
-		</dict>
-	</array>
-	
-	<!-- Google Sign-in Section -->
-	<key>GIDClientID</key>
-	<string>138107844519-2mrj6rtdrh01n84j5ct6tl7rohr4ka7h.apps.googleusercontent.com</string>
-	
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.138107844519-2mrj6rtdrh01n84j5ct6tl7rohr4ka7h</string>
-			</array>
-		</dict>
-	</array>
-	<!-- End of the Google Sign-in Section -->
-	
-	<!-- URL Launcher Configuration -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>https</string>
-		<string>http</string>
-		<string>mailto</string>
-		<string>tel</string>
-		<string>sms</string>
 	</array>
 </dict>
 </plist>

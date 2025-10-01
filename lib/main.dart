@@ -10,11 +10,11 @@ import './routes/routes.dart';
 import 'splash_screen.dart';
 import 'presentation/pages/home/home_page.dart';
 import 'presentation/pages/welcome/welcome_page.dart';
-import 'presentation/pages/auth/login_page.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'services/notification_service.dart';
 import 'services/cloud_messaging_service.dart';
 import 'services/ad_service.dart';
+import 'services/content_moderation_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +32,10 @@ Future<void> main() async {
   Get.put<NotificationService>(NotificationService(), permanent: true);
   Get.put<CloudMessagingService>(CloudMessagingService(), permanent: true);
   Get.put<AdService>(AdService(), permanent: true);
+  Get.put<ContentModerationService>(
+    ContentModerationService(),
+    permanent: true,
+  );
 
   runApp(const MainApp());
 }
@@ -56,6 +60,30 @@ class _MainAppState extends State<MainApp> {
     // Esperar un tiempo mínimo para mostrar el splash screen
     await Future.delayed(const Duration(milliseconds: 2000));
 
+    // Verificar la persistencia de la sesión de Firebase Auth
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        debugPrint('Usuario persistente encontrado: ${currentUser.email}');
+        debugPrint('Email verificado: ${currentUser.emailVerified}');
+      } else {
+        debugPrint('No hay usuario persistente');
+      }
+    } catch (e) {
+      debugPrint('Error verificando persistencia de sesión: $e');
+    }
+
+    // Inicializar Cloud Messaging Service después de que la app esté lista
+    try {
+      Get.put<CloudMessagingService>(CloudMessagingService());
+      final CloudMessagingService cloudMessagingService =
+          Get.put<CloudMessagingService>(CloudMessagingService());
+      await cloudMessagingService.initializeWhenReady();
+      debugPrint('Cloud Messaging Service inicializado correctamente');
+    } catch (e) {
+      debugPrint('Error inicializando Cloud Messaging Service: $e');
+    }
+
     setState(() {
       _isInitialized = true;
     });
@@ -79,11 +107,16 @@ class _MainAppState extends State<MainApp> {
                 }
                 final User? user = snapshot.data;
                 if (user != null) {
+                  // Usuario autenticado - verificar estado de email
                   if (user.emailVerified) {
                     return const HomePage();
+                  } else {
+                    // Usuario autenticado pero email no verificado - mantener en WelcomePage
+                    // pero mostrar opciones de login para reenviar verificación
+                    return const WelcomePage();
                   }
-                  return const LoginPage();
                 }
+                // Usuario no autenticado - ir a WelcomePage
                 return const WelcomePage();
               },
             )

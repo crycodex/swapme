@@ -7,7 +7,9 @@ import '../../data/models/chat_model.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/swap_item_model.dart';
 import '../../data/models/store_item_model.dart';
+import '../../data/models/content_report_model.dart';
 import '../../services/cloud_messaging_service.dart';
+import '../../services/content_moderation_service.dart';
 import 'package:swapme/controllers/swap/swap_history_controller.dart';
 
 class ChatController extends GetxController {
@@ -15,6 +17,9 @@ class ChatController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CloudMessagingService _cloudMessagingService =
       CloudMessagingService.instance;
+  final ContentModerationService _moderationService = Get.put(
+    ContentModerationService(),
+  );
 
   final RxList<ChatModel> chats = <ChatModel>[].obs;
   final RxList<ChatModel> filteredChats = <ChatModel>[].obs;
@@ -191,6 +196,15 @@ class ChatController extends GetxController {
     if (currentUserId.value == null) return null;
 
     try {
+      // Verificar si alguno de los usuarios está bloqueado
+      final bool isBlocked = await _moderationService.isUserBlocked(
+        interestedUserId,
+      );
+      if (isBlocked) {
+        error.value = 'No puedes iniciar un chat con este usuario';
+        return null;
+      }
+
       // Verificar si ya existe un chat para este intercambio
       final QuerySnapshot existingChat = await _firestore
           .collection('chats')
@@ -265,6 +279,15 @@ class ChatController extends GetxController {
     if (currentUserId.value == null) return null;
 
     try {
+      // Verificar si alguno de los usuarios está bloqueado
+      final bool isBlocked = await _moderationService.isUserBlocked(
+        interestedUserId,
+      );
+      if (isBlocked) {
+        error.value = 'No puedes iniciar un chat con este usuario';
+        return null;
+      }
+
       // Primero, necesitamos obtener el dueño de la tienda
       final DocumentSnapshot storeDoc = await _firestore
           .collection('stores')
@@ -371,6 +394,36 @@ class ChatController extends GetxController {
     if (currentUserId.value == null || content.trim().isEmpty) return false;
 
     try {
+      // Verificar si el otro usuario está bloqueado
+      final DocumentSnapshot chatDocForBlock = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .get();
+
+      if (chatDocForBlock.exists) {
+        final ChatModel chat = ChatModel.fromFirestore(chatDocForBlock);
+        final String otherUserId = chat.getOtherUserId(currentUserId.value!);
+
+        // Verificar si el otro usuario está bloqueado por el usuario actual
+        final bool isBlocked = await _moderationService.isUserBlocked(
+          otherUserId,
+        );
+        if (isBlocked) {
+          error.value =
+              'No puedes enviar mensajes a este usuario porque está bloqueado';
+          return false;
+        }
+      }
+
+      // Validar contenido con el servicio de moderación
+      final moderationResult = await _moderationService.validateContent(
+        content,
+      );
+      if (!moderationResult.isValid) {
+        error.value = moderationResult.reason ?? 'Contenido no permitido';
+        return false;
+      }
+
       // Obtener información del usuario actual
       final DocumentSnapshot userDoc = await _firestore
           .collection('users')
@@ -947,6 +1000,57 @@ class ChatController extends GetxController {
     } catch (e) {
       debugPrint('Error buscando mensajes: $e');
       return [];
+    }
+  }
+
+  /// Reporta contenido inapropiado en el chat
+  Future<bool> reportContent({
+    required String reportedUserId,
+    required String reason,
+    required String description,
+    String? messageId,
+  }) async {
+    try {
+      return await _moderationService.reportContent(
+        reportedUserId: reportedUserId,
+        type: ReportType.inappropriateContent,
+        reason: reason,
+        description: description,
+        contentId: messageId,
+      );
+    } catch (e) {
+      debugPrint('Error reportando contenido: $e');
+      return false;
+    }
+  }
+
+  /// Bloquea a un usuario
+  Future<bool> blockUser(String userId, {String? reason}) async {
+    try {
+      return await _moderationService.blockUser(userId, reason: reason);
+    } catch (e) {
+      debugPrint('Error bloqueando usuario: $e');
+      return false;
+    }
+  }
+
+  /// Desbloquea a un usuario
+  Future<bool> unblockUser(String userId) async {
+    try {
+      return await _moderationService.unblockUser(userId);
+    } catch (e) {
+      debugPrint('Error desbloqueando usuario: $e');
+      return false;
+    }
+  }
+
+  /// Verifica si un usuario está bloqueado
+  Future<bool> isUserBlocked(String userId) async {
+    try {
+      return await _moderationService.isUserBlocked(userId);
+    } catch (e) {
+      debugPrint('Error verificando si usuario está bloqueado: $e');
+      return false;
     }
   }
 }

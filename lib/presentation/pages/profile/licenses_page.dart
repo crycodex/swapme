@@ -138,6 +138,7 @@ class LicensesPage extends StatelessWidget {
     );
   }
 
+
   Widget _buildLicenseCard(String name, String license, String description) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

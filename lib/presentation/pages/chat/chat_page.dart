@@ -6,6 +6,8 @@ import '../../../data/models/chat_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../../data/models/swap_history_model.dart';
 import '../../../data/models/swap_item_model.dart';
+import '../../../routes/routes.dart';
+import '../../../services/content_moderation_service.dart';
 import '../../widgets/molecules/product_selector.dart';
 
 class ChatPage extends StatefulWidget {
@@ -24,6 +26,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   ChatModel? _currentChat;
   bool _isAppInForeground = true;
   bool _isRatingDialogShown = false;
+  bool _isUserBlocked = false;
 
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _loadChatInfo();
     _markChatAsRead();
     _setupNotificationHandling();
+    _checkIfUserIsBlocked();
 
     // Marcar como leído cada vez que se recibe un nuevo mensaje
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,6 +106,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           }
         });
       }
+
+      // Verificar estado de bloqueo cuando se carga la información del chat
+      _checkIfUserIsBlocked();
     }
   }
 
@@ -245,12 +252,66 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             PopupMenuButton<String>(
               onSelected: (String value) {
                 switch (value) {
+                  case 'report':
+                    _showReportUserDialog();
+                    break;
+                  case 'block':
+                    _showBlockUserDialog();
+                    break;
+                  case 'unblock':
+                    _showUnblockDialog();
+                    break;
+                  case 'blocked_users':
+                    Get.toNamed(Routes.blockedUsers);
+                    break;
                   case 'delete':
                     _showDeleteChatDialog();
                     break;
                 }
               },
               itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.report_outlined, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Reportar usuario'),
+                    ],
+                  ),
+                ),
+                if (_isUserBlocked)
+                  const PopupMenuItem<String>(
+                    value: 'unblock',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_add, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Desbloquear usuario'),
+                      ],
+                    ),
+                  )
+                else
+                  const PopupMenuItem<String>(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Bloquear usuario'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem<String>(
+                  value: 'blocked_users',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_off, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Text('Usuarios bloqueados'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem<String>(
                   value: 'delete',
                   child: Row(
@@ -286,6 +347,46 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         color: colorScheme.onErrorContainer,
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_isUserBlocked)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: Colors.red.withValues(alpha: 0.1),
+              child: Row(
+                children: [
+                  Icon(Icons.block, color: Colors.red[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Usuario bloqueado',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Este usuario está bloqueado. No puedes enviar mensajes.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.red[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _showUnblockDialog,
+                    child: Text(
+                      'Desbloquear',
+                      style: TextStyle(color: Colors.red[700]),
                     ),
                   ),
                 ],
@@ -345,7 +446,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ),
           ),
           if (_currentChat?.isExpired != true &&
-              _currentChat?.status != ChatStatus.completed)
+              _currentChat?.status != ChatStatus.completed &&
+              !_isUserBlocked)
             Column(
               children: [
                 // Botones de acción rápida
@@ -466,6 +568,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _sendProductProposal(SwapItemModel product) async {
+    // Verificar si el usuario está bloqueado antes de enviar propuesta
+    if (_currentChat != null && _chatController.currentUserId.value != null) {
+      final String otherUserId = _currentChat!.getOtherUserId(
+        _chatController.currentUserId.value!,
+      );
+
+      final bool isBlocked = await _checkIfUserIsBlockedById(otherUserId);
+      if (isBlocked) {
+        Get.snackbar(
+          'Acción no permitida',
+          'No puedes enviar propuestas a este usuario porque está bloqueado',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
+    }
+
     final bool success = await _chatController.sendMessage(
       chatId: widget.chatId,
       content: 'Te propongo intercambiar mi "${product.name}" por tu artículo.',
@@ -493,13 +614,36 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } else {
       Get.snackbar(
         'Error',
-        'No se pudo enviar la propuesta',
+        _chatController.error.value.isNotEmpty
+            ? _chatController.error.value
+            : 'No se pudo enviar la propuesta',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
       );
     }
   }
 
   Future<void> _sendMoneyProposal(double amount) async {
+    // Verificar si el usuario está bloqueado antes de enviar propuesta
+    if (_currentChat != null && _chatController.currentUserId.value != null) {
+      final String otherUserId = _currentChat!.getOtherUserId(
+        _chatController.currentUserId.value!,
+      );
+
+      final bool isBlocked = await _checkIfUserIsBlockedById(otherUserId);
+      if (isBlocked) {
+        Get.snackbar(
+          'Acción no permitida',
+          'No puedes enviar propuestas a este usuario porque está bloqueado',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
+    }
+
     final bool success = await _chatController.sendMessage(
       chatId: widget.chatId,
       content: 'Te ofrezco \$${amount.toStringAsFixed(0)} por tu artículo.',
@@ -519,8 +663,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } else {
       Get.snackbar(
         'Error',
-        'No se pudo enviar la propuesta',
+        _chatController.error.value.isNotEmpty
+            ? _chatController.error.value
+            : 'No se pudo enviar la propuesta',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
       );
     }
   }
@@ -532,6 +680,47 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    }
+  }
+
+  /// Verifica si el usuario del chat está bloqueado
+  Future<void> _checkIfUserIsBlocked() async {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    try {
+      final String otherUserId = _currentChat!.getOtherUserId(
+        _chatController.currentUserId.value!,
+      );
+
+      final bool isBlocked = await _checkIfUserIsBlockedById(otherUserId);
+
+      if (mounted) {
+        setState(() {
+          _isUserBlocked = isBlocked;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error verificando estado de bloqueo: $e');
+      if (mounted) {
+        setState(() {
+          _isUserBlocked = false;
+        });
+      }
+    }
+  }
+
+  /// Verifica si un usuario está bloqueado de forma optimizada
+  Future<bool> _checkIfUserIsBlockedById(String userId) async {
+    try {
+      final ContentModerationService moderationService = Get.put(
+        ContentModerationService(),
+      );
+      return await moderationService.isUserBlocked(userId);
+    } catch (e) {
+      debugPrint('Error verificando si usuario está bloqueado: $e');
+      return false; // En caso de error, permitir la acción
     }
   }
 
@@ -832,7 +1021,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               Icon(Icons.star, color: Colors.amber, size: 28),
               const SizedBox(width: 12),
               Text(
-                'Calificar intercambio',
+                'Calificar ',
                 style: TextStyle(
                   color: Colors.amber.shade700,
                   fontWeight: FontWeight.w700,
@@ -1089,6 +1278,234 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (remaining.inHours < 24) return colorScheme.error;
     if (remaining.inDays < 3) return Colors.orange;
     return colorScheme.secondary;
+  }
+
+  void _showReportUserDialog() {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId.value!,
+    );
+
+    Get.toNamed(
+      Routes.reportContent,
+      arguments: {
+        'reportedUserId': otherUserId,
+        'contentType': 'chat',
+        'contentId': widget.chatId,
+      },
+    );
+  }
+
+  void _showUnblockDialog() {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId.value!,
+    );
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.person_add, color: Colors.green[700], size: 24),
+            const SizedBox(width: 8),
+            const Text('Desbloquear Usuario'),
+          ],
+        ),
+        content: const Text(
+          '¿Estás seguro de que quieres desbloquear a este usuario? '
+          'Podrás recibir mensajes de él nuevamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back();
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Desbloqueando usuario...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                final ContentModerationService moderationService = Get.put(
+                  ContentModerationService(),
+                );
+                final bool success = await moderationService.unblockUser(
+                  otherUserId,
+                );
+
+                Get.back(); // Cerrar indicador de carga
+
+                if (success) {
+                  setState(() {
+                    _isUserBlocked = false;
+                  });
+
+                  Get.snackbar(
+                    'Usuario desbloqueado',
+                    'El usuario ha sido desbloqueado exitosamente',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+                } else {
+                  Get.snackbar(
+                    'Error',
+                    'No se pudo desbloquear al usuario',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red.withValues(alpha: 0.8),
+                  colorText: Colors.white,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Desbloquear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBlockUserDialog() {
+    if (_currentChat == null || _chatController.currentUserId.value == null) {
+      return;
+    }
+
+    final String otherUserId = _currentChat!.getOtherUserId(
+      _chatController.currentUserId.value!,
+    );
+
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.block, color: colorScheme.error, size: 24),
+            const SizedBox(width: 8),
+            const Text('Bloquear Usuario'),
+          ],
+        ),
+        content: const Text(
+          '¿Estás seguro de que quieres bloquear a este usuario? '
+          'No podrás recibir mensajes de él y no podrás contactarlo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back();
+
+              // Mostrar indicador de carga
+              Get.dialog(
+                const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Bloqueando usuario...'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                barrierDismissible: false,
+              );
+
+              try {
+                final bool success = await _chatController.blockUser(
+                  otherUserId,
+                  reason: 'Bloqueado desde chat',
+                );
+
+                Get.back(); // Cerrar indicador de carga
+
+                if (success) {
+                  setState(() {
+                    _isUserBlocked = true;
+                  });
+
+                  Get.snackbar(
+                    'Usuario bloqueado',
+                    'El usuario ha sido bloqueado exitosamente',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+                } else {
+                  Get.snackbar(
+                    'Error',
+                    'No se pudo bloquear al usuario',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                  );
+                }
+              } catch (e) {
+                Get.back(); // Cerrar indicador de carga
+                Get.snackbar(
+                  'Error',
+                  'Ocurrió un error inesperado',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red.withValues(alpha: 0.8),
+                  colorText: Colors.white,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            child: const Text('Bloquear'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

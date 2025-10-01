@@ -142,6 +142,36 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeAuth();
+    _setupAuthStateListener();
+  }
+
+  // Configurar listener para cambios en el estado de autenticación
+  void _setupAuthStateListener() {
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Usuario autenticado
+        uid.value = user.uid;
+        email.value = user.email ?? '';
+        name.value = user.displayName ?? '';
+        profilePicture.value = user.photoURL ?? '';
+
+        if (user.emailVerified) {
+          authStatus.value = AuthStatus.authenticated;
+          debugPrint('Estado de autenticación actualizado: Usuario verificado');
+        } else {
+          authStatus.value = AuthStatus.unauthenticated;
+          debugPrint(
+            'Estado de autenticación actualizado: Email no verificado',
+          );
+        }
+      } else {
+        // Usuario no autenticado
+        _clearUserState();
+        debugPrint(
+          'Estado de autenticación actualizado: Usuario no autenticado',
+        );
+      }
+    });
   }
 
   void _initializeAuth() async {
@@ -149,12 +179,29 @@ class AuthController extends GetxController {
       final User? currentUser = _auth.currentUser;
       if (currentUser != null) {
         uid.value = currentUser.uid;
+        email.value = currentUser.email ?? '';
+        name.value = currentUser.displayName ?? '';
+        profilePicture.value = currentUser.photoURL ?? '';
+
         await _loadUserData();
         await _loadTheme();
         await _loadSecuritySettings();
-        authStatus.value = AuthStatus.authenticated;
+
+        // Verificar si el email está verificado
+        if (currentUser.emailVerified) {
+          authStatus.value = AuthStatus.authenticated;
+          debugPrint('Usuario autenticado y verificado: ${currentUser.email}');
+        } else {
+          authStatus.value = AuthStatus.unauthenticated;
+          debugPrint(
+            'Usuario autenticado pero email no verificado: ${currentUser.email}',
+          );
+          // Opcionalmente, reenviar email de verificación
+          await currentUser.sendEmailVerification();
+        }
       } else {
         authStatus.value = AuthStatus.unauthenticated;
+        debugPrint('No hay usuario autenticado');
       }
     } catch (e) {
       debugPrint('Error al inicializar auth: $e');
@@ -415,10 +462,11 @@ class AuthController extends GetxController {
       if (signedUser == null) {
         throw Exception('No se pudo iniciar sesión');
       }
+      // Verificar si el email está verificado
       if (!signedUser.emailVerified) {
         await signedUser.sendEmailVerification();
         throw Exception(
-          'Verifica tu correo electrónico. Enviamos un nuevo correo.',
+          'Verifica tu correo electrónico. Enviamos un nuevo correo de verificación.',
         );
       }
       final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore
@@ -909,6 +957,44 @@ class AuthController extends GetxController {
       lockTimeout.value = timeout;
     } catch (e) {
       Get.snackbar('Error', 'No se pudo cambiar el tiempo de bloqueo');
+    }
+  }
+
+  // Método para verificar el estado de verificación del email
+  Future<void> checkEmailVerification() async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        await currentUser.reload();
+        final User? refreshedUser = _auth.currentUser;
+        if (refreshedUser != null && refreshedUser.emailVerified) {
+          authStatus.value = AuthStatus.authenticated;
+          debugPrint('Email verificado correctamente');
+          Get.snackbar('Éxito', 'Email verificado correctamente');
+        } else {
+          authStatus.value = AuthStatus.unauthenticated;
+          debugPrint('Email aún no verificado');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al verificar email: $e');
+    }
+  }
+
+  // Método para reenviar email de verificación
+  Future<void> resendEmailVerification() async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        await currentUser.sendEmailVerification();
+        Get.snackbar(
+          'Correo enviado',
+          'Revisa tu bandeja de entrada para verificar tu email',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error al reenviar email de verificación: $e');
+      Get.snackbar('Error', 'No se pudo reenviar el correo de verificación');
     }
   }
 }

@@ -1,28 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'routes/routes.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _navigateToWelcome();
-  }
-
-  void _navigateToWelcome() {
-    Future.delayed(const Duration(milliseconds: 3500), () {
-      if (mounted) {
-        Get.offAllNamed(Routes.welcome);
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
